@@ -72,9 +72,26 @@ Current primitives are focused on reactive core building blocks:
 - `Solid.DOM` (MVP)
   - generic element constructors (`element`, `element_`)
   - minimal HTML constructors (`div`, `span`, `button`, `input`, `form`, `ul`, `li`)
+- `Solid.DOM.HTML`
+  - full HTML constructor set (`tag` and `tag_` variants)
+  - `dataTag` / `dataTag_` for `<data>`
+- `Solid.DOM.SVG`
+  - full SVG constructor set (`tag` and `tag_` variants)
+  - hyphenated SVG tag mapping via camelCase constructors (`fontFace`, `colorProfile`, `missingGlyph`, ...)
 - `Solid.DOM.Events`
   - `handler`
   - `handler_`
+  - uses `web-events` package `Web.Event.Event` type
+  - keeps only thin handler helpers
+- `Solid.DOM.EventAdapters`
+  - optional ergonomics over ecosystem web packages
+  - casts/reads through `web-uievents`, `web-html`, `web-dom`, `web-file`
+  - includes input/keyboard/mouse/drag/composition adapter helpers
+- `Solid.Control`
+  - conditionals (`when`, `whenElse`)
+  - list control (`forEach`, `forEachElse`, `forEachWithIndex`, `forEachWithIndexElse`, `indexEach`, `indexEachElse`)
+  - branching (`matchWhen`, `matchWhenKeyed`, `switchCases`, `switchCasesElse`)
+  - dynamic/portal (`dynamicTag`, `dynamicComponent`, `portal`, `portalAt`)
 
 No React-style API layer is included. The package intentionally uses Solid naming and Solid mental model.
 
@@ -208,13 +225,15 @@ Reason:
 
 ### 14) DOM authoring strategy
 
-`Solid.DOM` starts as a pragmatic MVP:
+`Solid.DOM` started as a pragmatic MVP:
 
 - generic constructors (`element`, `element_`)
 - small high-frequency HTML constructor set
 - event handler helpers in `Solid.DOM.Events`
 
-Then it scales to generated full HTML/SVG coverage.
+Then it scales to generated full HTML/SVG coverage through `Solid.DOM.HTML` and `Solid.DOM.SVG`.
+
+Event typing strategy: reuse ecosystem web packages (`web-events`, and later `web-uievents` / `web-html` / related packages) instead of growing bespoke event extractor APIs.
 
 Reason:
 
@@ -230,8 +249,37 @@ Examples:
 - `useState` test intent maps to `createSignal` local state behavior
 - `useReducer` test intent maps to explicit dispatch functions over signals/stores
 - `memo`/`memo'` test intent maps to `createMemoWith` equality behavior
+- `useMemo` dependency intent maps to `createMemo` tracked dependency behavior
+- `useEffect` cleanup intent maps to `createEffect` + `onCleanup`
 
 This keeps the package Solid-native while still delivering familiar DX guarantees (state updates, event-driven interactions, controlled recomputation).
+
+### 16) Control-flow wrappers accept accessors and expose effectful render callbacks
+
+`Solid.Control` wrappers are accessor-first for reactive inputs:
+
+- `when` / `whenElse` receive `Accessor Boolean`
+- `forEach` / `forEachWithIndex` / `indexEach` receive `Accessor (Array a)`
+- keyed switch matching is available via `matchWhenKeyed`
+
+Wrapper FFI uses JS getter props (`get when()`, `get each()`) so Solid tracks signal dependencies correctly.
+
+List render callbacks are effectful (`a -> Effect JSX`, `Accessor a -> Effect JSX`) to keep authoring style consistent with setup/effect patterns already used across this package.
+
+### 17) Reuse web platform packages instead of bespoke event extractors
+
+`Solid.DOM.Events` is intentionally thin and based on ecosystem web types:
+
+- event value type: `Web.Event.Event` from `web-events`
+- wrapper surface: `handler`, `handler_`
+
+Ergonomic extraction lives in `Solid.DOM.EventAdapters`, which is built on top of `web-uievents`, `web-html`, `web-dom`, and `web-file`.
+
+Reason:
+
+- avoids re-implementing browser API modeling in this package
+- keeps maintenance focused on Solid-specific abstractions
+- allows optional higher-level adapters on top of stable web package foundations
 
 ## Non-goals (for now)
 
@@ -241,7 +289,7 @@ These can be added incrementally after core reactive primitives are stable.
 
 ## Next Recommended Steps
 
-1. Add generated HTML/SVG constructor coverage and richer `Solid.DOM.Events` extractors.
-2. Add control-flow wrappers (`Show`, `For`, `Index`, `Switch`, `Dynamic`) as Solid-native modules.
-3. Add async-focused resource tests for pending/refreshing transitions.
-4. Add an SSR-backed hydrate success smoke test (in addition to current non-SSR classification checks).
+1. Add typed switch/list case-builder helpers for larger control-flow trees.
+2. Add async-focused resource tests for pending/refreshing transitions.
+3. Add an SSR-backed hydrate success smoke test (in addition to current non-SSR classification checks).
+4. Add optional clipboard-focused adapters via ecosystem web packages.

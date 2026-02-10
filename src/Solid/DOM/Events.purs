@@ -1,6 +1,5 @@
 module Solid.DOM.Events
-  ( Event
-  , EventHandler
+  ( EventHandler
   , handler
   , handler_
   ) where
@@ -8,8 +7,7 @@ module Solid.DOM.Events
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, mkEffectFn1)
 import Prelude (Unit)
-
-foreign import data Event :: Type
+import Web.Event.Event (Event)
 
 type EventHandler = EffectFn1 Event Unit
 

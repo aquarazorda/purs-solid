@@ -97,3 +97,55 @@ run = do
   assertEqual "createMemoWith custom equals false always notifies dependents" 3 neverEqRuns
 
   memoEqualityFixture.dispose
+
+  memoDependencyFixture <- createRoot \dispose -> do
+    left /\ setLeft <- createSignal 1
+    _ /\ setRight <- createSignal 10
+    memoRuns /\ setMemoRuns <- createSignal 0
+    effectRuns /\ setEffectRuns <- createSignal 0
+
+    doubledLeft <- createMemo do
+      leftValue <- get left
+      _ <- modify setMemoRuns (_ + 1)
+      pure (leftValue * 2)
+
+    _ <- createEffect do
+      _ <- get doubledLeft
+      _ <- modify setEffectRuns (_ + 1)
+      pure unit
+
+    pure
+      { setLeft
+      , setRight
+      , doubledLeft
+      , memoRuns
+      , effectRuns
+      , dispose
+      }
+
+  initialMemoRuns <- get memoDependencyFixture.memoRuns
+  assertEqual "createMemo initial compute run" 1 initialMemoRuns
+
+  initialMemoEffectRuns <- get memoDependencyFixture.effectRuns
+  assertEqual "createMemo dependent effect initial run" 1 initialMemoEffectRuns
+
+  _ <- set memoDependencyFixture.setRight 11
+
+  memoRunsAfterUnrelatedUpdate <- get memoDependencyFixture.memoRuns
+  assertEqual "createMemo ignores unrelated signal updates" 1 memoRunsAfterUnrelatedUpdate
+
+  memoEffectRunsAfterUnrelatedUpdate <- get memoDependencyFixture.effectRuns
+  assertEqual "dependent effect ignores unrelated signal updates" 1 memoEffectRunsAfterUnrelatedUpdate
+
+  _ <- set memoDependencyFixture.setLeft 2
+
+  memoRunsAfterRelevantUpdate <- get memoDependencyFixture.memoRuns
+  assertEqual "createMemo recomputes on tracked dependency update" 2 memoRunsAfterRelevantUpdate
+
+  memoEffectRunsAfterRelevantUpdate <- get memoDependencyFixture.effectRuns
+  assertEqual "dependent effect reruns on tracked dependency update" 2 memoEffectRunsAfterRelevantUpdate
+
+  doubledLeftAfterUpdate <- get memoDependencyFixture.doubledLeft
+  assertEqual "createMemo returns updated derived value" 4 doubledLeftAfterUpdate
+
+  memoDependencyFixture.dispose

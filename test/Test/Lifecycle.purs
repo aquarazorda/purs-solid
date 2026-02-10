@@ -9,8 +9,9 @@ import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Exception (throw)
 import Solid.Lifecycle (onCleanup, onMount)
+import Solid.Reactivity (createEffect)
 import Solid.Root (createRoot)
-import Solid.Signal (createSignal, get, modify)
+import Solid.Signal (createSignal, get, modify, set)
 import Solid.Utility (getOwner, runWithOwner)
 import Test.Assert (assertEqual)
 
@@ -73,3 +74,42 @@ run = do
 
       transferredAfterDispose <- get lifecycleFixture.transferredCleanupRuns
       assertEqual "runWithOwner transfers owner for cleanup registration" 1 transferredAfterDispose
+
+  cleanupRerunFixture <- createRoot \dispose -> do
+    source /\ setSource <- createSignal 0
+    effectRuns /\ setEffectRuns <- createSignal 0
+    cleanupRuns /\ setCleanupRuns <- createSignal 0
+
+    _ <- createEffect do
+      _ <- get source
+      _ <- modify setEffectRuns (_ + 1)
+      _ <- onCleanup do
+        _ <- modify setCleanupRuns (_ + 1)
+        pure unit
+      pure unit
+
+    pure
+      { setSource
+      , effectRuns
+      , cleanupRuns
+      , dispose
+      }
+
+  initialEffectRuns <- get cleanupRerunFixture.effectRuns
+  assertEqual "createEffect runs once initially for cleanup test" 1 initialEffectRuns
+
+  initialCleanupRuns <- get cleanupRerunFixture.cleanupRuns
+  assertEqual "effect cleanup has not run before dependency change" 0 initialCleanupRuns
+
+  _ <- set cleanupRerunFixture.setSource 1
+
+  effectRunsAfterDependencyChange <- get cleanupRerunFixture.effectRuns
+  assertEqual "createEffect reruns when dependency changes" 2 effectRunsAfterDependencyChange
+
+  cleanupRunsAfterDependencyChange <- get cleanupRerunFixture.cleanupRuns
+  assertEqual "effect cleanup runs before rerun on dependency change" 1 cleanupRunsAfterDependencyChange
+
+  cleanupRerunFixture.dispose
+
+  cleanupRunsAfterDisposal <- get cleanupRerunFixture.cleanupRuns
+  assertEqual "effect cleanup runs on disposal after dependency reruns" 2 cleanupRunsAfterDisposal

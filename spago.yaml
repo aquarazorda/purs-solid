@@ -5,6 +5,11 @@ package:
     - effect
     - prelude
     - tuples
+    - web-dom
+    - web-events
+    - web-file
+    - web-html
+    - web-uievents
   test:
     main: Test.Main
     dependencies:
