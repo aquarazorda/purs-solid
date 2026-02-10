@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>purs-solid browser smoke</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "solid-js": "/node_modules/solid-js/dist/solid.js",
+          "solid-js/web": "/node_modules/solid-js/web/dist/web.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="hydrate-root">hydrated text</div>
+    <script type="module" src="/test/browser/smoke-client.mjs"></script>
+  </body>
+</html>

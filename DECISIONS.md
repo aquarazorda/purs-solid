@@ -145,6 +145,8 @@ Reason: this keeps server/client behavior aligned with Solid's export conditions
 - in server-like runtimes, `isServer` is `true` and `render`/`hydrate` return `Left (ClientOnlyApi ...)`
 - in browser runtimes, `render`/`hydrate` return `Right disposer` on success
 
+Browser smoke tests run in real Chromium via Playwright and load generated `output/*` modules directly over HTTP with an import map for bare Solid specifiers.
+
 ### 10) Functional error handling policy (for future modules too)
 
 Public APIs model failure explicitly in return types.
@@ -169,6 +171,12 @@ Policy:
 - when an API can be made more principled (for example, replacing exceptions with `Either`), rewrite it directly
 - keep `DECISIONS.md` and tests aligned with the latest canonical API shape
 
+### 12) Test entrypoints
+
+- PureScript suite: `spago test`
+- Browser smoke suite: `npm run test:browser-smoke`
+- Combined local run: `npm run test:all`
+
 ## Non-goals (for now)
 
 - JSX/view DSL
@@ -179,7 +187,7 @@ These can be added incrementally after core reactive primitives are stable.
 
 ## Next Recommended Steps
 
-1. Add real browser DOM smoke tests for `Solid.Web` render/hydrate mount/dispose behavior.
-2. Add async-focused resource tests for pending/refreshing transitions.
-3. Improve docs and examples for all newly added modules.
-4. Add CI matrix steps for `spago test` and formatting/lint checks.
+1. Add async-focused resource tests for pending/refreshing transitions.
+2. Improve docs and examples for all newly added modules.
+3. Add CI matrix steps for `spago test`, `npm run test:browser-smoke`, and formatting/lint checks.
+4. Add an SSR-backed hydrate success smoke test (in addition to current non-SSR classification checks).

@@ -66,7 +66,7 @@ Design principles are documented in `DECISIONS.md`.
   - [x] `render`
   - [x] `hydrate`
   - [x] `isServer`
-  - [x] mount lookup helpers (`documentBody`, `mountById`)
+  - [x] mount lookup helpers (`documentBody`, `mountById`, `requireBody`, `requireMountById`)
 
 ## Milestone Plan
 
@@ -247,14 +247,14 @@ Tasks:
   - Files: `src/Solid/Web.purs`, `src/Solid/Web.js`
 - [x] Add `hydrate` and `isServer`
   - Files: `src/Solid/Web.purs`, `src/Solid/Web.js`
-- [~] Add browser integration smoke tests
-  - Files: `test/Test/Main.purs`, `test/Test/Main.js`
-  - Current coverage: server-runtime smoke checks for `isServer`, missing DOM mount lookup, and `Left (ClientOnlyApi ..)` results for server-side `render`/`hydrate`
-  - Deferred: real browser DOM mount/dispose smoke run
+- [x] Add browser integration smoke tests
+  - Files: `test/browser/smoke.html`, `test/browser/smoke-client.mjs`, `test/browser/run-smoke.mjs`, `package.json`
+  - Coverage: real Chromium smoke checks for `documentBody`, `mountById`, `requireBody`, `requireMountById`, browser `render` mount/dispose behavior, and `hydrate` result classification
+  - Commands: `npm run test:browser-smoke` (includes `spago test`)
 
 Acceptance:
 
-- [~] Minimal browser app entrypoint works from PureScript
+- [x] Minimal browser app entrypoint works from PureScript
 - [x] SSR-related APIs are clearly separated from core runtime wrappers
 
 ## Cross-Cutting Tasks
