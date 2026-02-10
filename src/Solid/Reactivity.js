@@ -1,4 +1,12 @@
-import { createEffect as createSolidEffect, createMemo as createSolidMemo } from "solid-js/dist/solid.js";
+import {
+  createComputed as createSolidComputed,
+  createDeferred as createSolidDeferred,
+  createEffect as createSolidEffect,
+  createMemo as createSolidMemo,
+  createReaction as createSolidReaction,
+  createRenderEffect as createSolidRenderEffect,
+  createSelector as createSolidSelector,
+} from "solid-js/dist/solid.js";
 
 const makeMemoOptions = (name) => {
   const options = {};
@@ -31,4 +39,38 @@ export const createEffect = (action) => () => {
   createSolidEffect(() => {
     action();
   });
+};
+
+export const createComputed = (action) => () => {
+  createSolidComputed(() => {
+    action();
+  });
+};
+
+export const createRenderEffect = (action) => () => {
+  createSolidRenderEffect(() => {
+    action();
+  });
+};
+
+export const createReaction = (onInvalidate) => () => {
+  const track = createSolidReaction(() => {
+    onInvalidate();
+  });
+
+  return (observe) => () => {
+    track(() => {
+      observe();
+    });
+  };
+};
+
+export const createDeferred = (source) => () =>
+  createSolidDeferred(source);
+
+export const createSelector = (source) => () => {
+  const selector = createSolidSelector(source);
+
+  return (key) => () =>
+    selector(key);
 };

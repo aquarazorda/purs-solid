@@ -4,6 +4,11 @@ module Solid.Reactivity
   , createMemo
   , createMemoWith
   , createEffect
+  , createComputed
+  , createRenderEffect
+  , createReaction
+  , createDeferred
+  , createSelector
   ) where
 
 import Prelude
@@ -44,3 +49,13 @@ foreign import createMemoWithCustomEqImpl
   -> Effect (Accessor a)
 
 foreign import createEffect :: Effect Unit -> Effect Unit
+
+foreign import createComputed :: Effect Unit -> Effect Unit
+
+foreign import createRenderEffect :: Effect Unit -> Effect Unit
+
+foreign import createReaction :: Effect Unit -> Effect (Effect Unit -> Effect Unit)
+
+foreign import createDeferred :: forall a. Accessor a -> Effect (Accessor a)
+
+foreign import createSelector :: forall a. Accessor a -> Effect (a -> Effect Boolean)

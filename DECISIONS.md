@@ -20,8 +20,44 @@ Current primitives are focused on reactive core building blocks:
   - `createMemo`
   - `createMemoWith`
   - `createEffect`
+  - `createComputed`
+  - `createRenderEffect`
+  - `createReaction`
+  - `createDeferred`
+  - `createSelector`
 - `Solid.Root`
   - `createRoot`
+- `Solid.Utility`
+  - `batch`
+  - `untrack`
+  - `on`
+  - `onWith`
+  - `getOwner`
+  - `runWithOwner`
+- `Solid.Lifecycle`
+  - `onCleanup`
+  - `onMount`
+- `Solid.Resource`
+  - `createResource`
+  - `createResourceFrom`
+  - resource accessors (`value`, `latest`, `state`, `loading`, `error`)
+  - resource actions (`mutate`, `refetch`)
+- `Solid.Context`
+  - `createContext`
+  - `createContextWithDefault`
+  - `useContext`
+  - `withContext`
+- `Solid.Store`
+  - `createStore`
+  - typed field helpers (`getField`, `setField`, `modifyField`)
+  - path helpers (`setPath`, `modifyPath`)
+  - `createMutable` and mutable field/path helpers
+  - unwrap helpers (`unwrapStore`, `unwrapMutable`)
+- `Solid.Web`
+  - `render`
+  - `hydrate`
+  - `isServer`
+  - mount lookup helpers (`documentBody`, `mountById`)
 
 No React-style API layer is included. The package intentionally uses Solid naming and Solid mental model.
 
@@ -86,18 +122,38 @@ FFI imports Solid from `solid-js/dist/solid.js`.
 
 Reason: this package targets client-style fine-grained reactivity behavior during local Node-based tests as well, and this import path preserves expected signal/memo update behavior for the current setup.
 
+### 8) Store update semantics and mutable caveats
+
+`Solid.Store` follows Solid Store behavior: object updates merge into existing branches by default, including top-level `setField` when the new value is an object.
+
+Implications:
+
+- branch references may remain stable for nested/object updates
+- untouched branches stay reference-stable
+- replacing object branches requires explicit non-merge patterns
+
+`createMutable` is exposed as an opt-in mutable escape hatch. It is practical for interop and imperative updates but should be used carefully because updates are in-place and can bypass immutable-style reasoning.
+
+### 9) Web wrappers use environment-aware imports
+
+`Solid.Web` imports from `solid-js/web` (package entry), not `solid-js/web/dist/web.js` directly.
+
+Reason: this keeps server/client behavior aligned with Solid's export conditions.
+
+- in server-like runtimes, `isServer` is `true` and client-only calls (`render`, `hydrate`) throw
+- in browser runtimes, `render`/`hydrate` map to the client implementation
+
 ## Non-goals (for now)
 
 - JSX/view DSL
 - component rendering helpers
 - router integration
-- stores/resources/context wrappers
 
 These can be added incrementally after core reactive primitives are stable.
 
 ## Next Recommended Steps
 
-1. Add `batch` and `untrack` wrappers.
-2. Add `onCleanup` and richer effect helpers.
-3. Add focused tests for memo equality and effect scheduling semantics.
-4. Define a rendering layer that stays Solid-native in naming and behavior.
+1. Add real browser DOM smoke tests for `Solid.Web` render/hydrate mount/dispose behavior.
+2. Add async-focused resource tests for pending/refreshing transitions.
+3. Improve docs and examples for all newly added modules.
+4. Add CI matrix steps for `spago test` and formatting/lint checks.
