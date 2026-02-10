@@ -221,6 +221,18 @@ Reason:
 - unblocks immediate UI authoring and browser smoke coverage
 - preserves a path to high-DX breadth similar to `react-basic-dom` without sacrificing Solid-native semantics
 
+### 15) Compatibility target is behavior, not React API shape
+
+When comparing against `purescript-react-basic` and `purescript-react-basic-hooks` tests, we target equivalent developer outcomes and behavior, not React hook naming or lifecycle shape.
+
+Examples:
+
+- `useState` test intent maps to `createSignal` local state behavior
+- `useReducer` test intent maps to explicit dispatch functions over signals/stores
+- `memo`/`memo'` test intent maps to `createMemoWith` equality behavior
+
+This keeps the package Solid-native while still delivering familiar DX guarantees (state updates, event-driven interactions, controlled recomputation).
+
 ## Non-goals (for now)
 
 - router integration

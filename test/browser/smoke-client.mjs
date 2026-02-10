@@ -3,6 +3,7 @@ import * as Data_Maybe from "/output/Data.Maybe/index.js";
 import * as Solid_Component from "/output/Solid.Component/index.js";
 import * as Solid_DOM from "/output/Solid.DOM/index.js";
 import * as Solid_JSX from "/output/Solid.JSX/index.js";
+import * as Solid_Signal from "/output/Solid.Signal/index.js";
 import * as Solid_Web from "/output/Solid.Web/index.js";
 
 const failures = [];
@@ -161,6 +162,117 @@ const run = () => {
     if (typeof keyedRenderDispose === "function") {
       keyedRenderDispose();
       record("keyed disposer clears mount", mount.textContent === "", mount.textContent);
+    }
+
+    const signalCounter = Solid_Component.component(() => () => {
+      const signal = Solid_Signal.createSignal(0)();
+      const count = signal.value0;
+      const setCount = signal.value1;
+
+      return Solid_DOM.element("button")({
+        id: "signal-counter",
+        onClick: () => Solid_Signal.modify(setCount)((n) => n + 1)(),
+      })([
+        () => String(count()),
+      ]);
+    });
+
+    const signalCounterRender = Solid_Web.render(
+      () => Solid_Component.element(signalCounter)({})
+    )(mount)();
+    const signalCounterDispose = expectRight("signal counter renders", signalCounterRender);
+    const signalCounterButton = mount.querySelector("#signal-counter");
+
+    record("signal counter starts at 0", signalCounterButton?.textContent === "0", signalCounterButton?.textContent);
+
+    if (signalCounterButton instanceof HTMLButtonElement) {
+      signalCounterButton.click();
+      record("signal counter increments on click", signalCounterButton.textContent === "1", signalCounterButton.textContent);
+
+      signalCounterButton.click();
+      record("signal counter increments again", signalCounterButton.textContent === "2", signalCounterButton.textContent);
+    } else {
+      record("signal counter button exists", false, signalCounterButton);
+    }
+
+    if (typeof signalCounterDispose === "function") {
+      signalCounterDispose();
+    }
+
+    const functionSignalCounter = Solid_Component.component(() => () => {
+      const signal = Solid_Signal.createSignal(() => 0)();
+      const readFn = signal.value0;
+      const setFn = signal.value1;
+
+      return Solid_DOM.element("button")({
+        id: "fn-signal-counter",
+        onClick: () =>
+          Solid_Signal.modify(setFn)((fn) => () => fn() + 1)(),
+      })([
+        () => String(readFn()()),
+      ]);
+    });
+
+    const functionSignalRender = Solid_Web.render(
+      () => Solid_Component.element(functionSignalCounter)({})
+    )(mount)();
+    const functionSignalDispose = expectRight("function-valued signal counter renders", functionSignalRender);
+    const fnCounterButton = mount.querySelector("#fn-signal-counter");
+
+    record("function signal counter starts at 0", fnCounterButton?.textContent === "0", fnCounterButton?.textContent);
+
+    if (fnCounterButton instanceof HTMLButtonElement) {
+      fnCounterButton.click();
+      record("function signal counter increments on click", fnCounterButton.textContent === "1", fnCounterButton.textContent);
+    } else {
+      record("function signal counter button exists", false, fnCounterButton);
+    }
+
+    if (typeof functionSignalDispose === "function") {
+      functionSignalDispose();
+      record("function signal disposer clears mount", mount.textContent === "", mount.textContent);
+    }
+
+    const reducerCounter = Solid_Component.component(() => () => {
+      const signal = Solid_Signal.createSignal(0)();
+      const count = signal.value0;
+      const setCount = signal.value1;
+
+      const dispatch = (action) => {
+        if (action === "Add") {
+          return Solid_Signal.modify(setCount)((n) => n + 1)();
+        }
+
+        return Solid_Signal.modify(setCount)((n) => n - 1)();
+      };
+
+      return Solid_DOM.element("button")({
+        id: "reducer-counter",
+        onClick: () => dispatch("Add"),
+      })([
+        () => String(count()),
+      ]);
+    });
+
+    const reducerRenderResult = Solid_Web.render(
+      () => Solid_Component.element(reducerCounter)({})
+    )(mount)();
+    const reducerDispose = expectRight("reducer-style counter renders", reducerRenderResult);
+    const reducerButton = mount.querySelector("#reducer-counter");
+
+    record("reducer-style counter starts at 0", reducerButton?.textContent === "0", reducerButton?.textContent);
+
+    if (reducerButton instanceof HTMLButtonElement) {
+      reducerButton.click();
+      reducerButton.click();
+      record("reducer-style dispatch updates state", reducerButton.textContent === "2", reducerButton.textContent);
+    } else {
+      record("reducer-style counter button exists", false, reducerButton);
+    }
+
+    if (typeof reducerDispose === "function") {
+      reducerDispose();
+      record("reducer-style disposer clears mount", mount.textContent === "", mount.textContent);
     }
   }
 
