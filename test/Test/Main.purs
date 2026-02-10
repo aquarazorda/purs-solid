@@ -10,6 +10,7 @@ import Test.Resource as Resource
 import Test.Secondary as Secondary
 import Test.Signal as Signal
 import Test.Store as Store
+import Test.UI as UI
 import Test.Utility as Utility
 import Test.Web as Web
 
@@ -28,5 +29,6 @@ main = do
   runSuite "Resource" Resource.run
   runSuite "Context" Context.run
   runSuite "Store" Store.run
+  runSuite "UI" UI.run
   runSuite "Web" Web.run
   log "All tests passed"

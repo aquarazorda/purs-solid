@@ -60,6 +60,21 @@ Current primitives are focused on reactive core building blocks:
   - `hydrate`
   - `isServer`
   - mount lookup helpers (`documentBody`, `mountById`, `requireBody`, `requireMountById`)
+- `Solid.JSX`
+  - `empty`
+  - `text`
+  - `fragment`
+  - `keyed`
+- `Solid.Component`
+  - `component`
+  - `element`
+  - `elementKeyed`
+- `Solid.DOM` (MVP)
+  - generic element constructors (`element`, `element_`)
+  - minimal HTML constructors (`div`, `span`, `button`, `input`, `form`, `ul`, `li`)
+- `Solid.DOM.Events`
+  - `handler`
+  - `handler_`
 
 No React-style API layer is included. The package intentionally uses Solid naming and Solid mental model.
 
@@ -177,17 +192,44 @@ Policy:
 - Browser smoke suite: `npm run test:browser-smoke`
 - Combined local run: `npm run test:all`
 
+### 13) Solid-native component setup model
+
+Components are defined as setup functions with this shape:
+
+- `props -> Effect JSX`
+
+and lifted into renderable component values via `Solid.Component.component`.
+
+Reason:
+
+- aligns with Solid's setup + fine-grained reactive mental model
+- naturally composes with existing primitives (`createSignal`, `createEffect`, lifecycle/owner APIs)
+- avoids introducing React hook semantics into this package
+
+### 14) DOM authoring strategy
+
+`Solid.DOM` starts as a pragmatic MVP:
+
+- generic constructors (`element`, `element_`)
+- small high-frequency HTML constructor set
+- event handler helpers in `Solid.DOM.Events`
+
+Then it scales to generated full HTML/SVG coverage.
+
+Reason:
+
+- unblocks immediate UI authoring and browser smoke coverage
+- preserves a path to high-DX breadth similar to `react-basic-dom` without sacrificing Solid-native semantics
+
 ## Non-goals (for now)
 
-- JSX/view DSL
-- component rendering helpers
 - router integration
 
 These can be added incrementally after core reactive primitives are stable.
 
 ## Next Recommended Steps
 
-1. Add async-focused resource tests for pending/refreshing transitions.
-2. Improve docs and examples for all newly added modules.
-3. Add CI matrix steps for `spago test`, `npm run test:browser-smoke`, and formatting/lint checks.
+1. Add generated HTML/SVG constructor coverage and richer `Solid.DOM.Events` extractors.
+2. Add control-flow wrappers (`Show`, `For`, `Index`, `Switch`, `Dynamic`) as Solid-native modules.
+3. Add async-focused resource tests for pending/refreshing transitions.
 4. Add an SSR-backed hydrate success smoke test (in addition to current non-SSR classification checks).

@@ -1,5 +1,8 @@
 import * as Data_Either from "/output/Data.Either/index.js";
 import * as Data_Maybe from "/output/Data.Maybe/index.js";
+import * as Solid_Component from "/output/Solid.Component/index.js";
+import * as Solid_DOM from "/output/Solid.DOM/index.js";
+import * as Solid_JSX from "/output/Solid.JSX/index.js";
 import * as Solid_Web from "/output/Solid.Web/index.js";
 
 const failures = [];
@@ -112,6 +115,52 @@ const run = () => {
       record("render disposer clears mount text", mount.textContent === "", mount.textContent);
     } else {
       record("render disposer is callable", false, renderDispose);
+    }
+
+    const badgeComponent = Solid_Component.component((props) => () =>
+      Solid_DOM.div({ id: props.id, className: props.className })([
+        Solid_DOM.text(props.label),
+      ])
+    );
+
+    const badgeView = Solid_Component.element(badgeComponent)({
+      id: "component-badge",
+      className: "badge",
+      label: "component ok",
+    });
+
+    const componentRenderResult = Solid_Web.render(() => badgeView)(mount)();
+    const componentRenderDispose = expectRight("component element renders via Solid.Component", componentRenderResult);
+    const badgeElement = mount.querySelector("#component-badge");
+
+    record("component render writes expected text", badgeElement?.textContent === "component ok", badgeElement?.textContent);
+
+    if (typeof componentRenderDispose === "function") {
+      componentRenderDispose();
+      record("component disposer clears mount", mount.textContent === "", mount.textContent);
+    }
+
+    const fragmentView = Solid_JSX.fragment([
+      Solid_DOM.text("frag"),
+      Solid_DOM.text("ment"),
+    ]);
+
+    const fragmentRenderResult = Solid_Web.render(() => fragmentView)(mount)();
+    const fragmentRenderDispose = expectRight("fragment renders through Solid.JSX", fragmentRenderResult);
+    record("fragment render combines children", mount.textContent === "fragment", mount.textContent);
+
+    if (typeof fragmentRenderDispose === "function") {
+      fragmentRenderDispose();
+    }
+
+    const keyedView = Solid_JSX.keyed("primary")(Solid_DOM.text("keyed"));
+    const keyedRenderResult = Solid_Web.render(() => keyedView)(mount)();
+    const keyedRenderDispose = expectRight("keyed JSX renders", keyedRenderResult);
+    record("keyed render writes expected text", mount.textContent === "keyed", mount.textContent);
+
+    if (typeof keyedRenderDispose === "function") {
+      keyedRenderDispose();
+      record("keyed disposer clears mount", mount.textContent === "", mount.textContent);
     }
   }
 
