@@ -1,0 +1,15 @@
+package:
+  name: purs-solid
+  dependencies:
+    - console
+    - effect
+    - prelude
+    - tuples
+  test:
+    main: Test.Main
+    dependencies:
+      - exceptions
+workspace:
+  packageSet:
+    registry: 73.0.0
+  extraPackages: {}
