@@ -175,7 +175,8 @@ Acceptance:
 
 - [x] Resource state transitions match Solid behavior
 - [x] Type-level API clearly represents possibly-uninitialized values
-  - `value` and `latest` are `Maybe`-typed in `Solid.Resource`
+  - `value` and `latest` are `Either ResourceReadError (Maybe a)` in `Solid.Resource`
+  - `state` is `Either ResourceStateError ResourceState` in `Solid.Resource`
 
 ### M5: Context API
 
@@ -248,7 +249,7 @@ Tasks:
   - Files: `src/Solid/Web.purs`, `src/Solid/Web.js`
 - [~] Add browser integration smoke tests
   - Files: `test/Test/Main.purs`, `test/Test/Main.js`
-  - Current coverage: server-runtime smoke checks for `isServer`, missing DOM mount lookup, and server-side `render`/`hydrate` client-only errors
+  - Current coverage: server-runtime smoke checks for `isServer`, missing DOM mount lookup, and `Left (ClientOnlyApi ..)` results for server-side `render`/`hydrate`
   - Deferred: real browser DOM mount/dispose smoke run
 
 Acceptance:

@@ -1,4 +1,5 @@
 import { createResource as createSolidResource } from "solid-js/dist/solid.js";
+import * as Data_Either from "../Data.Either/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
 
 const isJust = (maybe) => maybe instanceof Data_Maybe.Just;
@@ -29,10 +30,45 @@ const toFetchInfo = (info) => ({
 
 const toParts = (pair) => ({ resource: pair[0], actions: pair[1] });
 
-export const createResourceImpl = (fetcher) => () =>
-  toParts(
-    createSolidResource((_, info) => fetcher(toFetchInfo(info))())
+const toErrorMessage = (error) => {
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error instanceof Error && typeof error.message === "string") {
+    return error.message;
+  }
+
+  return String(error);
+};
+
+const fromEitherOrThrow = (result) => {
+  if (result instanceof Data_Either.Right) {
+    return result.value0;
+  }
+
+  if (result instanceof Data_Either.Left) {
+    throw new Error(result.value0);
+  }
+
+  throw new Error("Expected Either from resource fetcher");
+};
+
+const safeRead = (read) => {
+  try {
+    return Data_Either.Right.create(toMaybe(read()));
+  } catch (error) {
+    return Data_Either.Left.create(toErrorMessage(error));
+  }
+};
+
+export const createResourceImpl = (fetcher) => () => {
+  return toParts(
+    createSolidResource((_, info) =>
+      fromEitherOrThrow(fetcher(toFetchInfo(info))())
+    )
   );
+};
 
 export const createResourceFromImpl = (sourceAccessor) => (fetcher) => () => {
   const source = () => {
@@ -45,26 +81,16 @@ export const createResourceFromImpl = (sourceAccessor) => (fetcher) => () => {
 
   return toParts(
     createSolidResource(source, (wrappedSource, info) =>
-      fetcher(wrappedSource.value)(toFetchInfo(info))()
+      fromEitherOrThrow(fetcher(wrappedSource.value)(toFetchInfo(info))())
     )
   );
 };
 
-export const value = (resource) => () => {
-  try {
-    return toMaybe(resource());
-  } catch (_) {
-    return Data_Maybe.Nothing.value;
-  }
-};
+export const valueImpl = (resource) => () =>
+  safeRead(() => resource());
 
-export const latest = (resource) => () => {
-  try {
-    return toMaybe(resource.latest);
-  } catch (_) {
-    return Data_Maybe.Nothing.value;
-  }
-};
+export const latestImpl = (resource) => () =>
+  safeRead(() => resource.latest);
 
 export const stateTagImpl = (resource) => () =>
   resource.state;

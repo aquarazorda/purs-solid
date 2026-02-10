@@ -1,13 +1,40 @@
 import { hydrate as solidHydrate, isServer as solidIsServer, render as solidRender } from "solid-js/web";
+import * as Data_Either from "../Data.Either/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
 
 export const isServer = solidIsServer;
 
-export const render = (view) => (mount) => () =>
-  solidRender(() => view(), mount);
+const toErrorMessage = (error) => {
+  if (typeof error === "string") {
+    return error;
+  }
 
-export const hydrate = (view) => (mount) => () =>
-  solidHydrate(() => view(), mount);
+  if (error instanceof Error && typeof error.message === "string") {
+    return error.message;
+  }
+
+  return String(error);
+};
+
+export const renderImpl = (view) => (mount) => () => {
+  try {
+    return Data_Either.Right.create(
+      solidRender(() => view(), mount)
+    );
+  } catch (error) {
+    return Data_Either.Left.create(toErrorMessage(error));
+  }
+};
+
+export const hydrateImpl = (view) => (mount) => () => {
+  try {
+    return Data_Either.Right.create(
+      solidHydrate(() => view(), mount)
+    );
+  } catch (error) {
+    return Data_Either.Left.create(toErrorMessage(error));
+  }
+};
 
 export const documentBody = () => {
   if (typeof document === "undefined" || document.body == null) {

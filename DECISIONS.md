@@ -41,6 +41,8 @@ Current primitives are focused on reactive core building blocks:
   - `createResource`
   - `createResourceFrom`
   - resource accessors (`value`, `latest`, `state`, `loading`, `error`)
+    - functional reads: `value` and `latest` return `Either ResourceReadError (Maybe a)`
+    - functional state decode: `state` returns `Either ResourceStateError ResourceState`
   - resource actions (`mutate`, `refetch`)
 - `Solid.Context`
   - `createContext`
@@ -57,7 +59,7 @@ Current primitives are focused on reactive core building blocks:
   - `render`
   - `hydrate`
   - `isServer`
-  - mount lookup helpers (`documentBody`, `mountById`)
+  - mount lookup helpers (`documentBody`, `mountById`, `requireBody`, `requireMountById`)
 
 No React-style API layer is included. The package intentionally uses Solid naming and Solid mental model.
 
@@ -140,8 +142,32 @@ Implications:
 
 Reason: this keeps server/client behavior aligned with Solid's export conditions.
 
-- in server-like runtimes, `isServer` is `true` and client-only calls (`render`, `hydrate`) throw
-- in browser runtimes, `render`/`hydrate` map to the client implementation
+- in server-like runtimes, `isServer` is `true` and `render`/`hydrate` return `Left (ClientOnlyApi ...)`
+- in browser runtimes, `render`/`hydrate` return `Right disposer` on success
+
+### 10) Functional error handling policy (for future modules too)
+
+Public APIs model failure explicitly in return types.
+
+Policy:
+
+- prefer `Either ErrorType a` for recoverable runtime failures
+- use `Maybe a` only for expected absence (`no provider`, `no mount node`, etc.)
+- avoid throwing from public wrappers; convert JS exceptions in FFI into typed `Left` values
+- keep error representation close to domain (`WebError`, `ResourceReadError`, `ResourceStateError`)
+
+This policy applies to all future wrappers (`Solid.Web`, `Solid.Resource`, and upcoming modules) unless there is a hard runtime constraint that makes typed recovery impossible.
+
+### 11) Pre-1.0 API evolution policy
+
+This package currently prioritizes correctness, explicit types, and functional design over API stability.
+
+Policy:
+
+- no backwards-compatibility guarantees before 1.0
+- no deprecation/shim layer by default during early development
+- when an API can be made more principled (for example, replacing exceptions with `Either`), rewrite it directly
+- keep `DECISIONS.md` and tests aligned with the latest canonical API shape
 
 ## Non-goals (for now)
 

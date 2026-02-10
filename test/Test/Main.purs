@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..), isNothing)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Class.Console (log)
-import Effect.Exception (message, throw, try)
+import Effect.Exception (throw)
 import Solid.Context as Context
 import Solid.Lifecycle (onCleanup, onMount)
 import Solid.Reactivity (createComputed, createEffect, createMemo, createReaction, createRenderEffect, createSelector)
@@ -25,6 +25,14 @@ assertEqual label expected actual =
     pure unit
   else
     throw (label <> ": expected " <> show expected <> ", got " <> show actual)
+
+expectRight :: forall l r. Show l => String -> Either l r -> Effect r
+expectRight label result =
+  case result of
+    Left leftValue ->
+      throw (label <> ": unexpected Left " <> show leftValue)
+    Right rightValue ->
+      pure rightValue
 
 foreign import sameRef :: forall a. a -> a -> Boolean
 
@@ -423,7 +431,7 @@ main = do
         Nothing ->
           pure unit
 
-      pure (key * 10)
+      pure (Right (key * 10) :: Either String Int)
 
     pure
       { setSource
@@ -435,10 +443,12 @@ main = do
       , dispose
       }
 
-  sourcedInitialState <- Resource.state sourcedResourceFixture.resource
+  sourcedInitialStateResult <- Resource.state sourcedResourceFixture.resource
+  sourcedInitialState <- expectRight "sourced state decode" sourcedInitialStateResult
   assertEqual "sourced resource starts unresolved" Resource.Unresolved sourcedInitialState
 
-  sourcedInitialValue <- Resource.value sourcedResourceFixture.resource
+  sourcedInitialValueResult <- Resource.value sourcedResourceFixture.resource
+  sourcedInitialValue <- expectRight "sourced initial value read" sourcedInitialValueResult
   assertEqual "sourced resource has no initial value" Nothing sourcedInitialValue
 
   sourcedInitialLoading <- Resource.loading sourcedResourceFixture.resource
@@ -452,13 +462,16 @@ main = do
 
   _ <- set sourcedResourceFixture.setSource (Just 2)
 
-  sourcedReadyState <- Resource.state sourcedResourceFixture.resource
+  sourcedReadyStateResult <- Resource.state sourcedResourceFixture.resource
+  sourcedReadyState <- expectRight "sourced ready state decode" sourcedReadyStateResult
   assertEqual "sourced resource becomes ready after source appears" Resource.Ready sourcedReadyState
 
-  sourcedReadyValue <- Resource.value sourcedResourceFixture.resource
+  sourcedReadyValueResult <- Resource.value sourcedResourceFixture.resource
+  sourcedReadyValue <- expectRight "sourced ready value read" sourcedReadyValueResult
   assertEqual "sourced resource returns fetched value" (Just 20) sourcedReadyValue
 
-  sourcedReadyLatest <- Resource.latest sourcedResourceFixture.resource
+  sourcedReadyLatestResult <- Resource.latest sourcedResourceFixture.resource
+  sourcedReadyLatest <- expectRight "sourced latest read" sourcedReadyLatestResult
   assertEqual "sourced resource latest matches fetched value" (Just 20) sourcedReadyLatest
 
   sourcedFetchRunsAfterLoad <- get sourcedResourceFixture.fetchRuns
@@ -485,15 +498,18 @@ main = do
 
   _ <- Resource.mutate sourcedResourceFixture.actions (Just 99)
 
-  sourcedMutatedValue <- Resource.value sourcedResourceFixture.resource
+  sourcedMutatedValueResult <- Resource.value sourcedResourceFixture.resource
+  sourcedMutatedValue <- expectRight "sourced mutated value read" sourcedMutatedValueResult
   assertEqual "mutate updates resource value" (Just 99) sourcedMutatedValue
 
   _ <- Resource.mutate sourcedResourceFixture.actions Nothing
 
-  sourcedClearedValue <- Resource.value sourcedResourceFixture.resource
+  sourcedClearedValueResult <- Resource.value sourcedResourceFixture.resource
+  sourcedClearedValue <- expectRight "sourced cleared value read" sourcedClearedValueResult
   assertEqual "mutate can clear resource value" Nothing sourcedClearedValue
 
-  sourcedStateAfterMutate <- Resource.state sourcedResourceFixture.resource
+  sourcedStateAfterMutateResult <- Resource.state sourcedResourceFixture.resource
+  sourcedStateAfterMutate <- expectRight "sourced state after mutate decode" sourcedStateAfterMutateResult
   assertEqual "mutate keeps resource state ready" Resource.Ready sourcedStateAfterMutate
 
   sourcedResourceFixture.dispose
@@ -507,9 +523,9 @@ main = do
       currentMode <- get mode
 
       if currentMode == "error" then
-        throw "resource fetch failed"
+        pure (Left "resource fetch failed")
       else
-        pure (currentMode <> "-value")
+        pure (Right (currentMode <> "-value"))
 
     pure
       { setMode
@@ -519,34 +535,43 @@ main = do
       , dispose
       }
 
-  errorFlowInitialState <- Resource.state errorResourceFixture.resource
+  errorFlowInitialStateResult <- Resource.state errorResourceFixture.resource
+  errorFlowInitialState <- expectRight "resource initial state decode" errorFlowInitialStateResult
   assertEqual "resource without source fetches immediately" Resource.Ready errorFlowInitialState
 
-  errorFlowInitialValue <- Resource.value errorResourceFixture.resource
+  errorFlowInitialValueResult <- Resource.value errorResourceFixture.resource
+  errorFlowInitialValue <- expectRight "resource initial value read" errorFlowInitialValueResult
   assertEqual "resource without source yields initial value" (Just "ok-value") errorFlowInitialValue
 
   _ <- set errorResourceFixture.setMode "error"
   _ <- Resource.refetch errorResourceFixture.actions Nothing
 
-  errorFlowStateAfterFailure <- Resource.state errorResourceFixture.resource
+  errorFlowStateAfterFailureResult <- Resource.state errorResourceFixture.resource
+  errorFlowStateAfterFailure <- expectRight "resource errored state decode" errorFlowStateAfterFailureResult
   assertEqual "resource enters errored state after failing fetch" Resource.Errored errorFlowStateAfterFailure
 
   errorFlowMessage <- Resource.error errorResourceFixture.resource
   assertEqual "resource exposes fetch error message" (Just "resource fetch failed") errorFlowMessage
 
-  errorFlowValueAfterFailure <- Resource.value errorResourceFixture.resource
-  assertEqual "resource value is empty in errored state" Nothing errorFlowValueAfterFailure
+  errorFlowValueAfterFailureResult <- Resource.value errorResourceFixture.resource
+  case errorFlowValueAfterFailureResult of
+    Left (Resource.ResourceReadError message) ->
+      assertEqual "resource value read reports explicit read error" "resource fetch failed" message
+    Right _ ->
+      throw "resource value read should fail in errored state"
 
   _ <- set errorResourceFixture.setMode "recover"
   _ <- Resource.refetch errorResourceFixture.actions Nothing
 
-  errorFlowStateAfterRecovery <- Resource.state errorResourceFixture.resource
+  errorFlowStateAfterRecoveryResult <- Resource.state errorResourceFixture.resource
+  errorFlowStateAfterRecovery <- expectRight "resource recovered state decode" errorFlowStateAfterRecoveryResult
   assertEqual "resource returns to ready state after recovery" Resource.Ready errorFlowStateAfterRecovery
 
   errorFlowMessageAfterRecovery <- Resource.error errorResourceFixture.resource
   assertEqual "resource clears error after successful refetch" Nothing errorFlowMessageAfterRecovery
 
-  errorFlowValueAfterRecovery <- Resource.value errorResourceFixture.resource
+  errorFlowValueAfterRecoveryResult <- Resource.value errorResourceFixture.resource
+  errorFlowValueAfterRecovery <- expectRight "resource recovered value read" errorFlowValueAfterRecoveryResult
   assertEqual "resource exposes recovered value" (Just "recover-value") errorFlowValueAfterRecovery
 
   errorFlowFetchRuns <- get errorResourceFixture.fetchRuns
@@ -745,24 +770,48 @@ main = do
   webMissingMount <- Web.mountById "app"
   assertEqual "mountById returns Nothing without browser DOM" true (isNothing webMissingMount)
 
-  renderAttempt <- try (Web.render (pure unit) serverMountStub)
-  case renderAttempt of
-    Left err ->
+  requiredBody <- Web.requireBody
+  case requiredBody of
+    Left (Web.MissingMount message) ->
       assertEqual
-        "render throws client-only error on server runtime"
-        "Client-only API called on the server side. Run client-only code in onMount, or conditionally run client-only component with <Show>."
-        (message err)
-    Right _ ->
-      throw "render should throw on server runtime"
+        "requireBody returns functional MissingMount error"
+        "document.body is unavailable in current runtime"
+        message
+    _ ->
+      throw "requireBody should return MissingMount without browser DOM"
 
-  hydrateAttempt <- try (Web.hydrate (pure unit) serverMountStub)
-  case hydrateAttempt of
-    Left err ->
+  requiredAppMount <- Web.requireMountById "app"
+  case requiredAppMount of
+    Left (Web.MissingMount message) ->
       assertEqual
-        "hydrate throws client-only error on server runtime"
+        "requireMountById returns functional MissingMount error"
+        "No mount element found for id: app"
+        message
+    _ ->
+      throw "requireMountById should return MissingMount when element is absent"
+
+  renderAttempt <- Web.render (pure unit) serverMountStub
+  case renderAttempt of
+    Left (Web.ClientOnlyApi message) ->
+      assertEqual
+        "render returns client-only error value on server runtime"
         "Client-only API called on the server side. Run client-only code in onMount, or conditionally run client-only component with <Show>."
-        (message err)
+        message
+    Left other ->
+      throw ("render should classify as ClientOnlyApi, got " <> show other)
     Right _ ->
-      throw "hydrate should throw on server runtime"
+      throw "render should return Left on server runtime"
+
+  hydrateAttempt <- Web.hydrate (pure unit) serverMountStub
+  case hydrateAttempt of
+    Left (Web.ClientOnlyApi message) ->
+      assertEqual
+        "hydrate returns client-only error value on server runtime"
+        "Client-only API called on the server side. Run client-only code in onMount, or conditionally run client-only component with <Show>."
+        message
+    Left other ->
+      throw ("hydrate should classify as ClientOnlyApi, got " <> show other)
+    Right _ ->
+      throw "hydrate should return Left on server runtime"
 
   log "All tests passed"
