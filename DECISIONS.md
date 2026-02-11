@@ -281,15 +281,81 @@ Reason:
 - keeps maintenance focused on Solid-specific abstractions
 - allows optional higher-level adapters on top of stable web package foundations
 
+### 18) SolidStart-style file routing uses code generation, not runtime filesystem reads
+
+PureScript route files are discovered by a Node generator (`scripts/gen-routes.mjs`) and emitted into a generated PureScript module:
+
+- source convention (current example scaffold): `examples/solid-start/src/routes/**/*.purs`
+- generated output: `src/Solid/Start/Internal/Manifest.purs`
+
+Reason:
+
+- PureScript application code should stay pure/runtime-deterministic and avoid direct filesystem dependency
+- manifest generation keeps route tables explicit and compiler-visible
+- this preserves a file-based DX while still keeping routing runtime strongly typed
+
+### 19) Route matching precedence is explicit and typed
+
+`Solid.Start.Routing` models segments with an ADT (`Static`, `Param`, `Optional`, `CatchAll`) and computes best-match precedence from a deterministic score.
+
+Current ordering intent:
+
+- static segments outrank dynamic segments
+- param segments outrank catch-all
+- skipped optional segments are lower priority than exact static matches
+
+This policy is validated by dedicated tests in `test/Test/Start/Routing.purs` and integration checks in `test/Test/Start/Manifest.purs`.
+
+### 20) Middleware uses explicit functional composition (onion model)
+
+`Solid.Start.Middleware` composes middleware as pure function layers over a typed `Next` handler:
+
+- request flow: outer -> inner -> handler
+- response flow: handler -> inner -> outer
+
+Implication: response transforms from earlier middleware in the list run last (standard onion behavior). This is covered by tests in `test/Test/Start/Middleware.purs`.
+
+### 21) SolidStart app scaffold lives under `examples/`
+
+The in-repo Start app scaffold and route fixtures live in:
+
+- `examples/solid-start/`
+
+Reason:
+
+- keeps framework/library modules in `src/Solid/*` cleanly separated from app scaffolds
+- aligns with the repository's existing examples workspace model
+- allows route fixture evolution without coupling it to core library source layout
+
+### 22) Route generation includes diagnostics for ambiguous dynamic shapes
+
+`scripts/gen-routes.mjs` now emits warnings for:
+
+- equivalent dynamic route shapes across multiple files
+- optional/catch-all overlaps that can produce broad matching behavior
+
+These diagnostics are advisory (non-fatal) and designed to catch accidental route ambiguity early while keeping development flow unblocked.
+
+### 23) Runtime request/response adapters are kept explicit
+
+`Solid.Start.Server.Runtime` bridges untyped runtime request/response values into typed Start request/response models.
+
+Policy:
+
+- decode runtime inputs into `Either StartError Request`
+- map domain errors to typed responses deterministically
+- keep conversion boundaries visible rather than hiding runtime object access in core logic
+
 ## Non-goals (for now)
 
-- router integration
+- full production-grade SolidStart parity in one step
+- tight Vinxi/Nitro coupling before PureScript contracts stabilize
 
-These can be added incrementally after core reactive primitives are stable.
+These will be added incrementally as the `Solid.Start.*` surface matures.
 
 ## Next Recommended Steps
 
-1. Add typed switch/list case-builder helpers for larger control-flow trees.
-2. Add async-focused resource tests for pending/refreshing transitions.
-3. Add an SSR-backed hydrate success smoke test (in addition to current non-SSR classification checks).
-4. Add optional clipboard-focused adapters via ecosystem web packages.
+1. Add typed route param decoding helpers on top of `RouteParams`.
+2. Expand server entry APIs to typed query/body/header decoding.
+3. Add SSR-backed Start smoke tests for hydrate success and navigation.
+4. Continue existing control-flow ergonomics work in `Solid.Control`.

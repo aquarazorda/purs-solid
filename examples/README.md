@@ -4,6 +4,14 @@ Each example has its own static shell and styles:
 
 - `todomvc/` - TodoMVC application UI and styling.
 - `counter/` - signal/memo counter UI and styling.
+- `solid-start/` - SolidStart PureScript scaffold and route fixtures.
+
+For the SolidStart scaffold route manifest, run:
+
+```bash
+npm run gen:routes
+npm run test:start
+```
 
 PureScript entry modules live in `src/Examples/*`.
 

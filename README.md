@@ -44,6 +44,13 @@ UI authoring:
 
 For rationale and policy details, see `DECISIONS.md`.
 
+## SolidStart effort
+
+- `SolidStart/README.md` - implementation status and commands.
+- `SolidStart/IMPLEMENTATION_PLAN.md` - milestone roadmap for SolidStart functionality.
+- `SolidStart/ROUTING_CONVENTIONS.md` - file-based routing conventions for PureScript routes.
+- `npm run test:start` - route generation plus Start server/browser smoke checks.
+
 ## Quick start
 
 Prerequisites:
@@ -76,6 +83,7 @@ This repo now has an `examples/` workspace for runnable demo apps.
 
 - `examples/todomvc/` - TodoMVC clone with filtering, toggle-all, and completion controls.
 - `examples/counter/` - compact signal/memo example with step presets and event log.
+- `examples/solid-start/` - SolidStart implementation scaffold and route fixtures.
 
 Build example bundles:
 

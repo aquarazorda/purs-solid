@@ -11,6 +11,18 @@ import Test.Lifecycle as Lifecycle
 import Test.Resource as Resource
 import Test.Secondary as Secondary
 import Test.Signal as Signal
+import Test.Start.Core as StartCore
+import Test.Start.Entry as StartEntry
+import Test.Start.Manifest as StartManifest
+import Test.Start.MetaAssets as StartMetaAssets
+import Test.Start.Middleware as StartMiddleware
+import Test.Start.RequestEvent as StartRequestEvent
+import Test.Start.Router as StartRouter
+import Test.Start.Routing as StartRouting
+import Test.Start.Runtime as StartRuntime
+import Test.Start.Server as StartServer
+import Test.Start.ServerFunction as StartServerFunction
+import Test.Start.Session as StartSession
 import Test.Store as Store
 import Test.UI as UI
 import Test.Utility as Utility
@@ -35,4 +47,16 @@ main = do
   runSuite "Store" Store.run
   runSuite "UI" UI.run
   runSuite "Web" Web.run
+  runSuite "Start core" StartCore.run
+  runSuite "Start entry" StartEntry.run
+  runSuite "Start routing" StartRouting.run
+  runSuite "Start manifest" StartManifest.run
+  runSuite "Start meta/assets" StartMetaAssets.run
+  runSuite "Start middleware" StartMiddleware.run
+  runSuite "Start request event" StartRequestEvent.run
+  runSuite "Start runtime" StartRuntime.run
+  runSuite "Start server" StartServer.run
+  runSuite "Start router" StartRouter.run
+  runSuite "Start server function" StartServerFunction.run
+  runSuite "Start session" StartSession.run
   log "All tests passed"

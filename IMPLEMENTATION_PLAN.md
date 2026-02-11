@@ -4,6 +4,8 @@ This is a living plan for building SolidJS wrappers in PureScript.
 
 We will update this file as features are implemented, changed, or de-scoped.
 
+Note: SolidStart-focused planning and progress now live in `SolidStart/IMPLEMENTATION_PLAN.md`.
+
 ## Goal
 
 Provide a Solid-native PureScript API that preserves Solid semantics (fine-grained reactivity, ownership, lifecycle, rendering behavior) with strong types and minimal FFI leakage.
@@ -67,6 +69,33 @@ Design principles are documented in `DECISIONS.md`.
   - [x] `hydrate`
   - [x] `isServer`
   - [x] mount lookup helpers (`documentBody`, `mountById`, `requireBody`, `requireMountById`)
+- [x] `Solid.JSX`
+  - [x] `empty`
+  - [x] `text`
+  - [x] `fragment`
+  - [x] `keyed`
+- [x] `Solid.Component`
+  - [x] `component`
+  - [x] `element`
+  - [x] `elementKeyed`
+- [~] `Solid.DOM`
+  - [x] generic constructors (`element`, `element_`)
+  - [x] minimal HTML constructors (`div`, `span`, `button`, `input`, `form`, `ul`, `li`)
+  - [x] event handler core (`Solid.DOM.Events.handler`, `handler_`)
+  - [x] generated full HTML/SVG constructor coverage via submodules
+- [x] `Solid.DOM.HTML`
+  - [x] full HTML constructor surface (`tag` and `tag_` variants)
+  - [x] reserved-keyword-safe data constructor (`dataTag`, `dataTag_`)
+- [x] `Solid.DOM.SVG`
+  - [x] full SVG constructor surface (`tag` and `tag_` variants)
+  - [x] hyphenated tag mapping to camelCase names (`fontFace`, `colorProfile`, `missingGlyph`, etc.)
+- [~] `Solid.Control`
+  - [x] conditional wrappers (`when`, `whenElse`)
+  - [x] list wrappers (`forEach`, `forEachElse`, `forEachWithIndex`, `forEachWithIndexElse`, `indexEach`, `indexEachElse`)
+  - [x] branching wrappers (`matchWhen`, `matchWhenKeyed`, `switchCases`, `switchCasesElse`)
+  - [x] dynamic wrappers (`dynamicTag`, `dynamicComponent`)
+  - [x] portal wrappers (`portal`, `portalAt`)
+  - [~] richer control-flow ergonomics (typed switch/list case helpers)
 
 ## Milestone Plan
 
@@ -114,14 +143,15 @@ Tasks:
 - [x] Add owner utilities (`getOwner`, `runWithOwner`)
   - Files: `src/Solid/Utility.purs`, `src/Solid/Utility.js`
 - [x] Add disposal/cleanup tests
-  - File: `test/Test/Main.purs`
-  - Scenarios: `getOwner outside reactive context should return Nothing`, `onCleanup runs on root disposal`, `onMount executes once after initial setup`, `runWithOwner transfers owner for cleanup registration`
+  - File: `test/Test/Lifecycle.purs`
+  - Scenarios: `getOwner outside reactive context should return Nothing`, `onCleanup runs on root disposal`, `onMount executes once after initial setup`, `runWithOwner transfers owner for cleanup registration`, `effect cleanup runs before rerun on dependency change`
 
 Acceptance:
 
 - [x] Cleanup runs on root disposal
 - [x] Mount callback executes once after initial setup
 - [x] Owner transfer works with `runWithOwner`
+- [x] Effect cleanup runs before rerun and on disposal
 
 ### M3: Secondary Primitives
 
@@ -150,7 +180,7 @@ Acceptance:
 
 - [x] Execution timing differences between effect kinds are covered by tests
 - [x] Selector behavior updates only relevant dependents
-  - File: `test/Test/Main.purs`
+  - Files: `test/Test/Secondary.purs`, `test/Test/Signal.purs`
   - Scenarios: `createComputed runs for each synchronous update`, `createRenderEffect batches updates during setup`, `createEffect initial run happens after setup updates`, `selector skips unaffected row 3`
 
 ### M4: Async Reactivity (Resources)
@@ -257,6 +287,104 @@ Acceptance:
 - [x] Minimal browser app entrypoint works from PureScript
 - [x] SSR-related APIs are clearly separated from core runtime wrappers
 
+### M8: JSX and Component Core
+
+Docs references:
+
+- https://docs.solidjs.com/concepts/components/basics
+- https://github.com/solidjs/solid/tree/main/packages/solid/h
+
+Tasks:
+
+- [x] Add `Solid.JSX` (`empty`, `text`, `fragment`, `keyed`)
+  - Files: `src/Solid/JSX.purs`, `src/Solid/JSX.js`
+- [x] Add `Solid.Component` (`component`, `element`, `elementKeyed`)
+  - Files: `src/Solid/Component.purs`, `src/Solid/Component.js`
+- [x] Add compile/runtime smoke coverage for UI core modules
+  - Files: `test/Test/UI.purs`, `test/browser/smoke-client.mjs`
+
+Acceptance:
+
+- [x] Components can be defined as Solid-native setup functions (`props -> Effect JSX`)
+- [x] JSX core values compose and render in browser smoke tests
+
+### M9: Typed DOM Authoring (MVP)
+
+Docs references:
+
+- https://docs.solidjs.com/reference/jsx-attributes/classlist
+- https://docs.solidjs.com/reference/jsx-attributes/style
+
+Tasks:
+
+- [x] Add minimal `Solid.DOM` constructors for common HTML authoring
+  - Files: `src/Solid/DOM.purs`, `src/Solid/DOM.js`
+- [x] Add event handler helpers (`Solid.DOM.Events`)
+  - File: `src/Solid/DOM/Events.purs`
+  - Shape: `EventHandler`, `handler`, `handler_`
+- [x] Reuse ecosystem web event types instead of custom event extractor FFI
+  - Files: `spago.yaml`, `spago.lock`, `src/Solid/DOM/Events.purs`
+  - Package: `web-events`
+- [x] Add optional package-backed event adapters for common ergonomics
+  - Files: `src/Solid/DOM/EventAdapters.purs`, `test/Test/EventAdapters.purs`, `spago.yaml`, `spago.lock`
+  - Packages: `web-uievents`, `web-html`, `web-dom`, `web-file`
+  - Coverage: compile-level adapter API suite (`Event adapters tests starting`)
+- [x] Add browser smoke coverage rendering through `Solid.DOM` + `Solid.Component`
+  - File: `test/browser/smoke-client.mjs`
+- [x] Add interaction smoke checks for signal-based local state patterns
+  - File: `test/browser/smoke-client.mjs`
+  - Scenarios: click-driven counter, function-valued signal counter, reducer-style dispatch counter, memo dependency stability/recompute behavior, effect cleanup on dependency changes
+- [x] Add hooks-intent parity smoke checks using Solid-native APIs
+  - File: `test/browser/smoke-client.mjs`
+  - Mapping: `useState` -> `createSignal`, `useReducer` -> dispatch over signals, `memo`/`memo'` -> `createMemo`/`createMemoWith`, `useEffect` cleanup -> `createEffect` + `onCleanup`
+- [x] Add generated full HTML/SVG constructor modules
+  - Files: `src/Solid/DOM/HTML.purs`, `src/Solid/DOM/SVG.purs`
+  - Coverage smoke: `test/browser/smoke-client.mjs` (`html-article`, `html-data`, `svg-root`, `svg-circle`)
+- [x] Remove bespoke event extractor tranche and use browser/web packages instead
+  - Action: dropped custom extractor FFI surface from `Solid.DOM.Events`
+  - Coverage: browser smoke still validates event handling behavior through `handler` / `handler_`
+
+Acceptance:
+
+- [x] A simple UI tree can be authored with `Solid.DOM` and rendered in browser smoke tests
+- [x] Interactive state updates work in browser via `Solid.Component` + `Solid.Signal`
+- [~] DOM authoring ergonomics approach `react-basic-dom` breadth without unsafe user code
+
+### M10: Control-Flow Wrappers (MVP)
+
+Docs references:
+
+- https://docs.solidjs.com/concepts/control-flow/conditional-rendering
+- https://docs.solidjs.com/concepts/control-flow/list-rendering
+- https://docs.solidjs.com/reference/components/switch-and-match
+- https://docs.solidjs.com/reference/components/dynamic
+- https://docs.solidjs.com/reference/components/portal
+
+Tasks:
+
+- [x] Add conditional wrappers (`when`, `whenElse`)
+  - Files: `src/Solid/Control.purs`, `src/Solid/Control.js`
+- [x] Add list wrappers (`forEach`, `indexEach`) with effectful render callbacks
+  - Files: `src/Solid/Control.purs`, `src/Solid/Control.js`
+- [x] Add branching wrappers (`matchWhen`, `matchWhenKeyed`, `switchCases`, `switchCasesElse`)
+  - Files: `src/Solid/Control.purs`, `src/Solid/Control.js`
+- [x] Add dynamic and portal wrappers (`dynamicTag`, `dynamicComponent`, `portal`, `portalAt`)
+  - Files: `src/Solid/Control.purs`, `src/Solid/Control.js`
+- [x] Add browser smoke coverage for control-flow interaction behavior
+  - File: `test/browser/smoke-client.mjs`
+  - Scenarios: `when` toggle behavior, `whenElse` fallback/content switching, `forEach`/`indexEach` append updates, `switchCases` branch switching, `dynamicTag`/`dynamicComponent` render
+- [x] Add ergonomic helpers for keyed switch/list behavior
+  - Files: `src/Solid/Control.purs`, `src/Solid/Control.js`
+  - Added: `forEachWithIndex`, `forEachWithIndexElse`, `matchWhenKeyed`
+- [ ] Add typed switch/list case constructors for larger control-flow trees
+
+Acceptance:
+
+- [x] Control wrappers react to signal updates in browser runtime
+- [x] List wrappers update when backing signal arrays mutate
+- [~] API ergonomics approach Solid JSX control-flow breadth for day-to-day app code
+  - Improved with keyed/index helpers; typed case builders still pending
+
 ## Cross-Cutting Tasks
 
 - [ ] Improve docs for every exported symbol with short examples
@@ -275,6 +403,14 @@ Acceptance:
 - `Solid.Context`
 - `Solid.Store`
 - `Solid.Web` (render/hydrate/isServer)
+- `Solid.JSX`
+- `Solid.Component`
+- `Solid.DOM`
+- `Solid.DOM.HTML`
+- `Solid.DOM.SVG`
+- `Solid.DOM.Events`
+- `Solid.DOM.EventAdapters`
+- `Solid.Control`
 
 ## How To Update This Plan
 

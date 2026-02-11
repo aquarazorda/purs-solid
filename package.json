@@ -6,8 +6,13 @@
     "test": "test"
   },
   "scripts": {
+    "gen:routes": "node scripts/gen-routes.mjs --routes-root examples/solid-start/src/routes --output src/Solid/Start/Internal/Manifest.purs",
+    "create:start-app": "node scripts/create-solid-start-app.mjs",
     "test": "npm run test:purescript",
     "test:purescript": "spago test",
+    "test:start-server-smoke": "spago build && node test/start/run-server-smoke.mjs",
+    "test:start-browser-smoke": "node test/start/run-browser-smoke.mjs",
+    "test:start": "npm run gen:routes && npm run test:start-server-smoke && npm run test:start-browser-smoke",
     "test:browser-smoke": "spago test && node test/browser/run-smoke.mjs",
     "test:all": "npm run test:purescript && npm run test:browser-smoke",
     "build:example:todomvc": "npm exec --yes --package=esbuild -- spago bundle --module Examples.TodoMVC --bundle-type app --platform browser --outfile dist/examples/todomvc.js",
