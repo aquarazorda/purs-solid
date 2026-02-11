@@ -3,9 +3,7 @@ module Main where
 import Prelude
 
 import Effect (Effect)
-import Effect.Console (log)
+import Examples.TodoMVC as TodoMVC
 
 main :: Effect Unit
-main = do
-  log "🍝"
-
+main = TodoMVC.main

@@ -9,7 +9,13 @@
     "test": "npm run test:purescript",
     "test:purescript": "spago test",
     "test:browser-smoke": "spago test && node test/browser/run-smoke.mjs",
-    "test:all": "npm run test:purescript && npm run test:browser-smoke"
+    "test:all": "npm run test:purescript && npm run test:browser-smoke",
+    "build:example:todomvc": "npm exec --yes --package=esbuild -- spago bundle --module Examples.TodoMVC --bundle-type app --platform browser --outfile dist/examples/todomvc.js",
+    "build:example:counter": "npm exec --yes --package=esbuild -- spago bundle --module Examples.Counter --bundle-type app --platform browser --outfile dist/examples/counter.js",
+    "build:examples": "npm run build:example:todomvc && npm run build:example:counter",
+    "build:todomvc": "npm run build:example:todomvc",
+    "serve:examples": "python3 -m http.server 4173",
+    "serve:todomvc": "npm run serve:examples"
   },
   "keywords": [],
   "author": "",

@@ -70,6 +70,26 @@ npm run test:browser-smoke
 npm run test:all
 ```
 
+## Example apps
+
+This repo now has an `examples/` workspace for runnable demo apps.
+
+- `examples/todomvc/` - TodoMVC clone with filtering, toggle-all, and completion controls.
+- `examples/counter/` - compact signal/memo example with step presets and event log.
+
+Build example bundles:
+
+```bash
+npm run build:examples
+```
+
+Serve the repository root and open the examples index:
+
+```bash
+npm run serve:examples
+# then visit http://localhost:4173/examples/
+```
+
 ## Minimal example
 
 This example shows the core reactivity wrappers (signals, memo, effect, root):
