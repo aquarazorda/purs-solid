@@ -9,7 +9,9 @@ module Solid.Start.Server.Request
   , headers
   , queryParams
   , body
+  , withHeader
   , lookupHeader
+  , lookupCookie
   , lookupQuery
   , parseMethod
   , methodToString
@@ -17,6 +19,9 @@ module Solid.Start.Server.Request
 
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
+import Data.String as String
+import Data.String.CodeUnits as StringCodeUnits
+import Data.String.Pattern (Pattern(..))
 import Data.Tuple.Nested ((/\), type (/\))
 import Prelude
 
@@ -86,13 +91,70 @@ queryParams (Request request) = request.query
 body :: Request -> Maybe String
 body (Request request) = request.body
 
+withHeader :: String -> String -> Request -> Request
+withHeader key value (Request request) =
+  Request
+    ( request
+        { headers =
+            Array.filter (\(currentKey /\ _) -> currentKey /= key) request.headers
+              <> [ key /\ value ]
+        }
+    )
+
 lookupHeader :: String -> Request -> Maybe String
 lookupHeader key request =
   lookupPair key (headers request)
 
+lookupCookie :: String -> Request -> Maybe String
+lookupCookie key request =
+  case lookupCookieHeader request of
+    Nothing -> Nothing
+    Just rawCookieHeader ->
+      lookupCookiePair key (String.split (Pattern ";") rawCookieHeader)
+
 lookupQuery :: String -> Request -> Maybe String
 lookupQuery key request =
   lookupPair key (queryParams request)
+
+lookupCookieHeader :: Request -> Maybe String
+lookupCookieHeader (Request request) =
+  case Array.find hasCookieKey request.headers of
+    Nothing -> Nothing
+    Just (_ /\ value) -> Just value
+  where
+  hasCookieKey (headerKey /\ _) =
+    headerKey == "cookie" || headerKey == "Cookie"
+
+lookupCookiePair :: String -> Array String -> Maybe String
+lookupCookiePair key cookiePairs =
+  case Array.uncons cookiePairs of
+    Nothing -> Nothing
+    Just { head: pair, tail: remaining } ->
+      case parseCookiePair key pair of
+        Nothing -> lookupCookiePair key remaining
+        Just value -> Just value
+
+parseCookiePair :: String -> String -> Maybe String
+parseCookiePair key rawPair =
+  case Array.uncons parts of
+    Nothing -> Nothing
+    Just { head: rawCookieKey, tail: rest } ->
+      let
+        normalizedKey = stripLeadingSpaces rawCookieKey
+      in
+        if normalizedKey == key then
+          Just (String.joinWith "=" rest)
+        else
+          Nothing
+  where
+  parts = String.split (Pattern "=") rawPair
+
+stripLeadingSpaces :: String -> String
+stripLeadingSpaces value =
+  if StringCodeUnits.take 1 value == " " then
+    stripLeadingSpaces (StringCodeUnits.drop 1 value)
+  else
+    value
 
 lookupPair :: String -> Array (String /\ String) -> Maybe String
 lookupPair key pairs =

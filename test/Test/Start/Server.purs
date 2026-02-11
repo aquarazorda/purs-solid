@@ -29,6 +29,15 @@ run = do
   assertEqual "request query lookup" (Just "1") (Request.lookupQuery "page" request)
   assertEqual "request body accessor" (Just "{}") (Request.body request)
 
+  let requestWithCookie =
+        Request.withHeader
+          "cookie"
+          "sid=abc123; csrf-token=csrf123"
+          request
+  assertEqual "request withHeader updates header value" (Just "sid=abc123; csrf-token=csrf123") (Request.lookupHeader "cookie" requestWithCookie)
+  assertEqual "request lookupCookie reads cookie by name" (Just "abc123") (Request.lookupCookie "sid" requestWithCookie)
+  assertEqual "request lookupCookie reads second cookie by name" (Just "csrf123") (Request.lookupCookie "csrf-token" requestWithCookie)
+
   let textResponse = Response.text 200 "ok"
   assertEqual "text response status" 200 (Response.status textResponse)
   assertEqual "text response body" (Response.TextBody "ok") (Response.body textResponse)
