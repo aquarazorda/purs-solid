@@ -34,7 +34,7 @@ UI authoring:
 - `Solid.DOM.SVG` (full SVG constructors)
 - `Solid.DOM.Events` (thin handler helpers over `Web.Event.Event`)
 - `Solid.DOM.EventAdapters` (optional adapters built on `web-events`, `web-uievents`, `web-html`, `web-dom`, `web-file`)
-- `Solid.Control` (`when`, `forEach`, `indexEach`, `switchCases`, `dynamicComponent`, `portal`, and related helpers)
+- `Solid.Control` (`Show`/`For`/`Index`/`Switch`/`Match` wrappers, `ErrorBoundary`, `Suspense`, `SuspenseList`, `NoHydration`, `Dynamic`, `Portal`, and related helpers)
 
 ## Design stance
 
