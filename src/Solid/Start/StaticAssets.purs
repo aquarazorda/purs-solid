@@ -1,6 +1,7 @@
 module Solid.Start.StaticAssets
   ( resolveAssetUrl
   , resolvePublicUrl
+  , routeToOutputPath
   ) where
 
 import Data.String.CodeUnits as String
@@ -15,6 +16,21 @@ resolveAssetUrl config assetPath =
 resolvePublicUrl :: StartConfig -> String -> String
 resolvePublicUrl config publicPath =
   joinPath config.basePath publicPath
+
+routeToOutputPath :: String -> String
+routeToOutputPath routePath =
+  if normalized == "" then
+    "index.html"
+  else
+    normalized <> "/index.html"
+  where
+  normalized =
+    trimTrailingSlash
+      ( if String.take 1 routePath == "/" then
+          String.drop 1 routePath
+        else
+          routePath
+      )
 
 joinPath :: String -> String -> String
 joinPath prefix rawPath =

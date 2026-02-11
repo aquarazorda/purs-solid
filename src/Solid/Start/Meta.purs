@@ -2,11 +2,17 @@ module Solid.Start.Meta
   ( HeadTag(..)
   , MetaDoc
   , empty
+  , fromTitle
+  , merge
   , withTag
   , tags
+  , renderTag
+  , renderHeadHtml
   ) where
 
 import Prelude
+
+import Data.String as String
 
 data HeadTag
   = TitleTag String
@@ -33,9 +39,48 @@ instance showMetaDoc :: Show MetaDoc where
 empty :: MetaDoc
 empty = MetaDoc []
 
+fromTitle :: String -> MetaDoc
+fromTitle title =
+  withTag (TitleTag title) empty
+
+merge :: MetaDoc -> MetaDoc -> MetaDoc
+merge (MetaDoc left) (MetaDoc right) =
+  MetaDoc (left <> right)
+
 withTag :: HeadTag -> MetaDoc -> MetaDoc
 withTag tag (MetaDoc values) =
   MetaDoc (values <> [ tag ])
 
 tags :: MetaDoc -> Array HeadTag
 tags (MetaDoc values) = values
+
+renderTag :: HeadTag -> String
+renderTag = case _ of
+  TitleTag value -> "<title>" <> escapeHtml value <> "</title>"
+  MetaNameTag name content ->
+    "<meta name=\"" <> escapeHtmlAttribute name <> "\" content=\"" <> escapeHtmlAttribute content <> "\" />"
+  LinkTag rel href ->
+    "<link rel=\"" <> escapeHtmlAttribute rel <> "\" href=\"" <> escapeHtmlAttribute href <> "\" />"
+  ScriptSrcTag src ->
+    "<script src=\"" <> escapeHtmlAttribute src <> "\"></script>"
+
+renderHeadHtml :: MetaDoc -> String
+renderHeadHtml (MetaDoc values) =
+  String.joinWith "" (map renderTag values)
+
+escapeHtml :: String -> String
+escapeHtml value =
+  value
+    # replaceAll "&" "&amp;"
+    # replaceAll "<" "&lt;"
+    # replaceAll ">" "&gt;"
+
+escapeHtmlAttribute :: String -> String
+escapeHtmlAttribute value =
+  escapeHtml value
+    # replaceAll "\"" "&quot;"
+    # replaceAll "'" "&#39;"
+
+replaceAll :: String -> String -> String -> String
+replaceAll needle replacement value =
+  String.joinWith replacement (String.split (String.Pattern needle) value)

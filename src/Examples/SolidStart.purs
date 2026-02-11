@@ -24,7 +24,7 @@ import Solid.Start.Error (StartError(..))
 import Solid.Start.Internal.Serialization as Serialization
 import Solid.Start.Server.Function as ServerFunction
 import Solid.Start.Routing.Manifest as StartManifest
-import Solid.Web (render, requireBody)
+import Solid.Web as Web
 
 basePath :: String
 basePath = "/examples/solid-start"
@@ -239,9 +239,12 @@ mkApp resolveInitialRoute = Component.component \_ -> do
     pure (routeContent setCurrentRoute serverFnRouteNode route)
 
   _ <- createEffect do
-    route <- get currentRoute
-    _ <- ClientNavigation.applyRouteStyles routeStyles route
-    pure unit
+    if Web.isServer then
+      pure unit
+    else do
+      route <- get currentRoute
+      _ <- ClientNavigation.applyRouteStyles routeStyles route
+      pure unit
 
   _ <- onMount do
     unsubscribe <- ClientNavigation.subscribeRouteChanges basePath \nextRoute -> do
@@ -300,13 +303,13 @@ appWithRoute routePath = mkApp (pure routePath)
 
 main :: Effect Unit
 main = do
-  mountResult <- requireBody
+  mountResult <- Web.requireBody
   case mountResult of
     Left webError ->
       log ("Mount error: " <> show webError)
 
     Right mountNode -> do
-      renderResult <- render (pure (Component.element app {})) mountNode
+      renderResult <- Web.render (pure (Component.element app {})) mountNode
       case renderResult of
         Left webError ->
           log ("Render error: " <> show webError)

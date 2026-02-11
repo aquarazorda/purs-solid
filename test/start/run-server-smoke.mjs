@@ -13,6 +13,7 @@ const assert = (condition, message) => {
 const ensureBuildArtifacts = async () => {
   const entry = join(rootDir, "output", "Solid.Start.Server.Runtime", "index.js");
   const serverMain = join(rootDir, "output", "Examples.StartSSRSmoke.ServerMain", "index.js");
+  const solidStartEntryMain = join(rootDir, "output", "Examples.SolidStart.Entry.ServerMain", "index.js");
 
   try {
     await readFile(entry);
@@ -27,6 +28,14 @@ const ensureBuildArtifacts = async () => {
   } catch {
     throw new Error(
       "Missing build output at output/Examples.StartSSRSmoke.ServerMain/index.js. Run `spago build` first."
+    );
+  }
+
+  try {
+    await readFile(solidStartEntryMain);
+  } catch {
+    throw new Error(
+      "Missing build output at output/Examples.SolidStart.Entry.ServerMain/index.js. Run `spago build` first."
     );
   }
 };
@@ -44,6 +53,7 @@ const main = async () => {
 
   const Runtime = await import("../../output/Solid.Start.Server.Runtime/index.js");
   const StartServerMain = await import("../../output/Examples.StartSSRSmoke.ServerMain/index.js");
+  const SolidStartServerMain = await import("../../output/Examples.SolidStart.Entry.ServerMain/index.js");
   const Request = await import("../../output/Solid.Start.Server.Request/index.js");
   const Response = await import("../../output/Solid.Start.Server.Response/index.js");
   const DataEither = await import("../../output/Data.Either/index.js");
@@ -167,6 +177,33 @@ const main = async () => {
   assert(
     Runtime.runtimeResponseStatus(integratedMissingRoute) === 404,
     "Expected integrated router to map unknown API path to 404"
+  );
+
+  const solidStartPrerenderEntries = SolidStartServerMain.prerenderEntries;
+  assert(
+    Array.isArray(solidStartPrerenderEntries),
+    "Expected SolidStart prerender entries to be an array"
+  );
+  assert(
+    solidStartPrerenderEntries.some((entry) => entry.routePath === "/counter" && entry.outputPath === "counter/index.html"),
+    "Expected SolidStart prerender entries to include /counter output mapping"
+  );
+
+  const renderedPrerenderEntry = SolidStartServerMain.renderPrerenderEntry({
+    routePath: "/counter",
+    outputPath: "counter/index.html",
+  })();
+
+  assert(
+    renderedPrerenderEntry instanceof DataEither.Right || renderedPrerenderEntry instanceof DataEither.Left,
+    "Expected renderPrerenderEntry to return typed Either result"
+  );
+
+  const smokeStaticEntries = StartServerMain.staticExportEntries;
+  assert(
+    Array.isArray(smokeStaticEntries)
+      && smokeStaticEntries.some((entry) => entry.routePath === "/ssr/" && entry.outputPath === "ssr/index.html"),
+    "Expected SSR smoke static export entries to include /ssr/ output mapping"
   );
 
   console.log("[start-server-smoke] passed");

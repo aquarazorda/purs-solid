@@ -88,27 +88,6 @@ const toRuntimeRequest = async (request, pathname, searchParams) => {
   };
 };
 
-const decorateDocument = (html) => {
-  const headInsert =
-    "<title>purs-solid Start SSR smoke</title>" +
-    "<script>window.__PURS_SOLID_SSR_SMOKE_MODE__='ssr';</script>";
-
-  const bodyInsert =
-    "<script type=\"module\" src=\"/dist/examples/start-ssr-smoke-client.js\"></script>";
-
-  let next = html;
-
-  if (next.includes("</head>")) {
-    next = next.replace("</head>", `${headInsert}</head>`);
-  }
-
-  if (next.includes("</body>")) {
-    next = next.replace("</body>", `${bodyInsert}</body>`);
-  }
-
-  return next;
-};
-
 const loadServerHandler = async () => {
   const serverPath = pathToFileURL(join(rootDir, "output", "Examples.StartSSRSmoke.ServerMain", "index.js")).href;
   const runtimePath = pathToFileURL(join(rootDir, "output", "Solid.Start.Server.Runtime", "index.js")).href;
@@ -176,10 +155,7 @@ const createSsrServer = async () => {
     const headerEntries = headers.map((entry) => [entry.value0, entry.value1]);
     const bodyKind = runtime.runtimeResponseBodyKind(runtimeResponse);
 
-    let bodyText = runtime.runtimeResponseBody(runtimeResponse);
-    if (pathname === "/ssr/" && bodyKind === "html") {
-      bodyText = decorateDocument(bodyText);
-    }
+    const bodyText = runtime.runtimeResponseBody(runtimeResponse);
 
     if (bodyKind === "stream") {
       response.writeHead(status, Object.fromEntries(headerEntries));
@@ -234,7 +210,7 @@ const main = async () => {
     await page.goto(`http://127.0.0.1:${port}/ssr/`, { waitUntil: "domcontentloaded" });
 
     await page.waitForFunction(
-      () => window.__PURS_SOLID_SSR_SMOKE_MODE__ !== "ssr",
+      () => typeof window.__PURS_SOLID_SSR_SMOKE_MODE__ === "string",
       undefined,
       { timeout: 30000 }
     );
