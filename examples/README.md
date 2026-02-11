@@ -4,7 +4,7 @@ Each example has its own static shell and styles:
 
 - `todomvc/` - TodoMVC application UI and styling.
 - `counter/` - signal/memo counter UI and styling.
-- `solid-start/` - SolidStart PureScript scaffold and route fixtures.
+- `solid-start/` - SolidStart-style routed app shell with `counter` and `todomvc` routes.
 
 For the SolidStart scaffold route manifest, run:
 

@@ -15,6 +15,18 @@ const mimeTypeByExtension = {
 
 const asError = (error) => (error instanceof Error ? error : new Error(String(error)));
 
+const ensureBuildArtifacts = async () => {
+  const entry = join(rootDir, "dist", "examples", "solid-start.js");
+
+  try {
+    await readFile(entry);
+  } catch {
+    throw new Error(
+      "Missing build output at dist/examples/solid-start.js. Run `npm run build:example:solid-start` first."
+    );
+  }
+};
+
 const toAbsolutePath = (urlPath) => {
   const withoutQuery = urlPath.split("?")[0];
   const decoded = decodeURIComponent(withoutQuery);
@@ -83,6 +95,7 @@ const loadPlaywright = async () => {
 };
 
 const main = async () => {
+  await ensureBuildArtifacts();
   const { chromium } = await loadPlaywright();
   const server = createStaticServer();
   const port = await startServer(server);
@@ -94,11 +107,17 @@ const main = async () => {
 
     const url = `http://127.0.0.1:${port}/examples/solid-start/`;
     await page.goto(url, { waitUntil: "domcontentloaded" });
+    await page.locator(".start-brand").first().waitFor({ timeout: 30000 });
+
+    const navToken = await page.evaluate(() => {
+      window.__START_NAV_TOKEN__ = Math.random().toString(36).slice(2);
+      return window.__START_NAV_TOKEN__;
+    });
 
     const title = await page.title();
-    const heading = await page.locator("h1").textContent();
-    const counterHref = await page.locator('.start-nav a[href="./counter/"]').getAttribute("href");
-    const todomvcHref = await page.locator('.start-nav a[href="./todomvc/"]').getAttribute("href");
+    const heading = await page.locator(".start-brand").textContent();
+    const counterHref = await page.locator('.start-nav a:has-text("Counter")').getAttribute("href");
+    const todomvcHref = await page.locator('.start-nav a:has-text("TodoMVC")').getAttribute("href");
 
     if (title !== "purs-solid SolidStart Example") {
       throw new Error(`Unexpected page title: ${title}`);
@@ -108,57 +127,45 @@ const main = async () => {
       throw new Error(`Unexpected page heading: ${heading}`);
     }
 
-    if (counterHref !== "./counter/") {
+    if (counterHref !== "/examples/solid-start/counter/") {
       throw new Error(`Expected counter navigation link, got ${counterHref}`);
     }
 
-    if (todomvcHref !== "./todomvc/") {
+    if (todomvcHref !== "/examples/solid-start/todomvc/") {
       throw new Error(`Expected todomvc navigation link, got ${todomvcHref}`);
     }
 
-    await page.goto(`http://127.0.0.1:${port}/examples/solid-start/counter/`, { waitUntil: "domcontentloaded" });
-    const counterRouteHeading = await page.locator(".start-card h2").textContent();
-    if ((counterRouteHeading ?? "").trim() !== "/counter") {
-      throw new Error(`Unexpected counter route heading: ${counterRouteHeading}`);
-    }
-
-    await page
-      .frameLocator("iframe.start-frame")
-      .locator("h1")
-      .first()
-      .waitFor({ timeout: 30000 });
-
-    const counterAppHeading = await page
-      .frameLocator("iframe.start-frame")
-      .locator("h1")
-      .first()
-      .textContent();
+    await page.locator('.start-nav a:has-text("Counter")').click();
+    await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/counter/`);
+    await page.locator(".counter-card h1").first().waitFor({ timeout: 30000 });
+    const counterAppHeading = await page.locator(".counter-card h1").first().textContent();
 
     if ((counterAppHeading ?? "").trim() !== "Signal Counter") {
-      throw new Error(`Counter iframe app did not load as expected: ${counterAppHeading}`);
+      throw new Error(`Counter route app did not load as expected: ${counterAppHeading}`);
     }
 
-    await page.goto(`http://127.0.0.1:${port}/examples/solid-start/todomvc/`, { waitUntil: "domcontentloaded" });
-    const todoRouteHeading = await page.locator(".start-card h2").textContent();
-    if ((todoRouteHeading ?? "").trim() !== "/todomvc") {
-      throw new Error(`Unexpected todomvc route heading: ${todoRouteHeading}`);
+    const tokenAfterCounterClick = await page.evaluate(() => window.__START_NAV_TOKEN__);
+    if (tokenAfterCounterClick !== navToken) {
+      throw new Error("Counter navigation caused a full page reload");
     }
 
-    await page
-      .frameLocator("iframe.start-frame")
-      .locator("h1")
-      .first()
-      .waitFor({ timeout: 30000 });
-
-    const todoAppHeading = await page
-      .frameLocator("iframe.start-frame")
-      .locator("h1")
-      .first()
-      .textContent();
+    await page.locator('.start-nav a:has-text("TodoMVC")').click();
+    await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/todomvc/`);
+    await page.locator(".todoapp .header h1").first().waitFor({ timeout: 30000 });
+    const todoAppHeading = await page.locator(".todoapp .header h1").first().textContent();
 
     if ((todoAppHeading ?? "").trim() !== "todos") {
-      throw new Error(`TodoMVC iframe app did not load as expected: ${todoAppHeading}`);
+      throw new Error(`TodoMVC route app did not load as expected: ${todoAppHeading}`);
     }
+
+    const tokenAfterTodoClick = await page.evaluate(() => window.__START_NAV_TOKEN__);
+    if (tokenAfterTodoClick !== navToken) {
+      throw new Error("TodoMVC navigation caused a full page reload");
+    }
+
+    await page.goBack({ waitUntil: "domcontentloaded" });
+    await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/counter/`);
+    await page.locator(".counter-card h1").first().waitFor({ timeout: 30000 });
 
     console.log("[start-browser-smoke] passed");
   } finally {

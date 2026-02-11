@@ -61,6 +61,7 @@ body {
 }
 
 .start-link:hover,
+.start-link.active,
 .start-link[aria-current="page"] {
   background: #e4f0ff;
   border-color: #7ca0c7;
@@ -109,31 +110,13 @@ body {
   color: #5b7588;
 }
 
-.start-frame-wrap {
+.start-route-app {
   margin-top: 12px;
-  background: #ffffffd4;
-  border: 1px solid #d3dfeb;
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.start-frame {
-  display: block;
-  width: 100%;
-  height: calc(100vh - 170px);
-  min-height: 580px;
-  border: 0;
-  background: #fff;
 }
 
 @media (max-width: 720px) {
   .start-nav {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .start-frame {
-    min-height: 540px;
-    height: calc(100vh - 230px);
   }
 }

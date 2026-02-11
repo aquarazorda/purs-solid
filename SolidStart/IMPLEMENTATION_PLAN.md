@@ -244,6 +244,7 @@ Tasks:
   - Added docs in `SolidStart/README.md`, `SolidStart/ROUTING_CONVENTIONS.md`, and `examples/solid-start/README.md`
 - [~] Add end-to-end smoke app that exercises routing + API + hydration
   - Added Start server/browser smoke scripts: `test/start/run-server-smoke.mjs`, `test/start/run-browser-smoke.mjs`
+  - Updated `Examples.SolidStart` to render `/`, `/counter`, and `/todomvc` routes from one routed entrypoint
 
 Acceptance:
 

@@ -7,6 +7,7 @@ This folder tracks the SolidStart implementation effort for `purs-solid`.
 - Manifest generation for file-based routes is scaffolded.
 - Route matching runtime supports static/param/optional/catch-all segments with precedence behavior.
 - Route fixtures are scaffolded under `examples/solid-start/src/routes/` to exercise generation and matching.
+- `Examples.SolidStart` now renders `/`, `/counter`, and `/todomvc` from one routed PureScript entrypoint with client-side route transitions (without iframe embedding).
 - App and entrypoint skeletons are available under `src/Solid/Start/App.purs` and `src/Solid/Start/Entry/*`.
 - Typed server request/response primitives now exist under `src/Solid/Start/Server/*`.
 - Typed server-function serialization scaffolding exists under `src/Solid/Start/Server/Function.purs` and `src/Solid/Start/Internal/Serialization.purs`.
@@ -15,6 +16,7 @@ This folder tracks the SolidStart implementation effort for `purs-solid`.
 - Session store primitives exist in `src/Solid/Start/Session.purs`.
 - Metadata, asset URL, and prerender-plan primitives exist in `src/Solid/Start/Meta.purs`, `src/Solid/Start/StaticAssets.purs`, and `src/Solid/Start/Prerender.purs`.
 - Runtime request/response adapter primitives exist in `src/Solid/Start/Server/Runtime.purs`.
+- Client navigation interop primitives exist in `src/Solid/Start/Client/Navigation.purs`.
 - Entry points and server/API modules are still early; runtime integration, CSRF/auth, and full session strategy are pending.
 
 ## Docs in this folder
