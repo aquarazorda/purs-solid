@@ -47,6 +47,14 @@ const readRequestBody = async (request) => {
   return Buffer.concat(chunks).toString("utf8");
 };
 
+const isSolidStartRoutePath = (pathname) => {
+  if (typeof pathname !== "string") {
+    return false;
+  }
+
+  return pathname === "/examples/solid-start" || pathname.startsWith("/examples/solid-start/");
+};
+
 export const createExamplesServer = async () => {
   await ensureBuildArtifacts();
 
@@ -96,6 +104,16 @@ export const createExamplesServer = async () => {
       response.writeHead(200, { "content-type": contentType });
       response.end(file);
     } catch {
+      if (isSolidStartRoutePath(pathname) && extname(pathname) === "") {
+        try {
+          const fallbackPath = join(rootDir, "examples", "solid-start", "index.html");
+          const fallbackFile = await readFile(fallbackPath);
+          response.writeHead(200, { "content-type": mimeTypeByExtension[".html"] });
+          response.end(fallbackFile);
+          return;
+        } catch {}
+      }
+
       response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
       response.end("Not found");
     }

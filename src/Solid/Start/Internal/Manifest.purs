@@ -21,6 +21,41 @@ allRoutes =
   , moduleName: "Routes.Counter"
   , sourcePath: "counter.purs"
   }
+  ,   { id: "/hn"
+  , pattern: RoutePattern [Static "hn"]
+  , moduleName: "Routes.HN.Index"
+  , sourcePath: "hn/index.purs"
+  }
+  ,   { id: "/hn/ask"
+  , pattern: RoutePattern [Static "hn", Static "ask"]
+  , moduleName: "Routes.HN.Ask"
+  , sourcePath: "hn/ask.purs"
+  }
+  ,   { id: "/hn/job"
+  , pattern: RoutePattern [Static "hn", Static "job"]
+  , moduleName: "Routes.HN.Job"
+  , sourcePath: "hn/job.purs"
+  }
+  ,   { id: "/hn/new"
+  , pattern: RoutePattern [Static "hn", Static "new"]
+  , moduleName: "Routes.HN.New"
+  , sourcePath: "hn/new.purs"
+  }
+  ,   { id: "/hn/show"
+  , pattern: RoutePattern [Static "hn", Static "show"]
+  , moduleName: "Routes.HN.Show"
+  , sourcePath: "hn/show.purs"
+  }
+  ,   { id: "/hn/stories/:id"
+  , pattern: RoutePattern [Static "hn", Static "stories", Param "id"]
+  , moduleName: "Routes.HN.Stories.Id"
+  , sourcePath: "hn/stories/[id].purs"
+  }
+  ,   { id: "/hn/users/:id"
+  , pattern: RoutePattern [Static "hn", Static "users", Param "id"]
+  , moduleName: "Routes.HN.Users.Id"
+  , sourcePath: "hn/users/[id].purs"
+  }
   ,   { id: "/server-function"
   , pattern: RoutePattern [Static "server-function"]
   , moduleName: "Routes.ServerFunction"
