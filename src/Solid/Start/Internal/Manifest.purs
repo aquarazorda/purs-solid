@@ -21,6 +21,11 @@ allRoutes =
   , moduleName: "Routes.Counter"
   , sourcePath: "counter.purs"
   }
+  ,   { id: "/server-function"
+  , pattern: RoutePattern [Static "server-function"]
+  , moduleName: "Routes.ServerFunction"
+  , sourcePath: "server-function.purs"
+  }
   ,   { id: "/todomvc"
   , pattern: RoutePattern [Static "todomvc"]
   , moduleName: "Routes.TodoMVC"

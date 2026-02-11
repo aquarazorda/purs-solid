@@ -40,9 +40,25 @@ run = do
   let htmlResponse = Response.html 200 "<h1>hello</h1>"
   assertEqual "html response body" (Response.HtmlBody "<h1>hello</h1>") (Response.body htmlResponse)
 
+  let streamResponse = Response.streamText 200 [ "a", "b", "c" ]
+  assertEqual "stream response status" 200 (Response.status streamResponse)
+  assertEqual "stream response body" (Response.StreamBody [ "a", "b", "c" ]) (Response.body streamResponse)
+
   let redirectResponse = Response.redirect 302 "/login"
   assertEqual "redirect response status" 302 (Response.status redirectResponse)
   assertEqual "redirect response body is empty" Response.EmptyBody (Response.body redirectResponse)
+
+  assertEqual "okText helper status" 200 (Response.status (Response.okText "ok"))
+  assertEqual "createdJson helper status" 201 (Response.status (Response.createdJson "{}"))
+  assertEqual "acceptedText helper status" 202 (Response.status (Response.acceptedText "queued"))
+  assertEqual "noContent helper status" 204 (Response.status Response.noContent)
+  assertEqual "badRequestText helper status" 400 (Response.status (Response.badRequestText "bad"))
+  assertEqual "unauthorizedText helper status" 401 (Response.status (Response.unauthorizedText "nope"))
+  assertEqual "forbiddenText helper status" 403 (Response.status (Response.forbiddenText "forbidden"))
+  assertEqual "notFoundText helper status" 404 (Response.status (Response.notFoundText "missing"))
+  assertEqual "conflictText helper status" 409 (Response.status (Response.conflictText "conflict"))
+  assertEqual "unprocessableEntityText helper status" 422 (Response.status (Response.unprocessableEntityText "invalid"))
+  assertEqual "internalServerErrorText helper status" 500 (Response.status (Response.internalServerErrorText "error"))
 
   let withHeaderResponse = Response.withHeader "x-trace" "abc" textResponse
   assertEqual

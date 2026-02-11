@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "solid-web-ssr-rendering",
+      "docItem": "Solid rendering API parity",
+      "module": "src/Solid/Web/SSR.purs",
+      "symbols": [
+        "renderToString",
+        "renderToStringAsync",
+        "renderToStream",
+        "hydrationScript"
+      ],
+      "tests": [
+        "test/Test/WebSSR.purs"
+      ]
+    },
+    {
+      "id": "solid-store-parity",
+      "docItem": "Store utility parity",
+      "module": "src/Solid/Store.purs",
+      "symbols": [
+        "produce",
+        "reconcile",
+        "modifyMutable"
+      ],
+      "tests": [
+        "test/Test/Store.purs"
+      ]
+    },
+    {
+      "id": "start-runtime-web-interop",
+      "docItem": "SolidStart runtime Request/Response interop",
+      "module": "src/Solid/Start/Server/Runtime.purs",
+      "symbols": [
+        "adaptWebRequest",
+        "handleWebRuntimeRequest",
+        "runtimeResponseIsWeb"
+      ],
+      "tests": [
+        "test/Test/Start/Runtime.purs"
+      ]
+    },
+    {
+      "id": "start-server-function-transport",
+      "docItem": "SolidStart server-function transport",
+      "module": "src/Solid/Start/Server/Function.purs",
+      "symbols": [
+        "callWithTransport",
+        "callWithTransportAff",
+        "callWithTransportCached",
+        "callWithTransportCachedAff",
+        "cacheKeyFor",
+        "encodeStartErrorWire",
+        "decodeStartErrorWire",
+        "httpPostTransport",
+        "dispatchSerialized"
+      ],
+      "tests": [
+        "test/Test/Start/ServerFunction.purs",
+        "src/Examples/SolidStart.purs"
+      ]
+    },
+    {
+      "id": "start-api-response-streaming",
+      "docItem": "SolidStart API route response helpers and streaming",
+      "module": "src/Solid/Start/Server/Response.purs",
+      "symbols": [
+        "streamText",
+        "okStreamText",
+        "okText",
+        "createdJson",
+        "noContent",
+        "badRequestText",
+        "internalServerErrorText"
+      ],
+      "tests": [
+        "test/Test/Start/Server.purs",
+        "test/Test/Start/Runtime.purs"
+      ]
+    },
+    {
+      "id": "start-api-router-entry-integration",
+      "docItem": "SolidStart API routes integrated into server entry path",
+      "module": "src/Examples/StartSSRSmoke/ServerMain.purs",
+      "symbols": [
+        "handleRequest",
+        "handleRuntimeRequest",
+        "apiRouter"
+      ],
+      "tests": [
+        "test/start/run-server-smoke.mjs",
+        "test/start/run-ssr-hydration-smoke.mjs"
+      ]
+    }
+  ]
+}

@@ -2,6 +2,8 @@ import {
   createMutable as createSolidMutable,
   createStore as createSolidStore,
   modifyMutable as modifySolidMutable,
+  produce as solidProduce,
+  reconcile as solidReconcile,
   unwrap as unwrapSolid,
 } from "solid-js/store/dist/store.js";
 
@@ -67,6 +69,16 @@ export const modify = (setter) => (update) => () => {
   setter((previous) => update(previous));
 };
 
+export const produce = (setter) => (recipe) => () => {
+  setter(solidProduce((draft) => {
+    recipe(draft)();
+  }));
+};
+
+export const reconcile = (setter) => (next) => () => {
+  setter(solidReconcile(next));
+};
+
 export const getFieldImpl = (field) => (store) => () =>
   store[field];
 
@@ -94,6 +106,12 @@ export const getMutable = (mutable) => () =>
 
 export const unwrapMutable = (mutable) => () =>
   unwrapSolid(mutable);
+
+export const modifyMutable = (mutable) => (recipe) => () => {
+  modifySolidMutable(mutable, (draft) => {
+    recipe(draft)();
+  });
+};
 
 export const getMutableFieldImpl = (field) => (mutable) => () =>
   mutable[field];

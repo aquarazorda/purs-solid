@@ -5,6 +5,8 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
+import Effect.Aff (launchAff_)
+import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Examples.Counter as Counter
 import Examples.TodoMVC as TodoMVC
@@ -18,6 +20,9 @@ import Solid.Lifecycle (onCleanup, onMount)
 import Solid.Reactivity (createEffect, createMemo)
 import Solid.Signal (Setter, createSignal, get, set)
 import Solid.Start.Client.Navigation as ClientNavigation
+import Solid.Start.Error (StartError(..))
+import Solid.Start.Internal.Serialization as Serialization
+import Solid.Start.Server.Function as ServerFunction
 import Solid.Start.Routing.Manifest as StartManifest
 import Solid.Web (render, requireBody)
 
@@ -40,6 +45,7 @@ data RouteView
   = HomeView
   | CounterView
   | TodoView
+  | ServerFunctionView
   | NotFoundView String
 
 resolveRouteView :: String -> RouteView
@@ -51,6 +57,7 @@ resolveRouteView routePath =
         "/" -> HomeView
         "/counter" -> CounterView
         "/todomvc" -> TodoView
+        "/server-function" -> ServerFunctionView
         routeId -> NotFoundView routeId
 
 routeHref :: String -> String
@@ -59,6 +66,7 @@ routeHref routeId =
     "/" -> "/examples/solid-start/"
     "/counter" -> "/examples/solid-start/counter/"
     "/todomvc" -> "/examples/solid-start/todomvc/"
+    "/server-function" -> "/examples/solid-start/server-function/"
     _ -> "/examples/solid-start/"
 
 linkClass :: String -> String -> String
@@ -98,6 +106,15 @@ homeContent setCurrentRoute =
             [ HTML.h2_ [ DOM.text "/todomvc" ]
             , HTML.p_ [ DOM.text "Loads the TodoMVC app." ]
             ]
+        , HTML.a
+            { className: "start-tile"
+            , href: routeHref "/server-function"
+            , onClick: Events.handler \event ->
+                navigateToRoute "/server-function" setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+            }
+            [ HTML.h2_ [ DOM.text "/server-function" ]
+            , HTML.p_ [ DOM.text "Runs a server-function transport round-trip demo." ]
+            ]
         ]
     ]
 
@@ -118,8 +135,65 @@ notFoundContent setCurrentRoute routePath =
         ]
     ]
 
-routeContent :: Setter String -> String -> JSX
-routeContent setCurrentRoute currentRoute =
+runServerFunctionDemo :: String -> Setter String -> Effect Unit
+runServerFunctionDemo payload setServerResult = do
+  let codec = Serialization.mkWireCodec identity Right
+  let serverFunction =
+        ServerFunction.createServerFunction codec codec \requestPayload ->
+          if requestPayload == "ping" then
+            pure (Right "pong")
+          else
+            pure (Left (ServerFunctionExecutionError "unexpected payload"))
+
+  launchAff_ do
+    callResult <- ServerFunction.callWithTransportCachedAff
+      serverFunction
+      "example-server-function"
+      { invalidate: \_ -> pure (Right unit)
+      , revalidate: \_ -> pure (Right unit)
+      }
+      (ServerFunction.httpPostTransport "/api/server-function")
+      payload
+    liftEffect case callResult of
+      Left startError -> do
+        _ <- set setServerResult ("error: " <> show startError)
+        pure unit
+      Right value -> do
+        _ <- set setServerResult ("ok: " <> value)
+        pure unit
+
+serverFunctionContent :: Setter String -> Setter String -> String -> JSX
+serverFunctionContent setCurrentRoute setServerResult lastResult =
+  HTML.section { className: "start-card" }
+    [ HTML.h2_ [ DOM.text "Server function transport demo" ]
+    , HTML.p_ [ DOM.text "This route uses callWithTransportCachedAff over HTTP POST with invalidate/revalidate hooks to exercise a real client/server transport path." ]
+    , HTML.button
+        { className: "start-link"
+        , id: "server-fn-success"
+        , onClick: Events.handler_ (runServerFunctionDemo "ping" setServerResult)
+        }
+        [ DOM.text "Run success call" ]
+    , HTML.button
+        { className: "start-link"
+        , id: "server-fn-error"
+        , onClick: Events.handler_ (runServerFunctionDemo "boom" setServerResult)
+        }
+        [ DOM.text "Run error call" ]
+    , HTML.p_ [ DOM.text ("Last result: " <> lastResult) ]
+    , HTML.p_
+        [ DOM.text "Go back to "
+        , HTML.a
+            { href: routeHref "/"
+            , onClick: Events.handler \event ->
+                navigateToRoute "/" setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+            }
+            [ DOM.text "home" ]
+        , DOM.text "."
+        ]
+    ]
+
+routeContent :: Setter String -> JSX -> String -> JSX
+routeContent setCurrentRoute serverFunctionNode currentRoute =
   case resolveRouteView currentRoute of
     HomeView -> homeContent setCurrentRoute
     CounterView ->
@@ -130,12 +204,14 @@ routeContent setCurrentRoute currentRoute =
       HTML.div { className: "start-route-app" }
         [ Component.element TodoMVC.todoApp {}
         ]
+    ServerFunctionView -> serverFunctionNode
     NotFoundView routePath -> notFoundContent setCurrentRoute routePath
 
-app :: Component.Component {}
-app = Component.component \_ -> do
-  initialRoute <- ClientNavigation.startRoutePath basePath
+mkApp :: Effect String -> Component.Component {}
+mkApp resolveInitialRoute = Component.component \_ -> do
+  initialRoute <- resolveInitialRoute
   currentRoute /\ setCurrentRoute <- createSignal initialRoute
+  serverFunctionResult /\ setServerFunctionResult <- createSignal "idle"
 
   homeLinkClass <- createMemo do
     route <- get currentRoute
@@ -149,9 +225,18 @@ app = Component.component \_ -> do
     route <- get currentRoute
     pure (linkClass route "/todomvc")
 
+  serverFunctionLinkClass <- createMemo do
+    route <- get currentRoute
+    pure (linkClass route "/server-function")
+
+  serverFunctionNode <- createMemo do
+    result <- get serverFunctionResult
+    pure (serverFunctionContent setCurrentRoute setServerFunctionResult result)
+
   routeNode <- createMemo do
     route <- get currentRoute
-    pure (routeContent setCurrentRoute route)
+    serverFnRouteNode <- get serverFunctionNode
+    pure (routeContent setCurrentRoute serverFnRouteNode route)
 
   _ <- createEffect do
     route <- get currentRoute
@@ -190,6 +275,13 @@ app = Component.component \_ -> do
                     navigateToRoute "/todomvc" setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
                 }
                 [ DOM.text "TodoMVC" ]
+            , HTML.a
+                { className: serverFunctionLinkClass
+                , href: routeHref "/server-function"
+                , onClick: Events.handler \event ->
+                    navigateToRoute "/server-function" setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+                }
+                [ DOM.text "ServerFn" ]
             ]
         ]
     , HTML.main { className: "start-main" }
@@ -199,6 +291,12 @@ app = Component.component \_ -> do
             }
         ]
     ]
+
+app :: Component.Component {}
+app = mkApp (ClientNavigation.startRoutePath basePath)
+
+appWithRoute :: String -> Component.Component {}
+appWithRoute routePath = mkApp (pure routePath)
 
 main :: Effect Unit
 main = do

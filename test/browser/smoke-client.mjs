@@ -793,9 +793,13 @@ const run = () => {
   record("hydrate test mount exists", hydrateMount != null, hydrateMount);
 
   if (hydrateMount != null) {
-    const hydrateResult = Solid_Web.hydrate(() => "hydrated text")(hydrateMount)();
+    const hydrateResult = Solid_Web.hydrate(
+      () => Solid_DOM.div({ id: "hydrate-target" })([Solid_DOM.text("hydrated text")])
+    )(hydrateMount)();
     if (isRight(hydrateResult)) {
       const hydrateDispose = hydrateResult.value0;
+      const hydrateTarget = hydrateMount.querySelector("#hydrate-target");
+      record("hydrate keeps expected text content", hydrateTarget?.textContent === "hydrated text", hydrateTarget?.textContent);
       record("hydrate returns Right disposer when hydration succeeds", typeof hydrateDispose === "function", hydrateDispose);
 
       if (typeof hydrateDispose === "function") {
@@ -803,7 +807,7 @@ const run = () => {
         record("hydrate disposer is callable", true, "ok");
       }
     } else if (isLeft(hydrateResult) && hydrateResult.value0 instanceof Solid_Web.RuntimeError) {
-      record("hydrate surfaces RuntimeError for non-SSR mount", true, hydrateResult.value0);
+      record("hydrate surfaces RuntimeError when hydration context is unavailable", true, hydrateResult.value0);
     } else {
       record("hydrate returns expected Either shape", false, hydrateResult);
     }

@@ -29,6 +29,7 @@ import Test.Store as Store
 import Test.UI as UI
 import Test.Utility as Utility
 import Test.Web as Web
+import Test.WebSSR as WebSSR
 
 runSuite :: String -> Effect Unit -> Effect Unit
 runSuite label suite = do
@@ -51,6 +52,7 @@ main = do
   runSuite "Store" Store.run
   runSuite "UI" UI.run
   runSuite "Web" Web.run
+  runSuite "Web SSR" WebSSR.run
   runSuite "Start core" StartCore.run
   runSuite "Start entry" StartEntry.run
   runSuite "Start routing" StartRouting.run

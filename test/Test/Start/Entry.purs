@@ -5,6 +5,7 @@ module Test.Start.Entry
 import Prelude
 
 import Data.Either (Either(..))
+import Data.String.CodeUnits as String
 import Effect (Effect)
 import Effect.Exception (throw)
 import Solid.JSX as JSX
@@ -20,7 +21,27 @@ foreign import serverMountStub :: Web.Mountable
 
 run :: Effect Unit
 run = do
-  let app = App.createApp (pure JSX.empty)
+  let app = App.createApp (pure (JSX.text "entry-ssr"))
+
+  appHtml <- expectRight
+    "renderAppHtml renders app through SSR"
+    =<< Server.renderAppHtml app
+  assertEqual "renderAppHtml returns non-empty output" true (String.length appHtml > 0)
+
+  documentHtml <- expectRight
+    "renderDocumentHtml renders full document"
+    =<< Server.renderDocumentHtml app
+  assertEqual "renderDocumentHtml starts with doctype" "<!doctype html>" (String.take 15 documentHtml)
+
+  documentResponse <- expectRight
+    "renderDocumentResponse wraps SSR document into HTML response"
+    =<< Server.renderDocumentResponse 200 app
+  assertEqual "renderDocumentResponse status" 200 (Server.responseStatus documentResponse)
+  case Server.responseBody documentResponse of
+    Response.HtmlBody html ->
+      assertEqual "renderDocumentResponse includes app mount id" true (String.length html > String.length appHtml)
+    other ->
+      throw ("renderDocumentResponse should return HtmlBody, got " <> show other)
 
   mountFailure <- Client.bootstrapInBody Client.RenderMode app
   case mountFailure of
@@ -31,6 +52,16 @@ run = do
         clientError
     Right _ ->
       throw "bootstrapInBody should fail without DOM"
+
+  mountByIdFailure <- Client.bootstrapAtId Client.RenderMode "app" app
+  case mountByIdFailure of
+    Left clientError ->
+      assertEqual
+        "bootstrapAtId returns typed mount-id error without DOM"
+        (Client.MountFailure (Web.MissingMount "No mount element found for id: app"))
+        clientError
+    Right _ ->
+      throw "bootstrapAtId should fail without DOM"
 
   renderFailure <- Client.bootstrapAt Client.RenderMode app serverMountStub
   case renderFailure of

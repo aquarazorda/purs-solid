@@ -2,6 +2,7 @@ module Solid.Start.Entry.Client
   ( ClientMode(..)
   , ClientEntryError(..)
   , bootstrapAt
+  , bootstrapAtId
   , bootstrapInBody
   ) where
 
@@ -50,6 +51,13 @@ bootstrapAt mode app mount =
       pure case result of
         Left webError -> Left (HydrateFailure webError)
         Right disposer -> Right disposer
+
+bootstrapAtId :: ClientMode -> String -> App -> Effect (Either ClientEntryError (Effect Unit))
+bootstrapAtId mode mountId app = do
+  mountResult <- Web.requireMountById mountId
+  case mountResult of
+    Left webError -> pure (Left (MountFailure webError))
+    Right mount -> bootstrapAt mode app mount
 
 bootstrapInBody :: ClientMode -> App -> Effect (Either ClientEntryError (Effect Unit))
 bootstrapInBody mode app = do

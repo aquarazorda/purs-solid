@@ -5,7 +5,22 @@ module Solid.Start.Server.Response
   , text
   , json
   , html
+  , streamText
   , redirect
+  , okText
+  , okJson
+  , okHtml
+  , okStreamText
+  , createdJson
+  , acceptedText
+  , noContent
+  , badRequestText
+  , unauthorizedText
+  , forbiddenText
+  , notFoundText
+  , conflictText
+  , unprocessableEntityText
+  , internalServerErrorText
   , methodNotAllowed
   , withHeader
   , status
@@ -23,6 +38,7 @@ data ResponseBody
   | TextBody String
   | JsonBody String
   | HtmlBody String
+  | StreamBody (Array String)
 
 derive instance eqResponseBody :: Eq ResponseBody
 
@@ -32,6 +48,7 @@ instance showResponseBody :: Show ResponseBody where
     TextBody value -> "TextBody " <> show value
     JsonBody value -> "JsonBody " <> show value
     HtmlBody value -> "HtmlBody " <> show value
+    StreamBody chunks -> "StreamBody " <> show chunks
 
 newtype Response = Response
   { status :: Int
@@ -79,12 +96,61 @@ html code content =
     [ "content-type" /\ "text/html; charset=utf-8" ]
     (HtmlBody content)
 
+streamText :: Int -> Array String -> Response
+streamText code chunks =
+  mkResponse
+    code
+    [ "content-type" /\ "text/plain; charset=utf-8" ]
+    (StreamBody chunks)
+
 redirect :: Int -> String -> Response
 redirect code location =
   mkResponse
     code
     [ "location" /\ location ]
     EmptyBody
+
+okText :: String -> Response
+okText = text 200
+
+okJson :: String -> Response
+okJson = json 200
+
+okHtml :: String -> Response
+okHtml = html 200
+
+okStreamText :: Array String -> Response
+okStreamText = streamText 200
+
+createdJson :: String -> Response
+createdJson = json 201
+
+acceptedText :: String -> Response
+acceptedText = text 202
+
+noContent :: Response
+noContent = mkResponse 204 [] EmptyBody
+
+badRequestText :: String -> Response
+badRequestText = text 400
+
+unauthorizedText :: String -> Response
+unauthorizedText = text 401
+
+forbiddenText :: String -> Response
+forbiddenText = text 403
+
+notFoundText :: String -> Response
+notFoundText = text 404
+
+conflictText :: String -> Response
+conflictText = text 409
+
+unprocessableEntityText :: String -> Response
+unprocessableEntityText = text 422
+
+internalServerErrorText :: String -> Response
+internalServerErrorText = text 500
 
 methodNotAllowed :: Method -> Response
 methodNotAllowed allowedMethod =

@@ -7,6 +7,8 @@ module Solid.Store
   , unwrapStore
   , set
   , modify
+  , produce
+  , reconcile
   , getField
   , setField
   , modifyField
@@ -15,6 +17,7 @@ module Solid.Store
   , createMutable
   , getMutable
   , unwrapMutable
+  , modifyMutable
   , getMutableField
   , setMutableField
   , modifyMutableField
@@ -55,6 +58,10 @@ foreign import unwrapStore :: forall a. Store a -> Effect a
 foreign import set :: forall a. StoreSetter a -> a -> Effect Unit
 
 foreign import modify :: forall a. StoreSetter a -> (a -> a) -> Effect Unit
+
+foreign import produce :: forall a. StoreSetter a -> (a -> Effect Unit) -> Effect Unit
+
+foreign import reconcile :: forall a. StoreSetter a -> a -> Effect Unit
 
 getField
   :: forall label value tail row
@@ -110,6 +117,8 @@ foreign import createMutable :: forall a. a -> Effect (Mutable a)
 foreign import getMutable :: forall a. Mutable a -> Effect a
 
 foreign import unwrapMutable :: forall a. Mutable a -> Effect a
+
+foreign import modifyMutable :: forall a. Mutable a -> (a -> Effect Unit) -> Effect Unit
 
 getMutableField
   :: forall label value tail row

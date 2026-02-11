@@ -1,6 +1,8 @@
 package:
   name: purs-solid
   dependencies:
+    - aff
+    - aff-promise
     - console
     - effect
     - prelude

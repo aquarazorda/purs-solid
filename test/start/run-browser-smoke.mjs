@@ -1,90 +1,6 @@
-import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
-import { cwd } from "node:process";
-import { extname, join, normalize } from "node:path";
-
-const rootDir = cwd();
-
-const mimeTypeByExtension = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".mjs": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-};
+import { createExamplesServer, startExamplesServer } from "../../scripts/examples-server.mjs";
 
 const asError = (error) => (error instanceof Error ? error : new Error(String(error)));
-
-const ensureBuildArtifacts = async () => {
-  const entry = join(rootDir, "dist", "examples", "solid-start.js");
-
-  try {
-    await readFile(entry);
-  } catch {
-    throw new Error(
-      "Missing build output at dist/examples/solid-start.js. Run `npm run build:example:solid-start` first."
-    );
-  }
-};
-
-const toAbsolutePath = (urlPath) => {
-  const withoutQuery = urlPath.split("?")[0];
-  const decoded = decodeURIComponent(withoutQuery);
-  const requestedPath = decoded === "/" ? "/examples/solid-start/" : decoded;
-  const requested = requestedPath.endsWith("/") ? `${requestedPath}index.html` : requestedPath;
-  const relative = requested.startsWith("/") ? requested.slice(1) : requested;
-  const absolutePath = normalize(join(rootDir, relative));
-  const normalizedRoot = normalize(rootDir);
-
-  if (absolutePath !== normalizedRoot && !absolutePath.startsWith(normalizedRoot + "/")) {
-    return null;
-  }
-
-  return absolutePath;
-};
-
-const createStaticServer = () =>
-  createServer(async (request, response) => {
-    if (!request.url) {
-      response.writeHead(400, { "content-type": "text/plain; charset=utf-8" });
-      response.end("Bad request");
-      return;
-    }
-
-    const absolutePath = toAbsolutePath(request.url);
-    if (absolutePath == null) {
-      response.writeHead(403, { "content-type": "text/plain; charset=utf-8" });
-      response.end("Forbidden");
-      return;
-    }
-
-    try {
-      const file = await readFile(absolutePath);
-      const extension = extname(absolutePath);
-      const contentType = mimeTypeByExtension[extension] ?? "application/octet-stream";
-      response.writeHead(200, { "content-type": contentType });
-      response.end(file);
-    } catch {
-      response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
-      response.end("Not found");
-    }
-  });
-
-const startServer = async (server) =>
-  new Promise((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      server.removeListener("error", reject);
-      const address = server.address();
-
-      if (address == null || typeof address === "string") {
-        reject(new Error("Could not determine server address"));
-        return;
-      }
-
-      resolve(address.port);
-    });
-  });
 
 const loadPlaywright = async () => {
   try {
@@ -95,10 +11,10 @@ const loadPlaywright = async () => {
 };
 
 const main = async () => {
-  await ensureBuildArtifacts();
   const { chromium } = await loadPlaywright();
-  const server = createStaticServer();
-  const port = await startServer(server);
+  const server = await createExamplesServer();
+  const address = await startExamplesServer(server, 0, "127.0.0.1");
+  const port = address.port;
   let browser = null;
 
   try {
@@ -109,19 +25,20 @@ const main = async () => {
     await page.goto(url, { waitUntil: "domcontentloaded" });
     await page.locator(".start-brand").first().waitFor({ timeout: 30000 });
 
+    const bootstrapMode = await page.evaluate(() => window.__PURS_SOLID_START_BOOTSTRAP_MODE__);
+    if (bootstrapMode === "failure") {
+      throw new Error("Client entry bootstrap failed");
+    }
+
     const navToken = await page.evaluate(() => {
       window.__START_NAV_TOKEN__ = Math.random().toString(36).slice(2);
       return window.__START_NAV_TOKEN__;
     });
 
-    const title = await page.title();
     const heading = await page.locator(".start-brand").textContent();
     const counterHref = await page.locator('.start-nav a:has-text("Counter")').getAttribute("href");
     const todomvcHref = await page.locator('.start-nav a:has-text("TodoMVC")').getAttribute("href");
-
-    if (title !== "purs-solid SolidStart Example") {
-      throw new Error(`Unexpected page title: ${title}`);
-    }
+    const serverFnHref = await page.locator('.start-nav a:has-text("ServerFn")').getAttribute("href");
 
     if ((heading ?? "").trim() !== "purs-solid Start app") {
       throw new Error(`Unexpected page heading: ${heading}`);
@@ -133,6 +50,10 @@ const main = async () => {
 
     if (todomvcHref !== "/examples/solid-start/todomvc/") {
       throw new Error(`Expected todomvc navigation link, got ${todomvcHref}`);
+    }
+
+    if (serverFnHref !== "/examples/solid-start/server-function/") {
+      throw new Error(`Expected server function navigation link, got ${serverFnHref}`);
     }
 
     await page.locator('.start-nav a:has-text("Counter")').click();
@@ -162,6 +83,52 @@ const main = async () => {
     if (tokenAfterTodoClick !== navToken) {
       throw new Error("TodoMVC navigation caused a full page reload");
     }
+
+    await page.locator('.start-nav a:has-text("ServerFn")').click();
+    await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/server-function/`);
+    await page.locator('.start-card h2:has-text("Server function transport demo")').first().waitFor({ timeout: 30000 });
+
+    const beforeCall = await page.locator('.start-card p:has-text("Last result:")').first().textContent();
+    if ((beforeCall ?? "").trim() !== "Last result: idle") {
+      throw new Error(`Unexpected initial server function result: ${beforeCall}`);
+    }
+
+    await page.locator("#server-fn-success").click();
+    await page.waitForFunction(
+      () => {
+        const nodes = Array.from(document.querySelectorAll('.start-card p'));
+        return nodes.some((node) => node.textContent?.trim() === "Last result: ok: pong");
+      },
+      undefined,
+      { timeout: 30000 }
+    );
+    const afterCall = await page.locator('.start-card p:has-text("Last result:")').first().textContent();
+    if ((afterCall ?? "").trim() !== "Last result: ok: pong") {
+      throw new Error(`Unexpected server function result after call: ${afterCall}`);
+    }
+
+    await page.locator("#server-fn-error").click();
+    await page.waitForFunction(
+      () => {
+        const nodes = Array.from(document.querySelectorAll('.start-card p'));
+        return nodes.some((node) => node.textContent?.includes("ServerFunctionExecutionError"));
+      },
+      undefined,
+      { timeout: 30000 }
+    );
+    const errorCall = await page.locator('.start-card p:has-text("Last result:")').first().textContent();
+    if ((errorCall ?? "").trim() !== "Last result: error: ServerFunctionExecutionError \"unexpected payload\"") {
+      throw new Error(`Unexpected server function result after error call: ${errorCall}`);
+    }
+
+    const tokenAfterServerFnClick = await page.evaluate(() => window.__START_NAV_TOKEN__);
+    if (tokenAfterServerFnClick !== navToken) {
+      throw new Error("ServerFn navigation caused a full page reload");
+    }
+
+    await page.goBack({ waitUntil: "domcontentloaded" });
+    await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/todomvc/`);
+    await page.locator(".todoapp .header h1").first().waitFor({ timeout: 30000 });
 
     await page.goBack({ waitUntil: "domcontentloaded" });
     await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/counter/`);

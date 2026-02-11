@@ -13,6 +13,10 @@ import Type.Proxy (Proxy(..))
 
 foreign import sameRef :: forall a. a -> a -> Boolean
 
+foreign import produceIncrementCount :: forall r. { count :: Int | r } -> Effect Unit
+
+foreign import mutateMutableCount :: forall r. { count :: Int | r } -> Effect Unit
+
 run :: Effect Unit
 run = do
   storeFixture <- createRoot \dispose -> do
@@ -43,6 +47,10 @@ run = do
   _ <- Store.modifyField (Proxy :: Proxy "count") storeFixture.setStore (_ + 2)
   storeCountAfterModify <- Store.getField (Proxy :: Proxy "count") storeFixture.store
   assertEqual "store modifyField updates top-level field" 3 storeCountAfterModify
+
+  _ <- Store.produce storeFixture.setStore produceIncrementCount
+  storeCountAfterProduce <- Store.getField (Proxy :: Proxy "count") storeFixture.store
+  assertEqual "store produce applies mutable draft recipe" 13 storeCountAfterProduce
 
   _ <- Store.modifyField (Proxy :: Proxy "user") storeFixture.setStore \user ->
     user { age = user.age + 1 }
@@ -76,6 +84,19 @@ run = do
   assertEqual "store setField with object keeps branch reference and merges fields" true (sameRef userAfter userAfterSetFieldObject)
   assertEqual "store setField with object updates merged age" 31 userAfterSetFieldObject.age
 
+  _ <- Store.reconcile storeFixture.setStore
+    { count: 99
+    , user:
+        { age: 31
+        , name: "Grace"
+        }
+    , settings:
+        { theme: "light"
+        }
+    }
+  countAfterReconcile <- Store.getField (Proxy :: Proxy "count") storeFixture.store
+  assertEqual "store reconcile updates root tree with structural diff" 99 countAfterReconcile
+
   unwrappedStore <- Store.unwrapStore storeFixture.store
   assertEqual "unwrapStore exposes latest nested state" 31 unwrappedStore.user.age
 
@@ -104,6 +125,10 @@ run = do
   _ <- Store.modifyMutableField (Proxy :: Proxy "count") mutableFixture.mutable (_ + 3)
   mutableCountAfterModify <- Store.getMutableField (Proxy :: Proxy "count") mutableFixture.mutable
   assertEqual "mutable modifyMutableField updates top-level field" 8 mutableCountAfterModify
+
+  _ <- Store.modifyMutable mutableFixture.mutable mutateMutableCount
+  mutableCountAfterModifyMutable <- Store.getMutableField (Proxy :: Proxy "count") mutableFixture.mutable
+  assertEqual "modifyMutable convenience applies mutable draft recipe" 10 mutableCountAfterModifyMutable
 
   nestedBefore <- Store.getMutableField (Proxy :: Proxy "nested") mutableFixture.mutable
 
