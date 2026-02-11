@@ -3,10 +3,14 @@ module Solid.Component
   , component
   , element
   , elementKeyed
+  , children
+  , createUniqueId
+  , lazy
   ) where
 
 import Effect (Effect)
 import Solid.JSX (JSX)
+import Solid.Signal (Accessor)
 
 foreign import data Component :: Type -> Type
 
@@ -26,3 +30,12 @@ foreign import elementKeyed
    . Component { | props }
   -> { key :: String | props }
   -> JSX
+
+foreign import children :: Effect JSX -> Effect (Accessor JSX)
+
+foreign import createUniqueId :: Effect String
+
+foreign import lazy
+  :: forall props
+   . Effect (Component { | props })
+  -> Component { | props }

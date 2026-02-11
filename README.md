@@ -18,7 +18,7 @@ Core reactivity and lifecycle:
 - `Solid.Signal`
 - `Solid.Reactivity`
 - `Solid.Root`
-- `Solid.Utility`
+- `Solid.Utility` (`batch`, `catchError`, `from`, `mapArray`, `indexArray`, `mergeProps`, `splitProps`, `observable`, `startTransition`, `useTransition`, and related helpers)
 - `Solid.Lifecycle`
 - `Solid.Resource`
 - `Solid.Context`
@@ -28,7 +28,7 @@ Core reactivity and lifecycle:
 UI authoring:
 
 - `Solid.JSX`
-- `Solid.Component`
+- `Solid.Component` (`component`, `element`, `children`, `createUniqueId`, `lazy`)
 - `Solid.DOM` (generic + common HTML tags)
 - `Solid.DOM.HTML` (full HTML constructors)
 - `Solid.DOM.SVG` (full SVG constructors)

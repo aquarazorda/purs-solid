@@ -4,6 +4,8 @@ import Prelude
 
 import Effect (Effect)
 import Effect.Class.Console (log)
+import Test.AdvancedUtility as AdvancedUtility
+import Test.ComponentApi as ComponentApi
 import Test.Context as Context
 import Test.Control as Control
 import Test.EventAdapters as EventAdapters
@@ -37,6 +39,8 @@ main :: Effect Unit
 main = do
   runSuite "Signal" Signal.run
   log "Signal tests passed"
+  runSuite "Component API" ComponentApi.run
+  runSuite "Advanced utility" AdvancedUtility.run
   runSuite "Utility" Utility.run
   runSuite "Lifecycle" Lifecycle.run
   runSuite "Secondary primitive" Secondary.run
