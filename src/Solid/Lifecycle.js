@@ -1,4 +1,4 @@
-import { onCleanup as solidOnCleanup, onMount as solidOnMount } from "solid-js/dist/solid.js";
+import { onCleanup as solidOnCleanup, onMount as solidOnMount } from "solid-js";
 
 export const onCleanup = (action) => () => {
   solidOnCleanup(() => {

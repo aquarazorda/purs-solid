@@ -1,9 +1,9 @@
-import h from "solid-js/h";
 import {
+  createComponent as solidCreateComponent,
   children as solidChildren,
   createUniqueId as solidCreateUniqueId,
   lazy as solidLazy,
-} from "solid-js/dist/solid.js";
+} from "solid-js";
 
 export const component = (render) => {
   const wrapped = (props) =>
@@ -13,10 +13,10 @@ export const component = (render) => {
 };
 
 export const element = (comp) => (props) =>
-  h(comp, props);
+  solidCreateComponent(comp, props);
 
 export const elementKeyed = (comp) => (props) =>
-  h(comp, props);
+  solidCreateComponent(comp, props);
 
 export const children = (resolveChildren) => () =>
   solidChildren(() => resolveChildren());

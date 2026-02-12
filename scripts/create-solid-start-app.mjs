@@ -5,6 +5,18 @@ import { spawnSync } from "node:child_process";
 
 const projectRoot = process.cwd();
 const templateRoot = path.join(projectRoot, "examples", "solid-start");
+const generatorScript = path.join(projectRoot, "scripts", "gen-solid-start-app.mjs");
+
+const ignoredTemplateDirectories = new Set([
+  "node_modules",
+  ".vinxi",
+  ".output",
+  "dist",
+]);
+
+const ignoredTemplateFiles = new Set([
+  ".DS_Store",
+]);
 
 const packageManagers = ["npm", "pnpm", "bun", "none"];
 
@@ -136,6 +148,17 @@ const ensureTemplateExists = async () => {
   }
 };
 
+const regenerateTemplate = () => {
+  const result = spawnSync(process.execPath, [generatorScript], {
+    cwd: projectRoot,
+    stdio: "inherit",
+  });
+
+  if (result.status !== 0) {
+    throw new Error("Failed to regenerate SolidStart template before copy");
+  }
+};
+
 const assertValidPrefix = (label, value) => {
   if (typeof value !== "string" || value.length === 0) {
     throw new Error(`${label} must be a non-empty string`);
@@ -177,6 +200,10 @@ const walkFiles = async (dir) => {
   const files = [];
 
   for (const entry of entries) {
+    if (entry.isDirectory() && ignoredTemplateDirectories.has(entry.name)) {
+      continue;
+    }
+
     const absolutePath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       const nested = await walkFiles(absolutePath);
@@ -184,7 +211,7 @@ const walkFiles = async (dir) => {
       continue;
     }
 
-    if (entry.isFile()) {
+    if (entry.isFile() && !ignoredTemplateFiles.has(entry.name)) {
       files.push(absolutePath);
     }
   }
@@ -263,6 +290,7 @@ const main = async () => {
   const appName = options.name ?? derivedName;
   const resolvedOptions = { ...options, name: appName };
 
+  regenerateTemplate();
   await ensureTemplateExists();
   await assertTargetIsWritable(targetAbsolute, options.force);
 

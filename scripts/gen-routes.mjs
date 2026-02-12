@@ -3,7 +3,7 @@ import path from "node:path";
 import process from "node:process";
 
 const projectRoot = process.cwd();
-const defaultRoutesRoot = path.join(projectRoot, "examples", "solid-start", "src", "routes");
+const defaultRoutesRoot = path.join(projectRoot, "src", "Examples", "SolidStart", "Routes");
 const defaultOutputFile = path.join(projectRoot, "src", "Solid", "Start", "Internal", "Manifest.purs");
 
 const options = parseCliOptions(process.argv.slice(2));

@@ -285,7 +285,7 @@ Reason:
 
 PureScript route files are discovered by a Node generator (`scripts/gen-routes.mjs`) and emitted into a generated PureScript module:
 
-- source convention (current example scaffold): `examples/solid-start/src/routes/**/*.purs`
+- source convention (current example scaffold): `src/Examples/SolidStart/Routes/**/*.purs`
 - generated output: `src/Solid/Start/Internal/Manifest.purs`
 
 Reason:
@@ -315,17 +315,18 @@ This policy is validated by dedicated tests in `test/Test/Start/Routing.purs` an
 
 Implication: response transforms from earlier middleware in the list run last (standard onion behavior). This is covered by tests in `test/Test/Start/Middleware.purs`.
 
-### 21) SolidStart app scaffold lives under `examples/`
+### 21) SolidStart source-of-truth lives under `src/Examples/SolidStart`
 
-The in-repo Start app scaffold and route fixtures live in:
+The in-repo Start source and generated app split is:
 
-- `examples/solid-start/`
+- source-of-truth: `src/Examples/SolidStart/`
+- generated runnable app: `examples/solid-start/`
 
 Reason:
 
-- keeps framework/library modules in `src/Solid/*` cleanly separated from app scaffolds
-- aligns with the repository's existing examples workspace model
-- allows route fixture evolution without coupling it to core library source layout
+- keeps app behavior and route intent authored in PureScript
+- keeps Start runtime glue generated and replaceable as upstream alpha evolves
+- keeps the public runnable app location stable (`examples/solid-start/`) for DX and tooling
 
 ### 22) Route generation includes diagnostics for ambiguous dynamic shapes
 
@@ -346,10 +347,22 @@ Policy:
 - map domain errors to typed responses deterministically
 - keep conversion boundaries visible rather than hiding runtime object access in core logic
 
+### 24) SolidStart example parity targets the upstream Hacker News fixture (alpha)
+
+The reference behavior for the example app is the latest SolidStart Hacker News fixture:
+
+- `solidjs/solid-start` `main` -> `apps/fixtures/hackernews`
+
+Implementation policy:
+
+- author app behavior in PureScript under `src/Examples/SolidStart`
+- generate runnable Start app files into `examples/solid-start`
+- keep JS/JSX runtime glue minimal and generated where possible
+
 ## Non-goals (for now)
 
 - full production-grade SolidStart parity in one step
-- tight Vinxi/Nitro coupling before PureScript contracts stabilize
+- locking to a single runtime host strategy too early while alpha APIs are still moving
 
 These will be added incrementally as the `Solid.Start.*` surface matures.
 

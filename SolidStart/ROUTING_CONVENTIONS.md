@@ -1,65 +1,47 @@
 # SolidStart Routing Conventions (PureScript)
 
-This document defines how file-based routing works for PureScript route files.
+This document defines route file conventions for the PureScript SolidStart example.
 
-## Route Root
+## Route source root
 
-- Route files for the SolidStart example app live under `examples/solid-start/src/routes/`.
-- Only `.purs` files are treated as route sources.
+- Route source files live under `src/Examples/SolidStart/Routes/`.
+- Only `.purs` files are route sources.
 
-## File Name to URL Mapping
+## Naming rules
 
-Use these segment conventions in file and folder names:
+- Static segments must use lowercase names (`a-z`, `0-9`, `-`).
+- Dynamic segment syntax:
+  - `[id].purs` -> `:id`
+  - `[...stories].purs` -> `*stories`
+  - `[[lang]].purs` -> `:lang?`
+- `index.purs` maps to an index segment (no extra URL segment).
 
-- `index.purs` -> index segment (no path part)
-- `about.purs` -> `/about`
-- `[slug].purs` -> `/:slug`
-- `[...parts].purs` -> `/*parts`
-- `[[lang]].purs` -> `/:lang?`
+Important folder/file rule:
 
-Examples:
+- Use `stories/index.purs` for `/stories`.
+- Use `stories/[id].purs` for `/stories/:id`.
+- Do not try to use both `stories.purs` and `stories/[id].purs` in the same folder hierarchy.
 
-- `examples/solid-start/src/routes/index.purs` -> `/`
-- `examples/solid-start/src/routes/about.purs` -> `/about`
-- `examples/solid-start/src/routes/blog/[slug].purs` -> `/blog/:slug`
-- `examples/solid-start/src/routes/docs/[...parts].purs` -> `/docs/*parts`
-- `examples/solid-start/src/routes/[[lang]]/about.purs` -> `/:lang?/about`
+## Current example mapping
 
-## Module Names
+- `src/Examples/SolidStart/Routes/[...stories].purs` -> `/*stories`
+- `src/Examples/SolidStart/Routes/stories/[id].purs` -> `/stories/:id`
+- `src/Examples/SolidStart/Routes/users/[id].purs` -> `/users/:id`
 
-PureScript module names still follow normal PureScript rules.
+`/*stories` is intentionally used to model `/`, `/new`, `/show`, `/ask`, and `/job` like upstream Hacker News fixture behavior.
 
-- File path syntax (like `[slug]`) is route metadata.
-- The generator reads `module ... where` from file content.
-- Route matching uses the file path, not the module name.
-
-## Generated Manifest
+## Generated outputs
 
 Run:
 
 ```bash
 npm run gen:routes
+npm run gen:example:solid-start-app
 ```
 
-The command generates:
+This generates:
 
-- `src/Solid/Start/Internal/Manifest.purs`
+- `src/Solid/Start/Internal/Manifest.purs` (typed route manifest)
+- `examples/solid-start/src/routes/**/*.jsx` (Start file-route wrappers)
 
-Generator options:
-
-- `--routes-root <path>` to override route source root
-- `--output <path>` to override generated manifest file path
-
-Route diagnostics:
-
-- generator reports equivalent dynamic-shape conflicts
-- generator reports optional/catch-all overlap warnings with file-path guidance
-
-The generated module contains `allRoutes :: Array RouteDef`, which is consumed by routing runtime code.
-
-## Current Status
-
-- Manifest generation is available.
-- Runtime matcher supports static, param, optional, and catch-all segments.
-- Matcher strips query/fragment and ignores trailing slashes for segment matching.
-- Route precedence favors more specific matches (static > param > optional > catch-all).
+The route wrapper files are generated and should not be edited manually.

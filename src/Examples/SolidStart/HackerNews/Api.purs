@@ -87,11 +87,11 @@ feedLabel = case _ of
 
 feedRoutePath :: FeedType -> String
 feedRoutePath = case _ of
-  TopFeed -> "/hn"
-  NewFeed -> "/hn/new"
-  ShowFeed -> "/hn/show"
-  AskFeed -> "/hn/ask"
-  JobFeed -> "/hn/job"
+  TopFeed -> "/"
+  NewFeed -> "/new"
+  ShowFeed -> "/show"
+  AskFeed -> "/ask"
+  JobFeed -> "/job"
 
 feedApiSegment :: FeedType -> String
 feedApiSegment = case _ of

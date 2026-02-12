@@ -24,6 +24,7 @@ Core reactivity and lifecycle:
 - `Solid.Context`
 - `Solid.Store`
 - `Solid.Web`
+- `Solid.Web.SSR`
 
 UI authoring:
 
@@ -49,7 +50,9 @@ For rationale and policy details, see `DECISIONS.md`.
 - `SolidStart/README.md` - implementation status and commands.
 - `SolidStart/IMPLEMENTATION_PLAN.md` - milestone roadmap for SolidStart functionality.
 - `SolidStart/ROUTING_CONVENTIONS.md` - file-based routing conventions for PureScript routes.
-- `npm run test:start` - route generation plus Start server/browser smoke checks.
+- Source of truth for the SolidStart example now lives under `src/Examples/SolidStart/`.
+- `npm run gen:example:solid-start-app` generates `examples/solid-start/` (Vite + `@solidjs/start` alpha + Nitro).
+- `npm run test:start` runs route generation and Start smoke checks.
 
 ## Quick start
 
@@ -83,12 +86,29 @@ This repo now has an `examples/` workspace for runnable demo apps.
 
 - `examples/todomvc/` - TodoMVC clone with filtering, toggle-all, and completion controls.
 - `examples/counter/` - compact signal/memo example with step presets and event log.
-- `examples/solid-start/` - SolidStart implementation scaffold and route fixtures.
+- `examples/solid-start/` - generated SolidStart alpha Hacker News app (generated from `src/Examples/SolidStart/`).
+- `src/Examples/SolidStartSSR/` - Vinxi-hosted PureScript SSR app example (runs at `/`).
 
 Build example bundles:
 
 ```bash
 npm run build:examples
+```
+
+Run the SolidStart HackerNews demo:
+
+```bash
+npm run install:example:solid-start
+npm run dev:example:solid-start
+```
+
+Note: the generated SolidStart alpha app currently requires Node.js `>=22`.
+
+Run the Vinxi-hosted SolidStart SSR example:
+
+```bash
+npm run install:example:solid-start-ssr
+npm run dev:example:solid-start-ssr
 ```
 
 Serve the repository root and open the examples index:
@@ -97,6 +117,8 @@ Serve the repository root and open the examples index:
 npm run serve:examples
 # then visit http://localhost:4173/examples/
 ```
+
+`serve:examples` runs a small Node server for static examples and SSR runtime demo paths.
 
 ## Minimal example
 
@@ -191,6 +213,7 @@ Note: this snippet keeps the disposer in scope as `_dispose`. In a real app you 
 - Unit/integration coverage in `test/Test/*.purs`.
 - Browser smoke harness in `test/browser/run-smoke.mjs` + `test/browser/smoke-client.mjs`.
 - Smoke tests validate rendering, interactions, control-flow wrappers, and event behavior in a real Chromium runtime.
+- API coverage matrix validation in `API_COVERAGE_MATRIX.json` via `npm run check:coverage-matrix`.
 
 ## Repo guide
 

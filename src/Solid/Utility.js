@@ -12,7 +12,7 @@ import {
   startTransition as solidStartTransition,
   useTransition as solidUseTransition,
   untrack as solidUntrack,
-} from "solid-js/dist/solid.js";
+} from "solid-js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
 
 export const batch = (action) => () =>

@@ -8,7 +8,7 @@ import Data.Either (Either)
 import Effect (Effect)
 import Prelude
 
-import Examples.SolidStart as Example
+import Examples.SolidStart.App as Example
 import Solid.Component as Component
 import Solid.Start.App as StartApp
 import Solid.Start.Entry.Server as ServerEntry
@@ -28,7 +28,15 @@ renderDocumentForRoute routePath =
 
 prerenderEntries :: Array Prerender.PrerenderEntry
 prerenderEntries =
-  Prerender.entries Prerender.fromManifestRoutes
+  Prerender.entries
+    ( Prerender.fromPaths
+        [ "/"
+        , "/new"
+        , "/show"
+        , "/ask"
+        , "/job"
+        ]
+    )
 
 renderPrerenderEntry :: Prerender.PrerenderEntry -> Effect (Either StartError String)
 renderPrerenderEntry entry =
@@ -36,5 +44,5 @@ renderPrerenderEntry entry =
 
 routeMeta :: String -> Meta.MetaDoc
 routeMeta routePath =
-  Meta.fromTitle ("purs-solid SolidStart Example - " <> routePath)
-    `Meta.merge` Meta.withTag (Meta.MetaNameTag "description" "purs-solid SolidStart route") Meta.empty
+  Meta.fromTitle ("purs-solid Hacker News - " <> routePath)
+    `Meta.merge` Meta.withTag (Meta.MetaNameTag "description" "PureScript SolidStart Hacker News fixture") Meta.empty

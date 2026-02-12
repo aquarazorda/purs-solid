@@ -6,7 +6,7 @@ import {
   createReaction as createSolidReaction,
   createRenderEffect as createSolidRenderEffect,
   createSelector as createSolidSelector,
-} from "solid-js/dist/solid.js";
+} from "solid-js";
 
 const makeMemoOptions = (name) => {
   const options = {};

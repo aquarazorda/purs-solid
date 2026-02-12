@@ -1,0 +1,8 @@
+{
+  "name": "purs-solid Hacker News",
+  "short_name": "purs-solid HN",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f2f3f5",
+  "theme_color": "#335d92"
+}

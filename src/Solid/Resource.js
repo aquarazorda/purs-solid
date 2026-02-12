@@ -1,4 +1,4 @@
-import { createResource as createSolidResource } from "solid-js/dist/solid.js";
+import { createResource as createSolidResource } from "solid-js";
 import * as Data_Either from "../Data.Either/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
 

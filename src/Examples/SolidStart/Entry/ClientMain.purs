@@ -6,7 +6,7 @@ import Prelude
 
 import Data.Either (Either(..))
 import Effect (Effect)
-import Examples.SolidStart as Example
+import Examples.SolidStart.App as Example
 import Solid.Component as Component
 import Solid.Start.App as StartApp
 import Solid.Start.Entry.Client as ClientEntry

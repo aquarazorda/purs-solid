@@ -2,7 +2,7 @@ import {
   createContext as solidCreateContext,
   getOwner as solidGetOwner,
   useContext as solidUseContext,
-} from "solid-js/dist/solid.js";
+} from "solid-js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
 
 const isJust = (maybe) =>

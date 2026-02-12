@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js/dist/solid.js";
+import { createSignal } from "solid-js";
 
 const makeOptions = (name, internal) => {
   const options = {};

@@ -2,6 +2,13 @@
 
 This document defines how `purs-solid` can grow from a Solid runtime wrapper into a SolidStart-capable full-stack framework surface using purely functional PureScript APIs.
 
+## Current Direction (Alpha Track)
+
+- Source of truth app code lives in `src/Examples/SolidStart/`.
+- Route source is `src/Examples/SolidStart/Routes/**/*.purs`.
+- The runnable SolidStart app in `examples/solid-start/` is generated from that source.
+- Runtime target is `@solidjs/start` alpha + Nitro (latest upstream fixture direction), with minimal generated JS/JSX glue and PureScript-owned app behavior.
+
 Scope is based on SolidStart docs, beginning with:
 
 - https://docs.solidjs.com/solid-start/getting-started
@@ -121,7 +128,7 @@ Acceptance:
 
 ### M2 - File-Based Routing and Route Manifest
 
-Goal: functional equivalent of SolidStart `src/routes` behavior (scaffolded in `examples/solid-start/src/routes`).
+Goal: functional equivalent of SolidStart `src/routes` behavior (authored in `src/Examples/SolidStart/Routes`).
 
 Tasks:
 
@@ -237,14 +244,14 @@ Goal: make this usable as a starter flow similar to `npm init solid@latest`.
 Tasks:
 
 - [~] Add starter template folder with PureScript entry files
-  - Added scaffold at `examples/solid-start/src/*`
+  - Added source-of-truth app under `src/Examples/SolidStart/*` with generated output in `examples/solid-start/*`
 - [x] Add setup CLI script for scaffolding local app skeleton
   - Added `scripts/create-solid-start-app.mjs` and `npm run create:start-app`
 - [~] Document build/dev commands and expected structure
   - Added docs in `SolidStart/README.md`, `SolidStart/ROUTING_CONVENTIONS.md`, and `examples/solid-start/README.md`
 - [~] Add end-to-end smoke app that exercises routing + API + hydration
   - Added Start server/browser smoke scripts: `test/start/run-server-smoke.mjs`, `test/start/run-browser-smoke.mjs`
-  - Updated `Examples.SolidStart` to render `/`, `/counter`, and `/todomvc` routes from one routed entrypoint
+  - Updated `Examples.SolidStart.App` to render Hacker News fixture routes (`/`, `/new`, `/show`, `/ask`, `/job`, `/stories/:id`, `/users/:id`) from one routed PureScript entrypoint
 
 Acceptance:
 
@@ -253,13 +260,13 @@ Acceptance:
 
 ## Runtime Integration Notes
 
-SolidStart currently relies on Vinxi (Vite for dev and Nitro for production runtime).
+Current target is SolidStart alpha plugin flow (Vite + Nitro without Vinxi in fixture app setup).
 
 For this repository, we should phase integration in this order:
 
 1. Implement PureScript runtime contracts first.
 2. Keep JS bridge minimal for dev server/runtime integration.
-3. Introduce Vinxi/Nitro coupling only where unavoidable.
+3. Introduce Start/Nitro coupling only where unavoidable.
 4. Preserve the option to support alternative runtimes later.
 
 ## Error Model (Initial Draft)
