@@ -13,7 +13,4 @@ generated-docs/
 .spago
 
 # generated SolidStart alpha app output
-examples/solid-start/package.json
-examples/solid-start/vite.config.js
-examples/solid-start/public/
-examples/solid-start/src/
+examples/
