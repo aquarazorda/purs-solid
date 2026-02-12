@@ -5,27 +5,29 @@ module Test.Start.Manifest
 import Prelude
 
 import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Exception (throw)
-import Solid.Start.Routing (MatchError(..), RouteMatch)
-import Solid.Start.Routing.Manifest (matchPath)
+import Solid.Router.Route.Params as RouteParams
+import Solid.Router.Routing (RouteMatch)
+import Solid.Router.Routing.Manifest (matchPath)
 import Test.Assert (assertEqual)
 
 run :: Effect Unit
 run = do
   root <- expectMatch "manifest root route" "/"
-  assertEqual "manifest root route id" "/" root.route.id
+  assertEqual "manifest root route id" "/*stories" root.route.id
 
-  counter <- expectMatch "manifest counter route" "/counter"
-  assertEqual "manifest counter route id" "/counter" counter.route.id
+  newFeed <- expectMatch "manifest new feed route" "/new"
+  assertEqual "manifest new feed route id" "/*stories" newFeed.route.id
 
-  todomvc <- expectMatch "manifest todomvc route" "/todomvc"
-  assertEqual "manifest todomvc route id" "/todomvc" todomvc.route.id
+  story <- expectMatch "manifest story route" "/stories/100"
+  assertEqual "manifest story route id" "/stories/:id" story.route.id
+  assertEqual "manifest story id param" (Just "100") (RouteParams.lookupParam "id" story.params)
 
-  assertEqual
-    "manifest no match returns typed error"
-    (Left (NoMatch "/missing"))
-    (matchPath "/missing")
+  user <- expectMatch "manifest user route" "/users/alice"
+  assertEqual "manifest user route id" "/users/:id" user.route.id
+  assertEqual "manifest user id param" (Just "alice") (RouteParams.lookupParam "id" user.params)
 
 expectMatch
   :: String

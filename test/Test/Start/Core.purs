@@ -7,9 +7,9 @@ import Prelude
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Solid.Router.Route.Params as RouteParams
 import Solid.Start.App as App
 import Solid.Start.Error (StartError(..), fromRouteMiss)
-import Solid.Start.Route.Params as RouteParams
 import Test.Assert (assertEqual)
 
 run :: Effect Unit

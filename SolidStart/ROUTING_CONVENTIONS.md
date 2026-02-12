@@ -41,7 +41,7 @@ npm run gen:example:solid-start-app
 
 This generates:
 
-- `src/Solid/Start/Internal/Manifest.purs` (typed route manifest)
+- `src/Solid/Router/Internal/Manifest.purs` (typed route manifest)
 - `examples/solid-start/src/routes/**/*.jsx` (Start file-route wrappers)
 
 The route wrapper files are generated and should not be edited manually.

@@ -1,4 +1,4 @@
-module Solid.Start.Route.Pattern
+module Solid.Router.Route.Pattern
   ( Segment(..)
   , RoutePattern(..)
   ) where

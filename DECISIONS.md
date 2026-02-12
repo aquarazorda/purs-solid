@@ -60,6 +60,17 @@ Current primitives are focused on reactive core building blocks:
   - `hydrate`
   - `isServer`
   - mount lookup helpers (`documentBody`, `mountById`, `requireBody`, `requireMountById`)
+- `Solid.Router`
+  - `Router` / `Route` / `A` component wrappers
+  - `useLocation` and accessors (`pathname`, `search`, `hash`)
+  - `useNavigate`
+- `Solid.Router.Navigation`
+  - route path normalization (`startRoutePath`)
+  - browser route transition helpers (`subscribeRouteChanges`, optional direct navigation helpers)
+- `Solid.Router.Route.Pattern`
+- `Solid.Router.Route.Params`
+- `Solid.Router.Routing`
+- `Solid.Router.Routing.Manifest`
 - `Solid.JSX`
   - `empty`
   - `text`
@@ -286,7 +297,7 @@ Reason:
 PureScript route files are discovered by a Node generator (`scripts/gen-routes.mjs`) and emitted into a generated PureScript module:
 
 - source convention (current example scaffold): `src/Examples/SolidStart/Routes/**/*.purs`
-- generated output: `src/Solid/Start/Internal/Manifest.purs`
+- generated output: `src/Solid/Router/Internal/Manifest.purs`
 
 Reason:
 
@@ -296,7 +307,7 @@ Reason:
 
 ### 19) Route matching precedence is explicit and typed
 
-`Solid.Start.Routing` models segments with an ADT (`Static`, `Param`, `Optional`, `CatchAll`) and computes best-match precedence from a deterministic score.
+`Solid.Router.Routing` models segments with an ADT (`Static`, `Param`, `Optional`, `CatchAll`) and computes best-match precedence from a deterministic score.
 
 Current ordering intent:
 

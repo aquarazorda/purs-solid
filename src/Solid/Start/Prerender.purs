@@ -15,8 +15,8 @@ import Data.Array as Array
 import Effect (Effect)
 import Prelude
 
-import Solid.Start.Routing (RouteDef)
-import Solid.Start.Routing.Manifest as Manifest
+import Solid.Router.Routing (RouteDef)
+import Solid.Router.Routing.Manifest as Manifest
 import Solid.Start.StaticAssets as StaticAssets
 
 newtype PrerenderPlan = PrerenderPlan (Array String)

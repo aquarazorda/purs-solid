@@ -1,4 +1,4 @@
-module Solid.Start.Route.Params
+module Solid.Router.Route.Params
   ( RouteParamError(..)
   , RouteParams(..)
   , empty

@@ -62,9 +62,11 @@ Core namespace:
 - `Solid.Start.App`
 - `Solid.Start.Entry.Client`
 - `Solid.Start.Entry.Server`
-- `Solid.Start.Routing`
-- `Solid.Start.Route.Pattern`
-- `Solid.Start.Route.Params`
+- `Solid.Router`
+- `Solid.Router.Navigation`
+- `Solid.Router.Routing`
+- `Solid.Router.Route.Pattern`
+- `Solid.Router.Route.Params`
 - `Solid.Start.Server.Function`
 - `Solid.Start.Server.API`
 - `Solid.Start.Server.Response`
@@ -79,7 +81,7 @@ Core namespace:
 Support namespace:
 
 - `Solid.Start.Error`
-- `Solid.Start.Internal.Manifest` (generated)
+- `Solid.Router.Internal.Manifest` (generated)
 - `Solid.Start.Internal.Serialization`
 
 ## Milestones
@@ -96,7 +98,7 @@ Tracking:
 - [x] Add this implementation plan
 - [x] Add `SolidStart/README.md` with status and links
 - [x] Add `src/Solid/Start` module tree skeleton
-  - Added: `Solid.Start.Routing`, `Solid.Start.Routing.Manifest`, `Solid.Start.Route.Pattern`, `Solid.Start.Route.Params`, `Solid.Start.Internal.Manifest`
+  - Added: `Solid.Router.Routing`, `Solid.Router.Routing.Manifest`, `Solid.Router.Route.Pattern`, `Solid.Router.Route.Params`, `Solid.Router.Internal.Manifest`
 - [x] Add `test/Test/Start` test tree skeleton
   - Added: `test/Test/Start/Routing.purs` and runner wiring in `test/Test/Main.purs`
 
@@ -133,11 +135,11 @@ Goal: functional equivalent of SolidStart `src/routes` behavior (authored in `sr
 Tasks:
 
 - [x] Design route segment ADT (static, param, catch-all, optional)
-  - Implemented in `src/Solid/Start/Route/Pattern.purs`
+  - Implemented in `src/Solid/Router/Route/Pattern.purs`
 - [x] Build a manifest format for discovered routes
-  - Implemented generated `RouteDef` manifest in `src/Solid/Start/Internal/Manifest.purs`
+  - Implemented generated `RouteDef` manifest in `src/Solid/Router/Internal/Manifest.purs`
 - [x] Add route matching with typed params decode
-  - Implemented matcher and typed params in `src/Solid/Start/Routing.purs` and `src/Solid/Start/Route/Params.purs`
+  - Implemented matcher and typed params in `src/Solid/Router/Routing.purs` and `src/Solid/Router/Route/Params.purs`
 - [x] Add route ranking/precedence tests
   - Added precedence and decoding cases in `test/Test/Start/Routing.purs`
 - [x] Create a generator script for route manifest from filesystem
@@ -147,7 +149,7 @@ Acceptance:
 
 - [x] Route matching is deterministic and covered by tests
 - [x] Params decode to typed records (or typed lookup API)
-  - Implemented typed lookup/decode helpers in `src/Solid/Start/Route/Params.purs`
+  - Implemented typed lookup/decode helpers in `src/Solid/Router/Route/Params.purs`
 
 ### M3 - Data Fetching and Server Functions
 

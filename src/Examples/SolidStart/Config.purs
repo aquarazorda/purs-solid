@@ -7,12 +7,12 @@ module Examples.SolidStart.Config
 
 import Prelude
 
-import Solid.Start.Client.Navigation as ClientNavigation
+import Solid.Router.Navigation as RouterNavigation
 
 basePath :: String
 basePath = ""
 
-routeStyles :: Array ClientNavigation.RouteStyle
+routeStyles :: Array RouterNavigation.RouteStyle
 routeStyles = []
 
 routeHref :: String -> String

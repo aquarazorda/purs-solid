@@ -26,6 +26,15 @@ Core reactivity and lifecycle:
 - `Solid.Web`
 - `Solid.Web.SSR`
 
+Routing and navigation:
+
+- `Solid.Router` (`Router`/`Route`/`A` wrappers plus `useLocation` and `useNavigate`, client-side router context)
+- `Solid.Router.Navigation` (path normalization and browser route-change helpers)
+- `Solid.Router.Route.Pattern`
+- `Solid.Router.Route.Params`
+- `Solid.Router.Routing`
+- `Solid.Router.Routing.Manifest`
+
 UI authoring:
 
 - `Solid.JSX`

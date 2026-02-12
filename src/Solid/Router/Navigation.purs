@@ -1,4 +1,4 @@
-module Solid.Start.Client.Navigation
+module Solid.Router.Navigation
   ( RouteStyle
   , startRoutePath
   , navigateToRoutePath

@@ -8,8 +8,7 @@ import Effect (Effect)
 
 import Solid.Signal (Setter, set)
 
-navigateToRoute :: String -> Setter String -> (String -> Effect String) -> Effect Unit
-navigateToRoute routeId setCurrentRoute navigate = do
-  nextRoute <- navigate routeId
-  _ <- set setCurrentRoute nextRoute
+navigateToRoute :: String -> Setter String -> Effect Unit
+navigateToRoute routeId setCurrentRoute = do
+  _ <- set setCurrentRoute routeId
   pure unit

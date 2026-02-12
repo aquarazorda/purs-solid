@@ -8,8 +8,8 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 
 import Examples.SolidStart.HackerNews.Api as HackerNews
-import Solid.Start.Route.Params as RouteParams
-import Solid.Start.Routing.Manifest as StartManifest
+import Solid.Router.Route.Params as RouteParams
+import Solid.Router.Routing.Manifest as RouterManifest
 
 data HnRoute
   = HnFeedRoute HackerNews.FeedType
@@ -22,7 +22,7 @@ data RouteView
 
 resolveRouteView :: String -> RouteView
 resolveRouteView routePath =
-  case StartManifest.matchPath routePath of
+  case RouterManifest.matchPath routePath of
     Left _ -> NotFoundView routePath
     Right routeMatch ->
       case routeMatch.route.id of

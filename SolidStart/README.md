@@ -22,7 +22,7 @@ Runtime target for the example app is:
 
 ## How generation works
 
-- `npm run gen:routes` scans PureScript route files and generates `src/Solid/Start/Internal/Manifest.purs`.
+- `npm run gen:routes` scans PureScript route files and generates `src/Solid/Router/Internal/Manifest.purs`.
 - `npm run gen:example:solid-start-app` generates the SolidStart app folder in `examples/solid-start/`.
 - Generated route wrappers are `.jsx` files that forward route path context into PureScript app rendering.
 

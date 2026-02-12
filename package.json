@@ -6,7 +6,7 @@
     "test": "test"
   },
   "scripts": {
-    "gen:routes": "node scripts/gen-routes.mjs --routes-root src/Examples/SolidStart/Routes --output src/Solid/Start/Internal/Manifest.purs",
+    "gen:routes": "node scripts/gen-routes.mjs --routes-root src/Examples/SolidStart/Routes --output src/Solid/Router/Internal/Manifest.purs",
     "gen:example:solid-start-app": "node scripts/gen-solid-start-app.mjs",
     "create:start-app": "node scripts/create-solid-start-app.mjs",
     "install:example:solid-start": "npm run gen:example:solid-start-app && npm --prefix examples/solid-start install --no-package-lock",
@@ -39,6 +39,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@solidjs/router": "^0.15.4",
     "solid-js": "^1.9.11"
   },
   "devDependencies": {

@@ -8,9 +8,9 @@ import Data.Either (Either(..))
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
 import Effect.Exception (throw)
-import Solid.Start.Route.Params (toArray)
-import Solid.Start.Route.Pattern (RoutePattern(..), Segment(..))
-import Solid.Start.Routing (MatchError(..), RouteDef, RouteMatch, matchPathIn)
+import Solid.Router.Route.Params (toArray)
+import Solid.Router.Route.Pattern (RoutePattern(..), Segment(..))
+import Solid.Router.Routing (MatchError(..), RouteDef, RouteMatch, matchPathIn)
 import Test.Assert (assertEqual)
 
 run :: Effect Unit

@@ -10,8 +10,8 @@ import Data.String.CodeUnits as StringCodeUnits
 import Effect (Effect)
 
 import Solid.JSX as JSX
+import Solid.Router.Navigation as RouterNavigation
 import Solid.Start.App as StartApp
-import Solid.Start.Client.Navigation as ClientNavigation
 
 basePath :: String
 basePath = ""
@@ -59,7 +59,7 @@ mkApp resolveInitialRoute =
     pure (JSX.text (routeDescription (resolveRoute routePath)))
 
 app :: StartApp.App
-app = mkApp (ClientNavigation.startRoutePath basePath)
+app = mkApp (RouterNavigation.startRoutePath basePath)
 
 appWithRoute :: String -> StartApp.App
 appWithRoute routePath = mkApp (pure routePath)

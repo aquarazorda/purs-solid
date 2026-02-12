@@ -25,8 +25,8 @@ import Solid.DOM.HTML as HTML
 import Solid.JSX (JSX)
 import Solid.Lifecycle (onCleanup, onMount)
 import Solid.Reactivity (createEffect, createMemo)
+import Solid.Router.Navigation as RouterNavigation
 import Solid.Signal (Accessor, Setter, createSignal, get, modify, set)
-import Solid.Start.Client.Navigation as ClientNavigation
 
 notFoundContent :: Setter String -> String -> JSX
 notFoundContent setCurrentRoute routePath =
@@ -40,8 +40,7 @@ notFoundContent setCurrentRoute routePath =
         , HTML.p { className: "meta" }
             [ HTML.a
                 { href: routeHref "/"
-                , onClick: Events.handler \event ->
-                    navigateToRoute "/" setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+                , onClick: Events.handler_ (navigateToRoute "/" setCurrentRoute)
                 }
                 [ DOM.text "Back to feed" ]
             ]
@@ -74,9 +73,9 @@ navLink setCurrentRoute setHnPage activeClass routeId label =
   HTML.a
     { className: activeClass
     , href: routeHref routeId
-    , onClick: Events.handler \event -> do
+    , onClick: Events.handler_ do
         _ <- set setHnPage 1
-        navigateToRoute routeId setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+        navigateToRoute routeId setCurrentRoute
     }
     [ HTML.strong_ [ DOM.text label ] ]
 
@@ -259,7 +258,7 @@ mkApp resolveInitialRoute = Component.component \_ -> do
     pure (routeContent setCurrentRoute setHnPage storiesState storyState userState route)
 
   _ <- onMount do
-    unsubscribe <- ClientNavigation.subscribeRouteChanges basePath \nextRoute -> do
+    unsubscribe <- RouterNavigation.subscribeRouteChanges basePath \nextRoute -> do
       _ <- set setCurrentRoute nextRoute
       pure unit
     _ <- onCleanup unsubscribe
@@ -287,7 +286,7 @@ mkApp resolveInitialRoute = Component.component \_ -> do
     ]
 
 app :: Component.Component {}
-app = mkApp (ClientNavigation.startRoutePath basePath)
+app = mkApp (RouterNavigation.startRoutePath basePath)
 
 appWithRoute :: String -> Component.Component {}
 appWithRoute routePath = mkApp (pure routePath)

@@ -15,7 +15,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.String.CodeUnits as StringCodeUnits
 import Data.Tuple.Nested ((/\))
 
-import Examples.SolidStart.Config (basePath, routeHref)
+import Examples.SolidStart.Config (routeHref)
 import Examples.SolidStart.HackerNews.Api as HackerNews
 import Examples.SolidStart.Navigation (navigateToRoute)
 import Examples.SolidStart.RouteView (HnRoute(..))
@@ -27,7 +27,6 @@ import Solid.DOM.HTML as HTML
 import Solid.JSX (JSX)
 import Solid.Reactivity (createMemo)
 import Solid.Signal (Accessor, Setter, createSignal, get, set)
-import Solid.Start.Client.Navigation as ClientNavigation
 
 type HnStoriesState =
   { loading :: Boolean
@@ -128,8 +127,7 @@ renderStoryListItem setCurrentRoute story =
       _ ->
         HTML.a
           { href: routeHref path
-          , onClick: Events.handler \event ->
-              navigateToRoute path setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+          , onClick: Events.handler_ (navigateToRoute path setCurrentRoute)
           }
           [ DOM.text story.title ]
 
@@ -146,8 +144,7 @@ renderStoryListItem setCurrentRoute story =
     , DOM.text (" " <> story.timeAgo <> " | ")
     , HTML.a
         { href: routeHref path
-        , onClick: Events.handler \event ->
-            navigateToRoute path setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+        , onClick: Events.handler_ (navigateToRoute path setCurrentRoute)
         }
         [ DOM.text (commentsLabel story.commentsCount) ]
     ]
@@ -155,8 +152,7 @@ renderStoryListItem setCurrentRoute story =
   jobMeta =
     [ HTML.a
         { href: routeHref path
-        , onClick: Events.handler \event ->
-            navigateToRoute path setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+        , onClick: Events.handler_ (navigateToRoute path setCurrentRoute)
         }
         [ DOM.text story.timeAgo ]
     ]
@@ -166,8 +162,7 @@ renderStoryListItem setCurrentRoute story =
       Just userId ->
         HTML.a
           { href: routeHref (userRoutePath userId)
-          , onClick: Events.handler \event ->
-              navigateToRoute (userRoutePath userId) setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+          , onClick: Events.handler_ (navigateToRoute (userRoutePath userId) setCurrentRoute)
           }
           [ DOM.text userId ]
       Nothing ->
@@ -279,8 +274,7 @@ renderCommentNode setCurrentRoute (HackerNews.Comment comment) isOpen setIsOpen 
       Just userId ->
         HTML.a
           { href: routeHref (userRoutePath userId)
-          , onClick: Events.handler \event ->
-              navigateToRoute (userRoutePath userId) setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+          , onClick: Events.handler_ (navigateToRoute (userRoutePath userId) setCurrentRoute)
           }
           [ DOM.text userId ]
       Nothing ->
@@ -375,8 +369,7 @@ hackerNewsStoryContent setCurrentRoute storyState _storyId =
               Just userId ->
                 HTML.a
                   { href: routeHref (userRoutePath userId)
-                  , onClick: Events.handler \event ->
-                      navigateToRoute (userRoutePath userId) setCurrentRoute (ClientNavigation.navigateFromClick event basePath)
+                  , onClick: Events.handler_ (navigateToRoute (userRoutePath userId) setCurrentRoute)
                   }
                   [ DOM.text userId ]
               Nothing ->

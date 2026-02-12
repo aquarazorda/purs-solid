@@ -1,4 +1,4 @@
-module Solid.Start.Routing
+module Solid.Router.Routing
   ( RouteDef
   , RouteMatch
   , MatchError(..)
@@ -14,8 +14,8 @@ import Data.String.Pattern (Pattern(..))
 import Data.Tuple.Nested ((/\), type (/\))
 import Prelude
 
-import Solid.Start.Route.Params (RouteParams(..))
-import Solid.Start.Route.Pattern (RoutePattern(..), Segment(..))
+import Solid.Router.Route.Params (RouteParams(..))
+import Solid.Router.Route.Pattern (RoutePattern(..), Segment(..))
 
 type RouteDef =
   { id :: String

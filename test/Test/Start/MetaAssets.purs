@@ -7,11 +7,11 @@ import Prelude
 import Data.Array as Array
 import Effect (Effect)
 import Effect.Ref as Ref
+import Solid.Router.Route.Pattern (RoutePattern(..), Segment(..))
+import Solid.Router.Routing (RouteDef)
 import Solid.Start.App as App
 import Solid.Start.Meta as Meta
 import Solid.Start.Prerender as Prerender
-import Solid.Start.Route.Pattern (RoutePattern(..), Segment(..))
-import Solid.Start.Routing (RouteDef)
 import Solid.Start.StaticAssets as StaticAssets
 import Test.Assert (assertEqual)
 
@@ -65,7 +65,7 @@ run = do
     (Prerender.entries (Prerender.fromPaths [ "/about", "/" ]))
 
   let manifestPaths = Prerender.paths Prerender.fromManifestRoutes
-  assertEqual "prerender manifest includes server-function route" true (Array.elem "/server-function" manifestPaths)
+  assertEqual "prerender manifest includes story route" true (Array.elem "/stories/:id" manifestPaths)
 
   hooksRef <- Ref.new ([] :: Array String)
   let hooks =

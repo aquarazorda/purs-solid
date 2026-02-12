@@ -4,7 +4,7 @@ import process from "node:process";
 
 const projectRoot = process.cwd();
 const defaultRoutesRoot = path.join(projectRoot, "src", "Examples", "SolidStart", "Routes");
-const defaultOutputFile = path.join(projectRoot, "src", "Solid", "Start", "Internal", "Manifest.purs");
+const defaultOutputFile = path.join(projectRoot, "src", "Solid", "Router", "Internal", "Manifest.purs");
 
 const options = parseCliOptions(process.argv.slice(2));
 const routesRoot = toAbsolutePath(options.routesRoot ?? defaultRoutesRoot);
@@ -344,13 +344,13 @@ function detectRouteDiagnostics(entries) {
 }
 
 function renderManifest(entries, generatedFromRoot) {
-  const imports = ["import Solid.Start.Routing (RouteDef)"];
+  const imports = ["import Solid.Router.Routing (RouteDef)"];
   if (entries.length > 0) {
-    imports.unshift("import Solid.Start.Route.Pattern (RoutePattern(..), Segment(..))");
+    imports.unshift("import Solid.Router.Route.Pattern (RoutePattern(..), Segment(..))");
   }
 
   const header = [
-    "module Solid.Start.Internal.Manifest",
+    "module Solid.Router.Internal.Manifest",
     "  ( allRoutes",
     "  ) where",
     "",

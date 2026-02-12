@@ -1,12 +1,12 @@
-module Solid.Start.Routing.Manifest
+module Solid.Router.Routing.Manifest
   ( routes
   , matchPath
   ) where
 
 import Data.Either (Either)
 
-import Solid.Start.Internal.Manifest (allRoutes)
-import Solid.Start.Routing (MatchError, RouteDef, RouteMatch, matchPathIn)
+import Solid.Router.Internal.Manifest (allRoutes)
+import Solid.Router.Routing (MatchError, RouteDef, RouteMatch, matchPathIn)
 
 routes :: Array RouteDef
 routes = allRoutes
