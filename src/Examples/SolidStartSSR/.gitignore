@@ -1,0 +1,4 @@
+.vinxi/
+.output/
+node_modules/
+public/client.js

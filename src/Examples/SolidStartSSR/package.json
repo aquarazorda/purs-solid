@@ -1,0 +1,17 @@
+{
+  "name": "purs-solid-start-ssr",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:purs": "npm --prefix ../../.. run build:example:solid-start-ssr",
+    "dev": "npm run build:purs && vinxi dev",
+    "build": "npm run build:purs && vinxi build",
+    "start": "vinxi start"
+  },
+  "dependencies": {
+    "vinxi": "^0.5.7"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

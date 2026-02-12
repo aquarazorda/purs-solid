@@ -52,6 +52,7 @@ For rationale and policy details, see `DECISIONS.md`.
 - `SolidStart/ROUTING_CONVENTIONS.md` - file-based routing conventions for PureScript routes.
 - Source of truth for the SolidStart example now lives under `src/Examples/SolidStart/`.
 - `npm run gen:example:solid-start-app` generates `examples/solid-start/` (Vite + `@solidjs/start` alpha + Nitro).
+- Generated `examples/solid-start/src`, `examples/solid-start/public`, and app config files are gitignored on purpose.
 - `npm run test:start` runs route generation and Start smoke checks.
 
 ## Quick start
@@ -86,7 +87,7 @@ This repo now has an `examples/` workspace for runnable demo apps.
 
 - `examples/todomvc/` - TodoMVC clone with filtering, toggle-all, and completion controls.
 - `examples/counter/` - compact signal/memo example with step presets and event log.
-- `examples/solid-start/` - generated SolidStart alpha Hacker News app (generated from `src/Examples/SolidStart/`).
+- `examples/solid-start/` - generated SolidStart alpha Hacker News app (generated from `src/Examples/SolidStart/`, not committed as source).
 - `src/Examples/SolidStartSSR/` - Vinxi-hosted PureScript SSR app example (runs at `/`).
 
 Build example bundles:
