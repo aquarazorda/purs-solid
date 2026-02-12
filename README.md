@@ -227,7 +227,6 @@ Note: this snippet keeps the disposer in scope as `_dispose`. In a real app you 
 - Unit/integration coverage in `test/Test/*.purs`.
 - Browser smoke harness in `test/browser/run-smoke.mjs` + `test/browser/smoke-client.mjs`.
 - Smoke tests validate rendering, interactions, control-flow wrappers, and event behavior in a real Chromium runtime.
-- API coverage matrix validation in `API_COVERAGE_MATRIX.json` via `npm run check:coverage-matrix`.
 
 ## Repo guide
 
