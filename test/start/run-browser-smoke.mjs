@@ -1,4 +1,6 @@
-import { createExamplesServer, startExamplesServer } from "../../scripts/examples-server.mjs";
+import { spawn } from "node:child_process";
+import { once } from "node:events";
+import { setTimeout as delay } from "node:timers/promises";
 
 const asError = (error) => (error instanceof Error ? error : new Error(String(error)));
 
@@ -10,24 +12,170 @@ const loadPlaywright = async () => {
   }
 };
 
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+
+const startSolidStartDevServer = (port) => {
+  const child = spawn(
+    npmCommand,
+    ["--prefix", "examples/solid-start", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port)],
+    {
+      cwd: process.cwd(),
+      stdio: ["ignore", "pipe", "pipe"],
+    }
+  );
+
+  child.stdout.on("data", (chunk) => {
+    process.stdout.write(`[start-browser-smoke][dev] ${chunk}`);
+  });
+
+  child.stderr.on("data", (chunk) => {
+    process.stderr.write(`[start-browser-smoke][dev] ${chunk}`);
+  });
+
+  return child;
+};
+
+const waitForServer = async (url, timeoutMs = 60000) => {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const response = await fetch(url);
+      if (response.ok || response.status === 404) {
+        return;
+      }
+    } catch {}
+
+    await delay(500);
+  }
+
+  throw new Error(`Timed out waiting for dev server at ${url}`);
+};
+
+const stopServer = async (child) => {
+  if (child == null || child.exitCode != null) {
+    return;
+  }
+
+  child.kill("SIGTERM");
+
+  const exited = Promise.race([
+    once(child, "exit"),
+    delay(5000).then(() => {
+      child.kill("SIGKILL");
+    }),
+  ]);
+
+  await exited;
+};
+
+const mockStories = [
+  {
+    id: 100,
+    title: "PureScript Hacker News story",
+    points: 42,
+    user: "alice",
+    time_ago: "1 hour",
+    comments_count: 3,
+    type: "link",
+    url: "https://example.com/story",
+    domain: "example.com",
+  },
+  {
+    id: 101,
+    title: "Second story",
+    points: 10,
+    user: "bob",
+    time_ago: "2 hours",
+    comments_count: 0,
+    type: "ask",
+    url: null,
+    domain: null,
+  },
+];
+
+const mockStoryDetail = {
+  id: 100,
+  title: "PureScript Hacker News story",
+  points: 42,
+  user: "alice",
+  time_ago: "1 hour",
+  comments_count: 1,
+  type: "link",
+  url: "https://example.com/story",
+  domain: "example.com",
+  comments: [
+    {
+      id: 500,
+      user: "bob",
+      time_ago: "30 minutes",
+      content: "<p>Looks good.</p>",
+      comments: [],
+    },
+  ],
+};
+
+const mockUser = {
+  id: "alice",
+  created: 1700000000,
+  karma: 123,
+  about: "<p>PureScript fan</p>",
+};
+
+const installApiMocks = async (page) => {
+  await page.route("https://node-hnapi.herokuapp.com/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith("/item/")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(mockStoryDetail),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(mockStories),
+    });
+  });
+
+  await page.route("https://hacker-news.firebaseio.com/v0/user/*.json", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(mockUser),
+    });
+  });
+};
+
 const main = async () => {
   const { chromium } = await loadPlaywright();
-  const server = await createExamplesServer();
-  const address = await startExamplesServer(server, 0, "127.0.0.1");
-  const port = address.port;
+  const port = 3310;
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const server = startSolidStartDevServer(port);
   let browser = null;
 
   try {
+    await waitForServer(`${baseUrl}/`);
+
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
+    await installApiMocks(page);
 
-    const url = `http://127.0.0.1:${port}/examples/solid-start/`;
-    await page.goto(url, { waitUntil: "domcontentloaded" });
-    await page.locator(".start-brand").first().waitFor({ timeout: 30000 });
+    await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
+    await page.locator(".header .inner").first().waitFor({ timeout: 30000 });
+    await page.waitForFunction(() => window.__PURS_SOLID_START_CLIENT_READY__ === true, null, {
+      timeout: 30000,
+    });
 
-    const bootstrapMode = await page.evaluate(() => window.__PURS_SOLID_START_BOOTSTRAP_MODE__);
-    if (bootstrapMode === "failure") {
-      throw new Error("Client entry bootstrap failed");
+    const navHrefs = await page.locator(".header .inner > a").evaluateAll((nodes) =>
+      nodes.slice(0, 5).map((node) => node.getAttribute("href"))
+    );
+
+    const expectedHrefs = ["/", "/new", "/show", "/ask", "/job"];
+    if (JSON.stringify(navHrefs) !== JSON.stringify(expectedHrefs)) {
+      throw new Error(`Unexpected nav hrefs: ${JSON.stringify(navHrefs)}`);
     }
 
     const navToken = await page.evaluate(() => {
@@ -35,104 +183,40 @@ const main = async () => {
       return window.__START_NAV_TOKEN__;
     });
 
-    const heading = await page.locator(".start-brand").textContent();
-    const counterHref = await page.locator('.start-nav a:has-text("Counter")').getAttribute("href");
-    const todomvcHref = await page.locator('.start-nav a:has-text("TodoMVC")').getAttribute("href");
-    const serverFnHref = await page.locator('.start-nav a:has-text("ServerFn")').getAttribute("href");
+    await page.locator('.header .inner > a:has-text("New")').click();
+    await page.waitForURL(new RegExp(`${baseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/new/?$`));
+    await page.locator(".news-item .title").first().waitFor({ timeout: 30000 });
 
-    if ((heading ?? "").trim() !== "purs-solid Start app") {
-      throw new Error(`Unexpected page heading: ${heading}`);
+    const tokenAfterNew = await page.evaluate(() => window.__START_NAV_TOKEN__);
+    if (tokenAfterNew !== navToken) {
+      throw new Error("Navigation to /new triggered a full page reload");
     }
 
-    if (counterHref !== "/examples/solid-start/counter/") {
-      throw new Error(`Expected counter navigation link, got ${counterHref}`);
+    await page.locator(".news-item .meta a").nth(1).click();
+    await page.waitForURL(new RegExp(`${baseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/stories/100/?$`));
+    await page.locator(".item-view-header h1").first().waitFor({ timeout: 30000 });
+
+    const tokenAfterStory = await page.evaluate(() => window.__START_NAV_TOKEN__);
+    if (tokenAfterStory !== navToken) {
+      throw new Error("Navigation to /stories/:id triggered a full page reload");
     }
 
-    if (todomvcHref !== "/examples/solid-start/todomvc/") {
-      throw new Error(`Expected todomvc navigation link, got ${todomvcHref}`);
+    await page.locator(".item-view-header .meta a").first().click();
+    await page.waitForURL(new RegExp(`${baseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/users/alice/?$`));
+    await page.locator(".user-view h1").first().waitFor({ timeout: 30000 });
+
+    const tokenAfterUser = await page.evaluate(() => window.__START_NAV_TOKEN__);
+    if (tokenAfterUser !== navToken) {
+      throw new Error("Navigation to /users/:id triggered a full page reload");
     }
 
-    if (serverFnHref !== "/examples/solid-start/server-function/") {
-      throw new Error(`Expected server function navigation link, got ${serverFnHref}`);
+    await page.locator('.header .inner > a:has-text("HN")').click();
+    await page.waitForURL(new RegExp(`${baseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`));
+
+    const tokenAfterHome = await page.evaluate(() => window.__START_NAV_TOKEN__);
+    if (tokenAfterHome !== navToken) {
+      throw new Error("Navigation back to / triggered a full page reload");
     }
-
-    await page.locator('.start-nav a:has-text("Counter")').click();
-    await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/counter/`);
-    await page.locator(".counter-card h1").first().waitFor({ timeout: 30000 });
-    const counterAppHeading = await page.locator(".counter-card h1").first().textContent();
-
-    if ((counterAppHeading ?? "").trim() !== "Signal Counter") {
-      throw new Error(`Counter route app did not load as expected: ${counterAppHeading}`);
-    }
-
-    const tokenAfterCounterClick = await page.evaluate(() => window.__START_NAV_TOKEN__);
-    if (tokenAfterCounterClick !== navToken) {
-      throw new Error("Counter navigation caused a full page reload");
-    }
-
-    await page.locator('.start-nav a:has-text("TodoMVC")').click();
-    await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/todomvc/`);
-    await page.locator(".todoapp .header h1").first().waitFor({ timeout: 30000 });
-    const todoAppHeading = await page.locator(".todoapp .header h1").first().textContent();
-
-    if ((todoAppHeading ?? "").trim() !== "todos") {
-      throw new Error(`TodoMVC route app did not load as expected: ${todoAppHeading}`);
-    }
-
-    const tokenAfterTodoClick = await page.evaluate(() => window.__START_NAV_TOKEN__);
-    if (tokenAfterTodoClick !== navToken) {
-      throw new Error("TodoMVC navigation caused a full page reload");
-    }
-
-    await page.locator('.start-nav a:has-text("ServerFn")').click();
-    await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/server-function/`);
-    await page.locator('.start-card h2:has-text("Server function transport demo")').first().waitFor({ timeout: 30000 });
-
-    const beforeCall = await page.locator('.start-card p:has-text("Last result:")').first().textContent();
-    if ((beforeCall ?? "").trim() !== "Last result: idle") {
-      throw new Error(`Unexpected initial server function result: ${beforeCall}`);
-    }
-
-    await page.locator("#server-fn-success").click();
-    await page.waitForFunction(
-      () => {
-        const nodes = Array.from(document.querySelectorAll('.start-card p'));
-        return nodes.some((node) => node.textContent?.trim() === "Last result: ok: pong");
-      },
-      undefined,
-      { timeout: 30000 }
-    );
-    const afterCall = await page.locator('.start-card p:has-text("Last result:")').first().textContent();
-    if ((afterCall ?? "").trim() !== "Last result: ok: pong") {
-      throw new Error(`Unexpected server function result after call: ${afterCall}`);
-    }
-
-    await page.locator("#server-fn-error").click();
-    await page.waitForFunction(
-      () => {
-        const nodes = Array.from(document.querySelectorAll('.start-card p'));
-        return nodes.some((node) => node.textContent?.includes("ServerFunctionExecutionError"));
-      },
-      undefined,
-      { timeout: 30000 }
-    );
-    const errorCall = await page.locator('.start-card p:has-text("Last result:")').first().textContent();
-    if ((errorCall ?? "").trim() !== "Last result: error: ServerFunctionExecutionError \"unexpected payload\"") {
-      throw new Error(`Unexpected server function result after error call: ${errorCall}`);
-    }
-
-    const tokenAfterServerFnClick = await page.evaluate(() => window.__START_NAV_TOKEN__);
-    if (tokenAfterServerFnClick !== navToken) {
-      throw new Error("ServerFn navigation caused a full page reload");
-    }
-
-    await page.goBack({ waitUntil: "domcontentloaded" });
-    await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/todomvc/`);
-    await page.locator(".todoapp .header h1").first().waitFor({ timeout: 30000 });
-
-    await page.goBack({ waitUntil: "domcontentloaded" });
-    await page.waitForURL(`http://127.0.0.1:${port}/examples/solid-start/counter/`);
-    await page.locator(".counter-card h1").first().waitFor({ timeout: 30000 });
 
     console.log("[start-browser-smoke] passed");
   } finally {
@@ -140,16 +224,7 @@ const main = async () => {
       await browser.close();
     }
 
-    await new Promise((resolve, reject) => {
-      server.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        resolve();
-      });
-    });
+    await stopServer(server);
   }
 };
 
