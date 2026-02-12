@@ -35,6 +35,10 @@ Routing and navigation:
 - `Solid.Router.Routing`
 - `Solid.Router.Routing.Manifest`
 
+Document head:
+
+- `Solid.Meta` (`MetaProvider`, `Title`, `Meta`, `Link`, `Style`, `Base`, `Stylesheet`, and `useHead`)
+
 UI authoring:
 
 - `Solid.JSX`

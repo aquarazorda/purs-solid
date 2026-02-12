@@ -69,6 +69,23 @@ Design principles are documented in `DECISIONS.md`.
   - [x] `hydrate`
   - [x] `isServer`
   - [x] mount lookup helpers (`documentBody`, `mountById`, `requireBody`, `requireMountById`)
+- [x] `Solid.Router`
+  - [x] component wrappers (`router`, `route`, `link`)
+  - [x] location and navigation wrappers (`useLocation`, `useNavigate`)
+- [x] `Solid.Router.Navigation`
+  - [x] client route path helpers (`startRoutePath`, `navigateToRoutePath`, `navigateFromClick`)
+  - [x] route subscription/styles helpers (`subscribeRouteChanges`, `applyRouteStyles`)
+- [x] `Solid.Router.Route.Pattern`
+  - [x] segment ADT (`Static`, `Param`, `Optional`, `CatchAll`)
+- [x] `Solid.Router.Route.Params`
+  - [x] typed lookup/decode helpers (`lookupParam`, `requireParam`, `decodeParamWith`)
+- [x] `Solid.Router.Routing`
+  - [x] deterministic route matching (`matchPathIn`)
+- [x] `Solid.Router.Routing.Manifest`
+  - [x] generated manifest-backed route matching (`matchPath`)
+- [x] `Solid.Meta`
+  - [x] head component wrappers (`metaProvider`, `title`, `meta`, `link`, `style`, `base`, `stylesheet`)
+  - [x] low-level tag API (`useHead`)
 - [x] `Solid.JSX`
   - [x] `empty`
   - [x] `text`

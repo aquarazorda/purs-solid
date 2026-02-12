@@ -24,6 +24,7 @@ import Solid.DOM.Events as Events
 import Solid.DOM.HTML as HTML
 import Solid.JSX (JSX)
 import Solid.Lifecycle (onCleanup, onMount)
+import Solid.Meta as Meta
 import Solid.Reactivity (createEffect, createMemo)
 import Solid.Router.Navigation as RouterNavigation
 import Solid.Signal (Accessor, Setter, createSignal, get, modify, set)
@@ -78,6 +79,21 @@ navLink setCurrentRoute setHnPage activeClass routeId label =
         navigateToRoute routeId setCurrentRoute
     }
     [ HTML.strong_ [ DOM.text label ] ]
+
+routeTitle :: RouteView -> String
+routeTitle = case _ of
+  HackerNewsView hnRoute ->
+    case hnRoute of
+      HnFeedRoute feed ->
+        case feed of
+          HackerNews.TopFeed -> "purs-solid Hacker News | Top"
+          HackerNews.NewFeed -> "purs-solid Hacker News | New"
+          HackerNews.ShowFeed -> "purs-solid Hacker News | Show"
+          HackerNews.AskFeed -> "purs-solid Hacker News | Ask"
+          HackerNews.JobFeed -> "purs-solid Hacker News | Jobs"
+      HnStoryRoute storyId -> "purs-solid Hacker News | Story " <> storyId
+      HnUserRoute userId -> "purs-solid Hacker News | User " <> userId
+  NotFoundView _ -> "purs-solid Hacker News | Not Found"
 
 mkApp :: Effect String -> Component.Component {}
 mkApp resolveInitialRoute = Component.component \_ -> do
@@ -256,6 +272,47 @@ mkApp resolveInitialRoute = Component.component \_ -> do
     storyState <- get hnStoryState
     userState <- get hnUserState
     pure (routeContent setCurrentRoute setHnPage storiesState storyState userState route)
+
+  pageTitle <- createMemo do
+    route <- get resolvedRoute
+    pure (routeTitle route)
+
+  _ <- createEffect do
+    titleValue <- get pageTitle
+    routePath <- get currentRoute
+    _ <- Meta.useHead
+      { tag: "title"
+      , props:
+          { children: titleValue
+          }
+      , setting: Just
+          { close: true
+          , escape: true
+          }
+      , id: "hn-title"
+      , name: Nothing
+      }
+    _ <- Meta.useHead
+      { tag: "meta"
+      , props:
+          { name: "description"
+          , content: "Hacker News fixture powered by purs-solid and SolidStart"
+          }
+      , setting: Nothing
+      , id: "hn-description"
+      , name: Just "description"
+      }
+    _ <- Meta.useHead
+      { tag: "link"
+      , props:
+          { rel: "canonical"
+          , href: routeHref routePath
+          }
+      , setting: Nothing
+      , id: "hn-canonical"
+      , name: Nothing
+      }
+    pure unit
 
   _ <- onMount do
     unsubscribe <- RouterNavigation.subscribeRouteChanges basePath \nextRoute -> do

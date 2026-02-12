@@ -71,6 +71,9 @@ Current primitives are focused on reactive core building blocks:
 - `Solid.Router.Route.Params`
 - `Solid.Router.Routing`
 - `Solid.Router.Routing.Manifest`
+- `Solid.Meta`
+  - head component wrappers (`MetaProvider`, `Title`, `Meta`, `Link`, `Style`, `Base`, `Stylesheet`)
+  - low-level `useHead`
 - `Solid.JSX`
   - `empty`
   - `text`

@@ -10,6 +10,7 @@ import Test.Context as Context
 import Test.Control as Control
 import Test.EventAdapters as EventAdapters
 import Test.Lifecycle as Lifecycle
+import Test.Meta as Meta
 import Test.Resource as Resource
 import Test.Secondary as Secondary
 import Test.Signal as Signal
@@ -47,6 +48,7 @@ main = do
   runSuite "Secondary primitive" Secondary.run
   runSuite "Resource" Resource.run
   runSuite "Context" Context.run
+  runSuite "Meta" Meta.run
   runSuite "Event adapters" EventAdapters.run
   runSuite "Control" Control.run
   runSuite "Store" Store.run
