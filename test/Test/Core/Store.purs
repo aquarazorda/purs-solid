@@ -136,8 +136,6 @@ spec = describe "Solid.Store" do
     settle
     liftEffect (Ref.read log) >>= shouldEqual [ "a", "A" ]
 
-  -- Identity matters for observed rows (Solid doesn't keep unobserved
-  -- element proxies around), so observe them through `mapArray` as rendering does.
   solidIt "reconcileBy keeps observed rows when elements move or change" do
     calls <- liftEffect (Ref.new 0)
     result <- liftEffect do
@@ -146,8 +144,7 @@ spec = describe "Solid.Store" do
         rows <- mapArray (Store.items (focus (key @"todos") state)) \row _ -> do
           liftSetup (Ref.modify_ (_ + 1) calls)
           pure (value (focus (key @"title") row))
-        -- Stand-in for the DOM: rendered rows read their fields. (Solid only keeps
-        -- element identity across a reconcile while the element is observed.)
+        -- Solid only keeps element identity across a reconcile while the element is observed.
         createEffect_ (rows >>= sequence) (\_ -> pure unit)
         pure { rows, setState }
       flush

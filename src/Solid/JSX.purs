@@ -1,8 +1,5 @@
--- | View descriptions.
--- |
--- | A `JSX` value describes UI; building it does nothing. Rendering it (via a
--- | parent element, a component, control flow or `Solid.Web.render`) creates
--- | the DOM, so the same `JSX` value can be rendered in several places.
+-- | A `JSX` value describes UI; building it does nothing. Each place it's
+-- | rendered creates its own DOM.
 module Solid.JSX
   ( module Exports
   , text
@@ -24,15 +21,13 @@ text value = case binding value of
   Static string -> textJsx string
   Dynamic accessor -> reactiveJsx (textJsx <$> accessor)
 
--- | A reactive region: re-renders when the accessor's value changes. Prefer
--- | control flow (`Solid.Control`) for conditionals and lists; it reuses DOM.
+-- | Re-renders when the accessor changes. Prefer `Solid.Control` for
+-- | conditionals and lists; it reuses DOM.
 reactive :: Accessor JSX -> JSX
 reactive = reactiveJsx
 
--- | Several nodes without a wrapper element.
 fragment :: Array JSX -> JSX
 fragment = View.fragment
 
--- | Renders nothing.
 empty :: JSX
 empty = View.empty

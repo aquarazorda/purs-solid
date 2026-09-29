@@ -1,64 +1,22 @@
-// Hydration end-to-end: renders Examples.Hydration.App on the server (Node's
-// default conditions select Solid's server build), serves the page with a
-// production client bundle, and checks in Chromium that hydration claims the
-// server DOM instead of recreating it.
-//
-//   npm run test:hydration
-
-import { execFileSync } from "node:child_process";
-import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
-import { delimiter, join } from "node:path";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { cwd, env } from "node:process";
+import { bundle, checks, launch, rootDir, serve, watchProblems } from "../support.mjs";
 
-const rootDir = cwd();
+const { expect, report } = checks("hydration");
 const clientBundle = join(rootDir, "dist", "hydration", "client.js");
-
-execFileSync(
-  "spago",
-  ["bundle", "--module", "Examples.Hydration.Client", "--bundle-type", "app", "--platform", "browser", "--minify", "--outfile", clientBundle],
-  { stdio: "inherit", env: { ...env, PATH: `${join(rootDir, "node_modules", ".bin")}${delimiter}${env.PATH}` } }
-);
+bundle("Examples.Hydration.Client", clientBundle);
 
 const { renderPage } = await import(pathToFileURL(join(rootDir, "output", "Examples.Hydration.Server", "index.js")).href);
-const page = await renderPage();
-const serverFetches = globalThis.__pursSolidFetches ?? 0;
+const html = await renderPage();
+expect("server fetched the async value once", globalThis.__pursSolidFetches ?? 0, 1);
+expect("server HTML has the resolved async value", html.includes("greeting from the server"), true);
 
-let checks = 0;
-const failures = [];
-const expect = (label, actual, expected) => {
-  checks += 1;
-  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-    failures.push(`${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
-  }
-};
-
-expect("server fetched the async value once", serverFetches, 1);
-expect("server HTML has the resolved async value", page.includes("greeting from the server"), true);
-
-const server = createServer(async (request, response) => {
-  if (request.url === "/client.js") {
-    response.writeHead(200, { "content-type": "text/javascript; charset=utf-8" });
-    response.end(await readFile(clientBundle));
-    return;
-  }
-  response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-  response.end(page);
-});
-await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-
-const { chromium } = await import("playwright");
-const browser = await chromium.launch();
+const { server, origin } = await serve({ "/": html, "/client.js": clientBundle });
+const browser = await launch();
 try {
   const tab = await browser.newPage();
-  const problems = [];
-  tab.on("pageerror", (error) => problems.push(error.message));
-  tab.on("console", (message) => {
-    if (message.type() === "error" || message.type() === "warning") problems.push(message.text());
-  });
-
-  await tab.goto(`http://127.0.0.1:${server.address().port}/`);
+  const problems = watchProblems(tab);
+  await tab.goto(origin);
   await tab.waitForFunction(() => window.__pursSolidHydrated === true, null, { timeout: 5000 });
 
   const reused = await tab.evaluate(() => {
@@ -90,10 +48,4 @@ try {
   await browser.close();
   server.close();
 }
-
-if (failures.length > 0) {
-  console.error(`[hydration] ${failures.length} of ${checks} checks failed:\n${failures.map((f) => `  - ${f}`).join("\n")}`);
-  process.exitCode = 1;
-} else {
-  console.log(`[hydration] passed ${checks} checks`);
-}
+report();

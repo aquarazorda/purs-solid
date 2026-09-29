@@ -1,7 +1,4 @@
--- | Context: values provided to a subtree.
--- |
--- | Every context has a default, so `useContext` is total: it returns the
--- | nearest provided value, or the default outside any provider. For a context
+-- | Context: values provided to a subtree. Every context has a default; for one
 -- | that must be provided, use `Context (Maybe a)` with default `Nothing`.
 module Solid.Context
   ( Context
@@ -20,9 +17,8 @@ foreign import data Context :: Type -> Type
 
 type role Context nominal
 
--- | Creates a context with a default value. Each call creates a distinct
--- | context. For a module-level context, create it once (e.g. with
--- | `unsafePerformEffect`) and share it.
+-- | Each call creates a distinct context; for a module-level one, create it
+-- | once (e.g. with `unsafePerformEffect`) and share it.
 createContext :: forall a. a -> Effect (Context a)
 createContext defaultValue = runEffectFn1 createContextImpl defaultValue
 
@@ -34,7 +30,5 @@ useContext context = Setup (runEffectFn1 useContextImpl context)
 
 foreign import useContextImpl :: forall a. EffectFn1 (Context a) a
 
--- | Provides `value` to `children`. The children are `Setup` so they run
--- | inside the provider, where `useContext` sees the value.
 provide :: forall a. Context a -> a -> Setup JSX -> JSX
 provide context value children = runFn3 provideImpl context value (runSetup children)

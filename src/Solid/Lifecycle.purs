@@ -17,13 +17,11 @@ onCleanup cleanup = Setup (runEffectFn1 onCleanupImpl cleanup)
 
 foreign import onCleanupImpl :: EffectFn1 (Effect Unit) Unit
 
--- | Runs once the current owner's subtree has settled: rendered and with no
--- | async work pending (Solid 1's `onMount`). The returned `Effect Unit` runs
--- | on disposal. Don't create reactive primitives inside the callback.
+-- | Runs once the current owner's subtree has rendered with no async work
+-- | pending. The returned `Effect Unit` runs on disposal.
 onSettled :: Effect (Effect Unit) -> Setup Unit
 onSettled callback = Setup (runEffectFn1 onSettledImpl callback)
 
--- | `onSettled` without a cleanup.
 onSettled_ :: Effect Unit -> Setup Unit
 onSettled_ callback = onSettled (callback $> pure unit)
 

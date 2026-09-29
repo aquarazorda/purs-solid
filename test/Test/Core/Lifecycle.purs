@@ -58,7 +58,6 @@ spec = describe "lifecycle and ownership" do
       owner <- getOwner
       value /\ setValue <- createSignal 0
       pure { owner, value, setValue, dispose }
-    -- Later, from Effect code (e.g. an event handler):
     liftEffect $ runWithOwner parts.owner do
       createEffect_ parts.value \v -> logTo log (show v)
     settle
@@ -69,8 +68,6 @@ spec = describe "lifecycle and ownership" do
     settle
     liftEffect (Ref.read log) >>= shouldEqual [ "0", "1" ]
 
-  -- The types rule this out; this documents that Solid's dev build still
-  -- guards the `liftSetup` escape hatch.
   it "a signal write smuggled into Setup is reported by Solid" do
     expectDiagnostic "REACTIVE_WRITE_IN_OWNED_SCOPE" do
       liftEffect do

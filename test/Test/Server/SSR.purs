@@ -6,14 +6,14 @@ import Prelude
 
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut.Core (Json, fromString, toString)
-import Data.Either (Either(..), note)
+import Data.Either (Either, either, note)
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), contains, stripPrefix)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Effect.Aff (Aff, Milliseconds(..), delay)
+import Effect.Aff (Aff, Milliseconds(..), delay, throwError)
 import Effect.Class (liftEffect)
-import Effect.Exception (throw)
+import Effect.Exception (Error)
 import Solid.Async (createAsync, createAsyncWith, defaultAsyncOptions, serialized, withCodec)
 import Solid.Component as Component
 import Solid.Control as Control
@@ -37,10 +37,8 @@ render view = liftEffect (SSR.renderToString view) >>= orFail
 renderAsync :: JSX -> Aff String
 renderAsync view = SSR.renderToStringAsync view >>= orFail
 
-orFail :: forall a. Either SSR.SsrError a -> Aff a
-orFail = case _ of
-  Left error -> liftEffect (throw (show error))
-  Right value -> pure value
+orFail :: forall a. Either Error a -> Aff a
+orFail = either throwError pure
 
 has :: String -> String -> Boolean
 has fragment = contains (Pattern fragment)

@@ -1,5 +1,3 @@
--- | Server test entry point. Run with Node's default export conditions so Solid
--- | resolves its server runtime (see `npm run test:server`).
 module Test.Server.Main where
 
 import Prelude

@@ -1,23 +1,7 @@
--- | Routing (`@solidjs/router` 2).
--- |
--- | Routes are values. Each route's path is parsed at compile time
--- | (`Solid.Router.Path`), so its component receives exactly the params the
--- | path declares:
--- |
--- | ```purescript
--- | routes =
--- |   [ Router.route @"/" \_ -> pure home
--- |   , Router.route @"/users/:id/:tab?" \props -> pure (userPage props.params)
--- |   ]
--- |
--- | main = do
--- |   router <- Router.createRouter Router.defaultRouterConfig { routes = routes }
--- |   ... render (Router.routerView router \content -> pure (layout content))
--- | ```
--- |
--- | Links are plain anchors (`H.a [ P.href (href @"/users/:id" { id }) ]`);
--- | the router intercepts same-origin clicks and marks the active link with
--- | `aria-current="page"`.
+-- | Paths are parsed at compile time, so a route's component receives exactly
+-- | the params its path declares. Links are plain anchors
+-- | (`P.href (href @"/users/:id" { id })`); the router intercepts same-origin
+-- | clicks and marks the active link with `aria-current="page"`.
 module Solid.Router
   ( Route
   , RouteProps
@@ -67,17 +51,15 @@ import Solid.Router.Path (href) as Exports
 import Solid.Signal (Accessor)
 import Type.Proxy (Proxy(..))
 
--- | A route definition (a path, what it renders, nested routes).
 foreign import data Route :: Type
 
--- | What a route's component receives: its params (reactive), and for a
--- | layout route, the matched child route.
+-- | `children` is the matched child route (for a layout).
 type RouteProps params =
   { params :: Accessor { | params }
   , children :: JSX
   }
 
--- | A route for a path pattern, e.g. `route @"/users/:id" \props -> ...`.
+-- | `route @"/users/:id/:tab?" \props -> ...` (optional params are `Maybe`).
 route
   :: forall @path params rl
    . IsSymbol path
@@ -88,8 +70,8 @@ route
   -> Route
 route render = layout @path render []
 
--- | A route with nested routes; render the matched child with
--- | `props.children`. Child paths are relative to this one.
+-- | Render the matched child with `props.children`. Child paths are relative
+-- | to this one.
 layout
   :: forall @path params rl
    . IsSymbol path
@@ -124,16 +106,13 @@ foreign import routeImpl
 
 foreign import data Router :: Type
 
--- | Where navigation state lives.
 foreign import data History :: Type
 
--- | The address bar (default).
 foreign import browserHistory :: Effect History
 
--- | The URL hash (`/#/path`).
 foreign import hashHistory :: Effect History
 
--- | In memory, starting at a URL (tests, embedded views).
+-- | Starts at the given URL.
 foreign import memoryHistory :: String -> Effect History
 
 type RouterConfig =
@@ -147,7 +126,7 @@ type RouterConfig =
 defaultRouterConfig :: RouterConfig
 defaultRouterConfig = { routes: [], base: Nothing, history: Nothing }
 
--- | Creates a router. Its route tree is fixed.
+-- | The route tree is fixed.
 createRouter :: RouterConfig -> Effect Router
 createRouter config =
   runEffectFn1 createRouterImpl
@@ -156,18 +135,17 @@ createRouter config =
 foreign import createRouterImpl
   :: EffectFn1 { routes :: Array Route, base :: Nullable String, history :: Nullable History } Router
 
--- | Renders the router. `root` wraps the matched route (the app shell).
+-- | `root` wraps the matched route (the app shell).
 routerView :: Router -> (JSX -> Setup JSX) -> JSX
 routerView router root = routerViewImpl router (toNullable Nothing) (runSetup <<< root) realize
 
--- | Renders the router for a given URL on the server, when no request event
--- | provides it (static rendering, tests).
+-- | For server rendering when no request event provides the URL (static
+-- | rendering, tests).
 routerViewAt :: String -> Router -> (JSX -> Setup JSX) -> JSX
 routerViewAt url router root = routerViewImpl router (toNullable (Just url)) (runSetup <<< root) realize
 
 foreign import routerViewImpl :: Router -> Nullable String -> (JSX -> Effect JSX) -> (JSX -> Realized) -> JSX
 
--- | The current location (reactive).
 foreign import data Location :: Type
 
 useLocation :: Setup Location
@@ -181,7 +159,7 @@ foreign import search :: Location -> Accessor String
 
 foreign import hash :: Location -> Accessor String
 
--- | A query string parameter (the first value if repeated).
+-- | The first value if repeated.
 queryParam :: String -> Location -> Accessor (Maybe String)
 queryParam name location = toMaybe <$> queryParamImpl name location
 
@@ -193,7 +171,6 @@ useIsRouting = Setup useIsRoutingImpl
 
 foreign import useIsRoutingImpl :: Effect (Accessor Boolean)
 
--- | Whether the current location matches a path pattern (e.g. for nav state).
 useMatch :: String -> Setup (Accessor Boolean)
 useMatch pattern = Setup (runEffectFn1 useMatchImpl pattern)
 
@@ -216,14 +193,13 @@ useNavigate = Setup useNavigateImpl
 
 foreign import useNavigateImpl :: Effect Navigate
 
--- | Navigates (from an event handler or effect).
+-- | Call from an event handler or effect.
 navigate :: Navigate -> String -> Effect Unit
 navigate nav to = runEffectFn2 navigateImpl nav { to, options: defaultNavigateOptions }
 
 navigateWith :: NavigateOptions -> Navigate -> String -> Effect Unit
 navigateWith options nav to = runEffectFn2 navigateImpl nav { to, options }
 
--- | Navigates to a path pattern with its params:
 -- | `navigateTo @"/users/:id" nav { id: "42" }`.
 navigateTo
   :: forall @path params
@@ -236,7 +212,7 @@ navigateTo nav params = navigate nav (href @path params)
 
 foreign import navigateImpl :: EffectFn2 Navigate { to :: String, options :: NavigateOptions } Unit
 
--- | Moves through history (`go nav (-1)` is back).
+-- | `go nav (-1)` is back.
 go :: Navigate -> Int -> Effect Unit
 go nav delta = runEffectFn2 goImpl nav delta
 

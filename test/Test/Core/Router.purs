@@ -5,22 +5,26 @@ module Test.Core.Router
 import Prelude
 
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Tuple.Nested ((/\))
 import Effect.Aff (Aff, Milliseconds(..), delay, throwError)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
+import Solid.Async (createAsync)
 import Solid.Component as Component
+import Solid.Control as Control
 import Solid.DOM.HTML as H
 import Solid.DOM.Props as P
 import Solid.JSX (JSX, text)
 import Solid.Router (href)
 import Solid.Router as Router
+import Solid.Router.Query (Query, revalidate, runQuery)
+import Solid.Router.Query as Query
 import Solid.Setup (liftSetup)
 import Test.Solid (Mounted, click, html, mount, query, settle, solidIt)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Effect.Exception (error)
 
--- | Renders a router over memory history and hands back its navigator.
 withRouter :: String -> Array Router.Route -> Aff { mounted :: Mounted, navigate :: Ref.Ref (Maybe Router.Navigate) }
 withRouter url routes = do
   navigateRef <- liftEffect (Ref.new Nothing)
@@ -53,6 +57,27 @@ user props = H.p_
   , text (fromMaybe "profile" <<< _.tab <$> props.params)
   ]
 
+countingQuery :: String -> Aff { query :: Query String String, loads :: Ref.Ref Int }
+countingQuery name = do
+  loads <- liftEffect (Ref.new 0)
+  let
+    load id = do
+      liftEffect (Ref.modify_ (_ + 1) loads)
+      delay (Milliseconds 2.0)
+      pure ("item " <> id)
+  pure { query: Query.query name load, loads }
+
+itemRoutes :: Query String String -> Array Router.Route
+itemRoutes q =
+  [ Router.route @"/" \_ -> pure (text "home")
+  , Router.route @"/items/:id" \props -> do
+      item /\ _ <- createAsync (runQuery q <<< _.id <$> props.params)
+      pure (Control.loading (text "loading") (H.p_ [ text item ]))
+  ]
+
+waitLoad :: Aff Unit
+waitLoad = settle *> delay (Milliseconds 10.0) *> settle
+
 spec :: Spec Unit
 spec = describe "Solid.Router" do
   describe "href" do
@@ -83,7 +108,7 @@ spec = describe "Solid.Router" do
     html r.mounted >>= shouldEqual "<main><p>user 1 / profile</p></main>"
     go r.navigate (href @"/users/:id/:tab?" { id: "2", tab: Just "posts" })
     html r.mounted >>= shouldEqual "<main><p>user 2 / posts</p></main>"
-    -- Same route: the component is reused and its params accessor updates.
+    -- Same route: the component is reused.
     liftEffect (Ref.read created) >>= shouldEqual 1
     liftEffect r.mounted.dispose
 
@@ -111,3 +136,43 @@ spec = describe "Solid.Router" do
     delay (Milliseconds 5.0)
     html r.mounted >>= shouldEqual """<main><div><p>user 9 / profile</p><a id="self" href="/users/9" data-active="" aria-current="page">me</a></div></main>"""
     liftEffect r.mounted.dispose
+
+  describe "Solid.Router.Query" do
+    solidIt "back navigation reuses the cached value" do
+      q <- countingQuery "backItem"
+      r <- withRouter "/" (itemRoutes q.query)
+      go r.navigate "/items/1"
+      waitLoad
+      html r.mounted >>= shouldEqual "<main><p>item 1</p></main>"
+      go r.navigate "/"
+      html r.mounted >>= shouldEqual "<main>home</main>"
+      nav <- liftEffect (Ref.read r.navigate)
+      liftEffect (maybe (pure unit) (\n -> Router.go n (-1)) nav)
+      waitLoad
+      html r.mounted >>= shouldEqual "<main><p>item 1</p></main>"
+      liftEffect (Ref.read q.loads) >>= shouldEqual 1
+      liftEffect r.mounted.dispose
+
+    solidIt "each argument is cached separately" do
+      q <- countingQuery "argItem"
+      r <- withRouter "/items/1" (itemRoutes q.query)
+      waitLoad
+      go r.navigate "/items/2"
+      waitLoad
+      html r.mounted >>= shouldEqual "<main><p>item 2</p></main>"
+      go r.navigate "/items/1"
+      waitLoad
+      html r.mounted >>= shouldEqual "<main><p>item 1</p></main>"
+      liftEffect (Ref.read q.loads) >>= shouldEqual 2
+      liftEffect r.mounted.dispose
+
+    solidIt "revalidate reloads the value on screen" do
+      q <- countingQuery "revalidatedItem"
+      r <- withRouter "/items/1" (itemRoutes q.query)
+      waitLoad
+      liftEffect (Ref.read q.loads) >>= shouldEqual 1
+      liftEffect (revalidate q.query)
+      waitLoad
+      liftEffect (Ref.read q.loads) >>= shouldEqual 2
+      html r.mounted >>= shouldEqual "<main><p>item 1</p></main>"
+      liftEffect r.mounted.dispose

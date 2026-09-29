@@ -1,4 +1,4 @@
--- | Internal representation of `Solid.Action.Action`.
+-- | Internal: not part of the public API.
 module Solid.Internal.Action
   ( Action(..)
   , liftActionEffect
@@ -10,6 +10,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
+import Solid.Internal.Optimistic (class MonadOptimistic)
 
 -- | A sequence of steps: effects run inside the transaction, async work
 -- | suspends it and re-enters it when done.
@@ -41,9 +42,11 @@ instance Monad Action
 instance MonadEffect Action where
   liftEffect = liftActionEffect
 
--- | Each `liftAff` is a suspension point that re-enters the transaction.
 instance MonadAff Action where
   liftAff aff = Await (Done <$> aff)
+
+instance MonadOptimistic Action where
+  liftOptimistic = liftActionEffect
 
 liftActionEffect :: forall a. Effect a -> Action a
 liftActionEffect effect = Write (Done <$> effect)

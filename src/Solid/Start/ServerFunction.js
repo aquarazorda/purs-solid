@@ -1,7 +1,6 @@
 import { isServer, isServerFunction } from "@solidjs/web";
 
-// On the client a server function must have been replaced by the plugin's
-// RPC reference; otherwise its body was bundled and would run in the browser.
+// An untransformed server function's body was bundled; don't run it in the browser.
 export const callImpl = (fn, argument) => {
   if (!isServer && !isServerFunction(fn)) {
     return Promise.reject(

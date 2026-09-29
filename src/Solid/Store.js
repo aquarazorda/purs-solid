@@ -9,15 +9,9 @@ import {
   snapshot as solidSnapshot,
 } from "solid-js";
 
-// Preparers come from `Solid.Internal.Store` (`null` = nothing to prepare).
 const runPreparer = (prepare, value) => {
   if (prepare !== null) prepare(value);
 };
-
-// ---------------------------------------------------------------------------
-// Cursors: a `Store a` is a zero-argument function returning the current node
-// (a store proxy for structure, the raw value for leaves). Reading through the
-// path on every call tracks each level, so replacing a parent is observed.
 
 const isProxy = (node) =>
   node !== null && typeof node === "object" && node[$PROXY] !== undefined;
@@ -39,13 +33,11 @@ export const focusImpl = (keys) => (cursor) => {
   };
 };
 
-// `deep` tracks the whole subtree and returns a plain copy.
 export const value = (cursor) => () => {
   const node = cursor();
   return isProxy(node) ? solidDeep(node) : node;
 };
 
-// One cursor per element proxy, cached so identity is stable across reads.
 const itemCursors = new WeakMap();
 
 const itemCursor = (element) => {
@@ -65,10 +57,6 @@ export const itemsImpl = (cursor) => () => {
 };
 
 export const snapshot = (cursor) => () => plain(cursor());
-
-// ---------------------------------------------------------------------------
-// Updates: an `Update a` is a function of a reference `{ get, set }` to the
-// focused part of a draft. `update` runs it inside the store setter.
 
 const replaceContents = (draft, next) => {
   if (Array.isArray(draft)) {
@@ -129,8 +117,7 @@ export const pushImpl = (prepare) => (element) => (ref) => {
   ref.get().push(element);
 };
 
-// Predicates read draft elements directly (pure reads; atomic fields are
-// frozen raw values, so pattern matching works).
+// Predicates see draft proxies; atomic fields are frozen, so matching works.
 export const filter = (keep) => (ref) => {
   const array = ref.get();
   for (let i = array.length - 1; i >= 0; i -= 1) {
@@ -166,8 +153,6 @@ export const reconcileImpl = (prepare) => (next) => reconcileWith(prepare, next,
 
 export const reconcileByImpl = (prepare) => (toKey) => (next) =>
   reconcileWith(prepare, next, (item) => toKey(item));
-
-// ---------------------------------------------------------------------------
 
 export const createProjectionImpl = (prepare, compute, seed) => {
   runPreparer(prepare, seed);

@@ -39,14 +39,11 @@ spec = describe "Solid.Action" do
     parts <- liftEffect $ createRoot \_ -> do
       saved /\ setSaved <- createSignal "old"
       saving /\ setSaving <- createOptimistic false
-      -- Observe both, as a rendered view would.
       createEffect_ (Tuple' <$> saved <*> saving) \_ -> pure unit
       pure { saved, setSaved, saving, setSaving }
     let
       save = action \next -> do
         setOptimistic parts.setSaving true
-        -- A real write before the async step: held by the transaction until
-        -- the action completes, while the optimistic value shows at once.
         Action.liftEffect (Signal.set parts.setSaved next)
         liftAff (delay (Milliseconds 20.0))
     running <- forkAff (save "new")

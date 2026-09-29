@@ -1,8 +1,6 @@
 import { isWrappable as solidIsWrappable } from "solid-js";
 
-// Preparers freeze atomic values so Solid stores them as-is (a frozen object is
-// never proxied). Solid 2 proxies user class instances, which would break
-// PureScript pattern matching on ADTs. `null` means nothing to prepare.
+// Freeze atomic values so Solid doesn't proxy PureScript ADTs.
 
 export const atomicPreparer = (value) => {
   if (solidIsWrappable(value)) Object.freeze(value);

@@ -4,16 +4,15 @@ module Test.Server.Meta
 
 import Prelude
 
-import Data.Either (Either(..))
+import Data.Either (either)
 import Data.String (Pattern(..), contains)
 import Data.String.Regex (match)
 import Data.String.Regex.Flags (global)
 import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.Array.NonEmpty as NEA
 import Data.Maybe (maybe)
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, throwError)
 import Effect.Class (liftEffect)
-import Effect.Exception (throw)
 import Solid.DOM.HTML as H
 import Solid.DOM.Props as P
 import Solid.JSX (JSX, text)
@@ -24,9 +23,7 @@ import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual, shouldSatisfy)
 
 renderHead :: JSX -> Aff { html :: String, head :: String }
-renderHead view = liftEffect (SSR.renderToStringWithHead SSR.defaultRenderOptions view) >>= case _ of
-  Left error -> liftEffect (throw (show error))
-  Right result -> pure result
+renderHead view = liftEffect (SSR.renderToStringWithHead SSR.defaultRenderOptions view) >>= either throwError pure
 
 count :: String -> String -> Int
 count pattern = maybe 0 NEA.length <<< match (unsafeRegex pattern global)
@@ -40,8 +37,7 @@ spec = describe "Solid.Meta (server)" do
       , Meta.link [ P.rel "canonical", P.href "https://example.test/inbox" ]
       , text "body"
       ]
-    -- When the host owns the document, Solid delivers the title as a script
-    -- that sets `document.title`.
+    -- The host owns the document, so the title arrives as a `document.title` script.
     result.head `shouldSatisfy` contains (Pattern "(\"Inbox\")")
     result.head `shouldSatisfy` contains (Pattern "content=\"mail\"")
     result.head `shouldSatisfy` contains (Pattern "href=\"https://example.test/inbox\"")

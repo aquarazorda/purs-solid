@@ -1,0 +1,47 @@
+{
+  "label": "purs-solid",
+  "date": "2026-09-29T23:47:12.334Z",
+  "solid": "2.0.0-rc.11",
+  "node": "22.17.1",
+  "chromium": "145.0.7632.6",
+  "runs": 3,
+  "bundleBytes": {
+    "minified": 99630,
+    "gzip": 34999,
+    "brotli": 31541
+  },
+  "operations": {
+    "create 1k rows": {
+      "median": 19.8,
+      "min": 18.2
+    },
+    "replace 1k rows": {
+      "median": 21,
+      "min": 19.8
+    },
+    "update every 10th row": {
+      "median": 3.3,
+      "min": 2.9
+    },
+    "swap rows": {
+      "median": 1.35,
+      "min": 1.1
+    },
+    "select row": {
+      "median": 0.2,
+      "min": 0.1
+    },
+    "append 1k rows": {
+      "median": 20.55,
+      "min": 18.7
+    },
+    "clear 1k rows": {
+      "median": 2.6,
+      "min": 1.9
+    },
+    "create 10k rows": {
+      "median": 214.5,
+      "min": 188
+    }
+  }
+}

@@ -30,7 +30,6 @@ import DOM.HTML.Indexed.WrapValue (WrapValue, renderWrapValue)
 import Data.MediaType (MediaType(..))
 import Unsafe.Coerce (unsafeCoerce)
 
--- | A value as the DOM receives it (a string, number or boolean).
 foreign import data AttrRep :: Type
 
 stringAttr :: String -> AttrRep

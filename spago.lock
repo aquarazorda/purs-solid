@@ -9,18 +9,19 @@
             "aff-promise",
             "argonaut-core",
             "arraybuffer-types",
-            "console",
+            "arrays",
             "dom-indexed",
             "effect",
             "either",
             "exceptions",
             "foreign-object",
             "functions",
+            "js-uri",
             "maybe",
             "media-types",
             "nullable",
             "prelude",
-            "refs",
+            "strings",
             "tailrec",
             "tuples",
             "unsafe-coerce",
@@ -28,7 +29,6 @@
             "web-dom",
             "web-events",
             "web-fetch",
-            "web-file",
             "web-html",
             "web-pointerevents",
             "web-streams",
@@ -38,10 +38,44 @@
         },
         "test": {
           "dependencies": [
-            "exceptions",
+            "foldable-traversable",
+            "partial",
+            "refs",
             "spec",
-            "spec-node"
+            "spec-node",
+            "transformers",
+            "unsafe-reference"
           ]
+        }
+      },
+      "purs-solid-examples": {
+        "path": "examples",
+        "core": {
+          "dependencies": [
+            "aff",
+            "aff-promise",
+            "arrays",
+            "console",
+            "dom-indexed",
+            "effect",
+            "either",
+            "exceptions",
+            "foldable-traversable",
+            "integers",
+            "maybe",
+            "nullable",
+            "ordered-collections",
+            "prelude",
+            "purs-solid",
+            "refs",
+            "tuples",
+            "web-events",
+            "web-html",
+            "web-uievents"
+          ]
+        },
+        "test": {
+          "dependencies": []
         }
       }
     },
@@ -1149,6 +1183,16 @@
         "prelude"
       ]
     },
+    "js-uri": {
+      "type": "registry",
+      "version": "3.1.0",
+      "integrity": "sha256-7waHOctAfqhhw540FNJ7C/YsDMQW9TmA+SpHhduH6Uw=",
+      "dependencies": [
+        "functions",
+        "maybe",
+        "prelude"
+      ]
+    },
     "lazy": {
       "type": "registry",
       "version": "6.0.0",
@@ -1732,6 +1776,14 @@
       "version": "6.0.0",
       "integrity": "sha256-0L1QsaY20OILjfU5TV72d3U/tSjhmL9hJ32WMp857Lk=",
       "dependencies": []
+    },
+    "unsafe-reference": {
+      "type": "registry",
+      "version": "5.0.0",
+      "integrity": "sha256-ttSJTQUnK8AK2eGOsfRxLUJEDPL6pnmExjbiOqfwC6I=",
+      "dependencies": [
+        "prelude"
+      ]
     },
     "web-clipboard": {
       "type": "registry",

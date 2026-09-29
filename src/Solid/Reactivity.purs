@@ -1,14 +1,6 @@
--- | Memos, effects and scheduling.
--- |
--- | Solid 2 splits every effect in two phases, and the types follow it:
--- |
--- | - **compute**: an `Accessor a`. Tracked and pure: whatever it reads becomes
--- |   a dependency, and it can't perform effects or write signals.
--- | - **apply**: `a -> Effect ...`. Untracked; this is where side effects and
--- |   signal writes belong. It may return a cleanup, which runs before the
--- |   next apply and when the owner is disposed.
--- |
--- | All primitives here create owned computations, so they run in `Setup`.
+-- | Memos, effects and scheduling. Effects have a tracked, pure compute phase
+-- | (an `Accessor`) and an untracked apply phase (`a -> Effect ...`) whose
+-- | cleanup runs before the next apply and on disposal.
 module Solid.Reactivity
   ( MemoOptions
   , defaultMemoOptions
@@ -44,8 +36,7 @@ import Solid.Signal (Accessor, Setter, Signal)
 type MemoOptions a =
   { name :: String
   , equality :: Equality a
-  -- | Defer the first computation until the memo is read, and dispose it
-  -- | when nothing observes it.
+  -- | Defer the first computation until read; dispose when nothing observes it.
   , lazy :: Boolean
   }
 
@@ -73,7 +64,6 @@ foreign import createMemoImpl
 
 -- | A signal derived from `compute` that can also be written locally. A write
 -- | wins until a dependency of `compute` changes, which re-derives it.
--- | (Solid 2's function form of `createSignal`.)
 createWritableMemo :: forall a. Accessor a -> Setup (Signal a)
 createWritableMemo compute = Setup do
   parts <- runEffectFn1 createWritableMemoImpl compute
@@ -87,8 +77,7 @@ type EffectOptions =
   { name :: String
   -- | Skip the apply phase for the initial value; run it on changes only.
   , defer :: Boolean
-  -- | Handles errors thrown by the compute phase. Without a handler Solid
-  -- | logs them and skips that run.
+  -- | Handles compute-phase errors; without it Solid logs them and skips the run.
   , onError :: Maybe (Error -> Effect Unit)
   }
 
@@ -104,7 +93,6 @@ defaultEffectOptions =
 createEffect :: forall a. Accessor a -> (a -> Effect (Effect Unit)) -> Setup Unit
 createEffect = createEffectWith defaultEffectOptions
 
--- | `createEffect` without a cleanup.
 createEffect_ :: forall a. Accessor a -> (a -> Effect Unit) -> Setup Unit
 createEffect_ compute apply = createEffect compute \value -> apply value $> pure unit
 
@@ -124,8 +112,7 @@ foreign import createEffectImpl
    . EffectFn5 String Boolean (Nullable (EffectFn1 Error Unit)) (Accessor a) (EffectFn1 a (Effect Unit)) Unit
 
 -- | Like `createEffect`, but the apply phase runs synchronously during
--- | rendering, before the DOM is committed. For DOM measurements and writes
--- | that must not wait for the next frame.
+-- | rendering, before the DOM is committed.
 createRenderEffect :: forall a. Accessor a -> (a -> Effect (Effect Unit)) -> Setup Unit
 createRenderEffect compute apply =
   Setup (runEffectFn2 createRenderEffectImpl compute (mkEffectFn1 apply))

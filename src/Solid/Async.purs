@@ -1,22 +1,7 @@
--- | Async values as part of the reactive graph (Solid 2 replaces
--- | `createResource` and transitions with this).
--- |
--- | `createAsync` takes an `Accessor (Aff a)`. The accessor layer is tracked:
--- | read your dependencies there. The `Aff` is the async work, and it can't
--- | subscribe to anything (Solid 2 only tracks reads before the first await,
--- | and here the types say so). When a dependency changes, the running fiber
--- | is killed and a new one starts.
--- |
--- | While the first value loads, reading the accessor suspends the nearest
--- | loading boundary. After that, a pending update keeps showing the previous
--- | value; ask `isPending` to show that something is in flight.
--- |
--- | **Server rendering.** By default an async value loads on the client
--- | (`OnClient`): the server renders the loading fallback and nothing is
--- | serialized. To load on the server and hand the result to the client with
--- | the page, choose `serialized` (for plain data: primitives, arrays,
--- | records) or `withCodec` (anything else, e.g. via argonaut-codecs). This
--- | is explicit because PureScript ADTs don't survive serialization as-is.
+-- | Async values in the reactive graph. In `createAsync`, read dependencies in
+-- | the tracked `Accessor` layer; the `Aff` is untracked and is killed when a
+-- | dependency changes. Values load on the client unless `ssr` is `serialized`
+-- | or `withCodec`.
 module Solid.Async
   ( AsyncOptions
   , defaultAsyncOptions
@@ -55,10 +40,8 @@ import Solid.Signal (Accessor)
 type AsyncOptions a =
   { name :: String
   , equality :: Equality a
-  -- | Where the value loads during server rendering.
   , ssr :: AsyncSsr a
-  -- | Hold the streamed shell until this value is ready (instead of streaming
-  -- | its loading fallback first).
+  -- | Hold the streamed shell until this value is ready.
   , deferStream :: Boolean
   }
 
@@ -81,8 +64,7 @@ newtype AsyncSsr a = AsyncSsr
 onClient :: forall a. AsyncSsr a
 onClient = AsyncSsr { source: "client", encode: null, decode: null }
 
--- | Load on the server and send the value with the page. Only for types that
--- | serialize as-is (`Serializable`: primitives, arrays, records of them).
+-- | Load on the server and send the value with the page.
 serialized :: forall a. Serializable a => AsyncSsr a
 serialized = AsyncSsr { source: "server", encode: null, decode: null }
 
@@ -90,9 +72,7 @@ serialized = AsyncSsr { source: "server", encode: null, decode: null }
 withCodec :: forall a. (a -> Json) -> (Json -> Either String a) -> AsyncSsr a
 withCodec encode decode = AsyncSsr { source: "server", encode: notNull encode, decode: notNull decode }
 
--- | The capability to re-run one async value's work even though its inputs
--- | haven't changed (Solid 1's `refetch`). Only `createAsync` produces it, so
--- | `refresh` can't be pointed at a derived accessor it wouldn't affect.
+-- | Re-runs one async value's work even though its inputs haven't changed.
 foreign import data Refresh :: Type -> Type
 
 createAsync :: forall a. Accessor (Aff a) -> Setup (Accessor a /\ Refresh a)
@@ -108,7 +88,6 @@ createAsyncWith options compute = Setup do
   rep :: AsyncRep a
   rep = { name: options.name, source: ssr.source, encode: ssr.encode, decode: ssr.decode, deferStream: options.deferStream, either }
 
--- | Starts an `Aff`, reporting its outcome; the returned effect kills it.
 start :: forall a. Aff a -> (a -> Effect Unit) -> (Error -> Effect Unit) -> Effect (Effect Unit)
 start aff onValue onError = do
   fiber <- runAff (either onError onValue) aff

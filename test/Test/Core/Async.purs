@@ -17,7 +17,6 @@ import Test.Solid (settle, solidIt)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 
--- | A fake request that records which ids finished.
 fetchUser :: Ref.Ref (Array Int) -> Int -> Aff String
 fetchUser finished id = do
   delay (Milliseconds 20.0)

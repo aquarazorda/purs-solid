@@ -1,7 +1,5 @@
--- | The current server request (start mode / `@solidjs/web`).
--- |
--- | Available on the server while handling a request: in middleware, server
--- | functions and during rendering. On the client there is none.
+-- | The current server request, available in middleware, server functions and
+-- | during rendering. On the client there is none.
 module Solid.Start.RequestEvent
   ( RequestEvent
   , getRequestEvent
@@ -30,7 +28,6 @@ import Web.Fetch.Request (Request)
 
 foreign import data RequestEvent :: Type
 
--- | The request being handled, if any (`Nothing` on the client).
 getRequestEvent :: Effect (Maybe RequestEvent)
 getRequestEvent = toMaybe <$> getRequestEventImpl
 
@@ -38,7 +35,7 @@ foreign import getRequestEventImpl :: Effect (Nullable RequestEvent)
 
 foreign import request :: RequestEvent -> Request
 
--- | The request's cookies (URI-decoded).
+-- | URI-decoded.
 foreign import cookies :: RequestEvent -> Object String
 
 cookie :: String -> RequestEvent -> Maybe String
@@ -67,7 +64,6 @@ defaultCookieOptions =
   , sameSite: Just Lax
   }
 
--- | Adds a `Set-Cookie` header to the response for this request.
 setCookie :: String -> String -> CookieOptions -> RequestEvent -> Effect Unit
 setCookie name value options event =
   runEffectFn4 setCookieImpl event name value
@@ -95,8 +91,7 @@ foreign import setCookieImpl
        }
        Unit
 
--- | A typed slot in the request's `locals` (per-request state, e.g. the
--- | signed-in user set by middleware). Define each key once and share it;
+-- | A typed slot in the request's `locals`. Define each key once and share it:
 -- | two keys with the same name refer to the same slot.
 newtype LocalKey :: Type -> Type
 newtype LocalKey a = LocalKey String

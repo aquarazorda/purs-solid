@@ -1,5 +1,4 @@
--- | Internal representation of `Setup`. Not part of the public API: code that
--- | imports this module can break the guarantees `Solid.Setup` documents.
+-- | Internal: not part of the public API.
 module Solid.Internal.Setup
   ( Setup(..)
   , runSetup
@@ -13,7 +12,7 @@ import Control.Monad.Rec.Class (class MonadRec)
 import Effect (Effect)
 
 -- | Code that runs inside a reactive owner: a component body, a `createRoot`
--- | body, a list-item mapper. Represented as `Effect` at runtime (zero cost).
+-- | body, a list-item mapper.
 newtype Setup a = Setup (Effect a)
 
 derive newtype instance Functor Setup

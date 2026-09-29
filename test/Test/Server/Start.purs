@@ -32,8 +32,6 @@ foreign import textResponse :: String -> Effect Response
 foreign import responseHeader :: String -> Response -> Effect String
 foreign import runMiddleware :: MiddlewareFn -> Request -> Effect (Promise Response)
 
--- | Runs an effect inside a request scope; returns its result and the
--- | response head the scope produced.
 foreign import withRequestEventImpl
   :: forall a. Request -> Effect a -> Effect { result :: a, status :: Int, headers :: Array String }
 

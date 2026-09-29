@@ -7,8 +7,6 @@ import {
   flush as solidFlush,
 } from "solid-js";
 
-// Same encoding as `Solid.Signal` (FFI files can't share code without relying
-// on the compiler's output layout).
 const equalityOptions = (name, mode, equals) => {
   const options = {};
   if (name !== "") options.name = name;
@@ -23,8 +21,7 @@ export const createMemoImpl = (name, mode, equals, lazy, compute) => {
   return solidCreateMemo(() => compute(), options);
 };
 
-// Function form of `createSignal`. The compute result is boxed for the same
-// reason as in `Solid.Signal`: a function result would otherwise be misread.
+// Boxed so Solid doesn't misread a function result as an updater.
 export const createWritableMemoImpl = (compute) => {
   const [getBox, setBox] = solidCreateSignal(() => ({ value: compute() }), {
     equals: (a, b) => a.value === b.value,
@@ -39,8 +36,6 @@ export const createWritableMemoImpl = (compute) => {
 const toError = (error) =>
   error instanceof Error ? error : new Error(String(error));
 
-// `apply` returns the cleanup `Effect` (a zero-argument function), which is
-// exactly the shape Solid expects from an effect function.
 export const createEffectImpl = (name, defer, onError, compute, apply) => {
   const options = {};
   if (name !== "") options.name = name;

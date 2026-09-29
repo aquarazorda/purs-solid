@@ -1,7 +1,5 @@
 import { createSignal as solidCreateSignal, untrack as solidUntrack } from "solid-js";
 
-// Options object for `createSignal` / `createMemo`: `mode` is "default" (omit
-// `equals`), "never" (`equals: false`), or "custom" (use the `equals` Fn2).
 const equalityOptions = (name, mode, equals) => {
   const options = {};
   if (name !== "") options.name = name;
@@ -10,11 +8,7 @@ const equalityOptions = (name, mode, equals) => {
   return options;
 };
 
-// Solid treats a function passed to `createSignal` as a compute function and a
-// function passed to a setter as an updater. PureScript functions (including
-// `Effect` values) are JS functions, so function-valued signals store a box and
-// expose an unboxing accessor. The type fixes whether values are functions, so
-// checking the initial value is enough.
+// Solid treats function values as compute functions / updaters, so box them.
 export const createSignalImpl = (name, mode, equals, initial) => {
   if (typeof initial !== "function") {
     const [get, set] = solidCreateSignal(initial, equalityOptions(name, mode, equals));

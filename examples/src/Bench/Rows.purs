@@ -1,7 +1,4 @@
 -- | Rows benchmark, modelled on js-framework-benchmark (keyed).
--- |
--- | Written against the public API only, the way an application would use it,
--- | so the numbers track what users get. Driven by `test/bench/run-bench.mjs`.
 module Bench.Rows
   ( main
   ) where
@@ -51,7 +48,6 @@ nouns =
   , "pizza", "mouse", "keyboard"
   ]
 
--- | Deterministic pseudo-random index so every run renders the same labels.
 nextIndex :: Ref.Ref Int -> Int -> Effect Int
 nextIndex seed bound = do
   current <- Ref.modify (\s -> (s * 75 + 74) `mod` 65537) seed
@@ -87,7 +83,6 @@ app = Component.component \_ -> do
   rows /\ setRows <- createSignal ([] :: Array RowItem)
   selected /\ setSelected <- createSignal 0
   isSelected <- createSelector show selected
-  probe /\ _ <- createSignal "reactive-ok"
 
   let
     replaceWith count = buildRows seed nextId count >>= set setRows
@@ -98,7 +93,6 @@ app = Component.component \_ -> do
 
     updateEveryTenth = do
       current <- get rows
-      -- Solid 2 batches writes until the microtask flush; no `batch` needed.
       for_ (Array.mapWithIndex (\i row -> { i, row }) current) \{ i, row } ->
         when (i `mod` 10 == 0) do
           modify_ row.setLabel (_ <> " !!!")
@@ -126,8 +120,6 @@ app = Component.component \_ -> do
         , button "clear" "Clear" (set setRows [])
         , button "swaprows" "Swap Rows" (modify_ setRows (swapAt 1 998))
         ]
-    -- Probe: is an Accessor passed as an attribute value applied reactively?
-    , H.input [ P.id "reactive-attr-probe", P.value probe ]
     , H.table [ P.class_ "table" ]
         [ H.tbody [ P.id "tbody" ] [ Control.forEach rows renderRow ] ]
     ]

@@ -17,9 +17,8 @@ getOwner = Setup getOwnerImpl
 
 foreign import getOwnerImpl :: Effect Owner
 
--- | Runs `Setup` code under a captured owner, from `Effect` code such as an
--- | event handler or an async callback. Anything it creates is disposed with
--- | that owner.
+-- | Runs `Setup` code under a captured owner, e.g. from an async callback.
+-- | Anything it creates is disposed with that owner.
 runWithOwner :: forall a. Owner -> Setup a -> Effect a
 runWithOwner owner setup = runEffectFn2 runWithOwnerImpl owner (runSetup setup)
 

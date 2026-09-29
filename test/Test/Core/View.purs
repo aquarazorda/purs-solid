@@ -26,14 +26,14 @@ import Solid.JSX as JSX
 import Solid.Setup (liftSetup)
 import Solid.Signal (Accessor, Setter, createSignal, set)
 import Solid.Signal as Signal
-import Test.Solid (Mounted, attribute, click, html, inputText, mount, namespaceOf, query, refEq, settle, solidIt)
+import Test.Solid (Mounted, click, html, inputText, mount, query, settle, solidIt)
+import Unsafe.Reference (unsafeRefEq)
+import Web.DOM.Element (Element, getAttribute, namespaceURI)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Effect (Effect)
-import Web.DOM.Element (Element)
 import Web.Event.Event (Event)
 
--- | A signal created outside any view, so tests can drive it.
 signal :: forall a. a -> Aff { get :: Accessor a, set :: Setter a }
 signal initial = liftEffect do
   value /\ setter <- createSignal initial
@@ -65,16 +65,16 @@ spec = describe "views" do
       write active true
       after <- expectElement "p" mounted
       html mounted >>= shouldEqual """<p title="two" class="item active">two</p>"""
-      refEq before after `shouldEqual` true
+      unsafeRefEq before after `shouldEqual` true
       liftEffect mounted.dispose
 
     solidIt "boolean attributes are present or absent" do
       disabled <- signal true
       mounted <- mount $ H.button [ P.disabled disabled.get ] [ text "go" ]
       button <- expectElement "button" mounted
-      liftEffect (attribute "disabled" button) >>= shouldEqual (Just "")
+      liftEffect (getAttribute "disabled" button) >>= shouldEqual (Just "")
       write disabled false
-      liftEffect (attribute "disabled" button) >>= shouldEqual Nothing
+      liftEffect (getAttribute "disabled" button) >>= shouldEqual Nothing
       liftEffect mounted.dispose
 
     solidIt "form state is set as a DOM property" do
@@ -84,7 +84,7 @@ spec = describe "views" do
       liftEffect (inputValue input) >>= shouldEqual "abc"
       write draft "xyz"
       liftEffect (inputValue input) >>= shouldEqual "xyz"
-      liftEffect (attribute "data-role" input) >>= shouldEqual (Just "draft")
+      liftEffect (getAttribute "data-role" input) >>= shouldEqual (Just "draft")
       liftEffect mounted.dispose
 
     solidIt "delegated events reach their handlers" do
@@ -115,9 +115,9 @@ spec = describe "views" do
     solidIt "SVG elements use the SVG namespace" do
       mounted <- mount $ S.svg [ SP.viewBox "0 0 10 10" ] [ S.circle [ SP.cx "5", SP.cy "5", SP.r "4" ] [] ]
       circle <- expectElement "circle" mounted
-      liftEffect (namespaceOf circle) >>= shouldEqual "http://www.w3.org/2000/svg"
+      namespaceURI circle `shouldEqual` Just "http://www.w3.org/2000/svg"
       svg <- expectElement "svg" mounted
-      liftEffect (attribute "viewBox" svg) >>= shouldEqual (Just "0 0 10 10")
+      liftEffect (getAttribute "viewBox" svg) >>= shouldEqual (Just "0 0 10 10")
       liftEffect mounted.dispose
 
     solidIt "dispose removes the view" do
@@ -165,7 +165,7 @@ spec = describe "views" do
       write items [ "c", "a" ]
       html mounted >>= shouldEqual """<ul><li id="c">c</li><li id="a">a</li></ul>"""
       laterA <- expectElement "#a" mounted
-      refEq firstA laterA `shouldEqual` true
+      unsafeRefEq firstA laterA `shouldEqual` true
       liftEffect mounted.dispose
 
     solidIt "forEachUnkeyed and repeat" do

@@ -10,9 +10,6 @@ import {
 } from "@solidjs/router";
 import { createComponent } from "solid-js";
 
-// A route's component receives the router's props; the PureScript component
-// gets its declared params as an accessor of a record (optional params as
-// `Maybe`) and the matched child route as lazy JSX.
 export const routeImpl = (spec) => {
   const toParams = (params) => () => {
     const record = {};

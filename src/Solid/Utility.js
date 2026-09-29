@@ -1,13 +1,7 @@
-import { mapArray as solidMapArray, repeat as solidRepeat } from "solid-js";
+import { mapArray } from "solid-js";
 
-export const mapArrayImpl = (list, mapItem) =>
-  solidMapArray(list, (item, index) => mapItem(item, index));
+export { mapArray as mapArrayImpl, repeat as repeatImpl } from "solid-js";
 
-export const mapArrayUnkeyedImpl = (list, mapItem) =>
-  solidMapArray(list, (item, index) => mapItem(item, index), { keyed: false });
+export const mapArrayUnkeyedImpl = (list, mapItem) => mapArray(list, mapItem, { keyed: false });
 
-export const mapArrayByImpl = (key, list, mapItem) =>
-  solidMapArray(list, (item, index) => mapItem(item, index), { keyed: (item) => key(item) });
-
-export const repeatImpl = (count, mapIndex) =>
-  solidRepeat(count, (index) => mapIndex(index)());
+export const mapArrayByImpl = (key, list, mapItem) => mapArray(list, mapItem, { keyed: key });

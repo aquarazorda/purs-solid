@@ -23,25 +23,12 @@ import {
   SVGElements,
 } from "@solidjs/web";
 
-// ---------------------------------------------------------------------------
-// JSX representation
-//
-//   string      text
-//   null        nothing
-//   Array       fragment
-//   function    lazy node: calling it creates the node (already realized)
-//   Reactive    reactive region: `read` yields JSX, re-rendered on change
-//
-// `realize` turns a description into what Solid's `insert` understands. Lazy
-// nodes are called; reactive regions become functions, which Solid tracks.
-
 class Reactive {
   constructor(read) {
     this.read = read;
   }
 }
 
-// Content that is already realized (e.g. resolved by `children`).
 class Prerealized {
   constructor(value) {
     this.value = value;
@@ -54,12 +41,7 @@ const realizeAll = (items) => {
   return out;
 };
 
-// A reactive region anywhere but directly inside an element (a component's
-// result, a control-flow branch, a fragment) is wrapped in a memo, as compiled
-// Solid does for top-level expressions. The memo is owned by the current
-// scope, so errors reach the enclosing `Errored` and cleanup follows the owner.
-// Consumers such as a parent's `insert` would otherwise evaluate a bare
-// function in *their* scope.
+// Reactive regions outside element children get a memo so errors reach the enclosing `Errored`.
 export const realize = (jsx) => {
   if (typeof jsx === "function") return jsx();
   if (jsx instanceof Reactive) {
@@ -71,8 +53,6 @@ export const realize = (jsx) => {
   return jsx;
 };
 
-// Directly inside an element, the element's own `insert` effect (created in
-// the current scope) tracks the region, so no extra memo is needed.
 const realizeChild = (jsx) => {
   if (jsx instanceof Reactive) {
     const read = jsx.read;
@@ -96,9 +76,6 @@ export const fragment = (items) => items;
 
 export const empty = null;
 
-// ---------------------------------------------------------------------------
-// Props: `{ k: name, m: mode, v: value }`.
-
 const STATIC = 0;
 const REACTIVE = 1;
 const REF = 2;
@@ -114,18 +91,12 @@ export const refProp = (callback) => ({ k: "ref", m: REF, v: (element) => callba
 
 const readProp = (prop) => (prop.m === REACTIVE ? prop.v() : prop.v);
 
-// Several `class` props merge into one array value (Solid's `class` accepts
-// strings, `{ name: boolean }` objects and arrays of them).
 const mergeClasses = (classes) =>
   classes.length === 1 ? classes[0] : { k: "class", m: classes.some((c) => c.m === REACTIVE) ? REACTIVE : STATIC, v: null, classes };
 
 const classValue = (entry) =>
   entry.classes === undefined ? readProp(entry) : entry.classes.map(readProp);
 
-// Elements go through Solid's public `dynamic(() => tag, { static: true })`:
-// Solid creates (or, when hydrating, claims) the element and applies props
-// with `spread`, on the client and on the server. Reactive props are getters,
-// and children are a getter so they're created after their parent.
 const staticComponents = new Map();
 
 const staticComponent = (tag) => {
@@ -138,8 +109,7 @@ const staticComponent = (tag) => {
 };
 
 const propsObject = (namespace, tag, props, children) => {
-  // Solid picks the namespace for known SVG / MathML tags; `xmlns` is only
-  // needed for tags that also exist in HTML (`a`, `title`, `script`, `style`).
+  // `xmlns` only for SVG / MathML tags that also exist in HTML (`a`, `title`, ...).
   const object = {};
   if (namespace === 1 && !SVGElements.has(tag)) object.xmlns = Namespaces.svg;
   else if (namespace === 2 && !MathMLElements.has(tag)) object.xmlns = Namespaces.mathml;
@@ -173,9 +143,6 @@ const propsObject = (namespace, tag, props, children) => {
 export const elementImpl = (namespace, tag, props, children) => () =>
   createComponent(staticComponent(tag), propsObject(namespace, tag, props, children));
 
-// ---------------------------------------------------------------------------
-// Components
-
 export const componentRep = (render) => (props) => realize(render(props)());
 
 export const componentElement = (component, props) => () => createComponent(component, props);
@@ -183,12 +150,18 @@ export const componentElement = (component, props) => () => createComponent(comp
 export const propsComponentElement = (component, props, children) => () =>
   createComponent(component, propsObject(0, "", props, children));
 
-// ---------------------------------------------------------------------------
-// Control flow. Content is passed through getters, so Solid creates it only
-// when (and each time) it's shown.
+// `undefined` values are left out so the component's defaults apply.
+export const jsPropsComponentElement = (component, entries) => () => {
+  const object = {};
+  for (let i = 0; i < entries.length; i += 1) {
+    const entry = entries[i];
+    if (entry.get !== undefined) Object.defineProperty(object, entry.key, { get: entry.get, enumerable: true });
+    else if (entry.value !== undefined) object[entry.key] = entry.value;
+  }
+  return createComponent(component, object);
+};
 
-// `Show` / `Match` test truthiness; falsy PureScript values inside a `Just`
-// are boxed so they still count as present.
+// Falsy values inside a `Just` are boxed so `Show` / `Match` treat them as present.
 class Falsy {
   constructor(value) {
     this.value = value;

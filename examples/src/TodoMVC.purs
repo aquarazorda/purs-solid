@@ -12,7 +12,6 @@ import Effect.Class.Console (log)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM (classWhen)
-import Solid.DOM.EventAdapters as EventAdapters
 import Solid.DOM.HTML as H
 import Solid.DOM.Props as P
 import Solid.JSX (text)
@@ -21,7 +20,14 @@ import Solid.Signal (createSignal, get, set)
 import Solid.Store (focus, key, value)
 import Solid.Store as Store
 import Solid.Web (render, requireBody)
+import Data.Maybe (Maybe)
+import Web.Event.Event (Event, target)
+import Web.HTML.HTMLInputElement (HTMLInputElement, checked, fromEventTarget)
+import Web.HTML.HTMLInputElement as Input
 import Web.UIEvent.KeyboardEvent as KeyboardEvent
+
+inputOf :: Event -> Maybe HTMLInputElement
+inputOf event = target event >>= fromEventTarget
 
 data Visibility
   = ShowAll
@@ -44,8 +50,6 @@ visibleIn = case _ of
 
 todoApp :: Component.Component {}
 todoApp = Component.component \_ -> do
-  -- Todos live in a store: each row reads only its own fields, so toggling
-  -- one todo updates one row.
   state /\ setState <- Store.createStore { todos: [] :: Array Todo, nextId: 1 }
   draft /\ setDraft <- createSignal ""
   visibility /\ setVisibility <- createSignal ShowAll
@@ -104,7 +108,7 @@ todoApp = Component.component \_ -> do
               , P.checked completed
               , P.onChange \event -> do
                   id <- _.id <$> get todo
-                  EventAdapters.targetInputChecked event >>= traverse_ (setCompleted id)
+                  traverse_ (checked >=> setCompleted id) (inputOf event)
               ]
           , H.span [ P.class_ "todo-title" ] [ text (value (focus (key @"title") row)) ]
           , H.button
@@ -123,7 +127,7 @@ todoApp = Component.component \_ -> do
                 , P.placeholder "What needs to be done?"
                 , P.value draft
                 , P.autofocus true
-                , P.onInput \event -> EventAdapters.targetInputValue event >>= traverse_ (set setDraft)
+                , P.onInput \event -> traverse_ (Input.value >=> set setDraft) (inputOf event)
                 , P.onKeyDown \event -> case KeyboardEvent.key event of
                     "Enter" -> addDraftTodo
                     "Escape" -> set setDraft ""
@@ -137,7 +141,7 @@ todoApp = Component.component \_ -> do
                   , P.class_ "toggle-all"
                   , P.type_ InputCheckbox
                   , P.checked allCompleted
-                  , P.onChange \event -> EventAdapters.targetInputChecked event >>= traverse_ setAllCompleted
+                  , P.onChange \event -> traverse_ (checked >=> setAllCompleted) (inputOf event)
                   ]
               , H.label [ P.for "toggle-all", P.class_ "toggle-all-label" ] [ text "Mark all as complete" ]
               , H.ul [ P.class_ "todo-list" ] [ Control.forEach rows renderTodo ]

@@ -1,5 +1,3 @@
-// Server rendering. Solid 2 selects its server build through export conditions,
-// so this module must run under Node's default conditions (not `browser`).
 import {
   generateHydrationScript as solidGenerateHydrationScript,
   renderToStream as solidRenderToStream,
@@ -17,8 +15,6 @@ const toOptions = (rep) => {
 export const renderToStringImpl = (realize, rep, view) =>
   solidRenderToString(() => realize(view), toOptions(rep));
 
-// `onHead` delivers everything head-bound (useHead winners, asset links,
-// styles) when the output has no `</head>`, i.e. when the host owns the document.
 export const renderToStringWithHeadImpl = (realize, rep, view) => {
   let head = "";
   const html = solidRenderToString(() => realize(view), {
@@ -30,8 +26,7 @@ export const renderToStringWithHeadImpl = (realize, rep, view) => {
   return { html, head };
 };
 
-// Awaiting a render stream yields the fully settled HTML (Solid 2's
-// replacement for `renderToStringAsync`). Synchronous failures reject.
+// An awaited render stream resolves to the fully settled HTML.
 export const renderToStringAsyncImpl = (realize, rep, view) => {
   try {
     return Promise.resolve(solidRenderToStream(() => realize(view), toOptions(rep)));

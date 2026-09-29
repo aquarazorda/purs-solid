@@ -1,155 +1,13 @@
 # purs-solid
 
-`purs-solid` is a PureScript-first wrapper around Solid's fine-grained reactivity and rendering runtime.
+PureScript bindings for [Solid 2.0](https://github.com/solidjs/solid): fine-grained reactivity, rendering, SSR and hydration, the router, head tags and start mode.
 
-This repository is a library project, not an app template. It provides typed PureScript modules backed by a small JavaScript FFI layer to expose Solid behavior in a Solid-native way.
+The bindings use Solid's public API only; what they add is types that reject incorrect code. For example, a signal can't be written during setup, a derived value can't perform effects, a prop only type-checks on elements that have it, and a route's params come from its path. See [docs/design.md](docs/design.md).
 
-## What this project is trying to do
-
-- Keep Solid's mental model (signals, memos, effects, roots, control-flow primitives).
-- Expose those primitives with explicit PureScript types.
-- Model recoverable failures with `Either`/`Maybe` at public boundaries.
-- Reuse existing PureScript web platform packages instead of re-implementing browser APIs.
-
-## Current module surface
-
-Core reactivity and lifecycle:
-
-- `Solid.Setup` (the monad for owned code: component bodies, roots, list mappers)
-- `Solid.Signal` (`Accessor` is a `Monad`; signals, `get`, `set`, `modify`)
-- `Solid.Reactivity` (memos, split effects, reactions, `flush`)
-- `Solid.Root`, `Solid.Owner`, `Solid.Lifecycle` (`onCleanup`, `onSettled`)
-- `Solid.Async` (`createAsync` over `Aff`, `isPending`, `latest`, `refresh`, `resolve`)
-- `Solid.Action` (transactional async mutations, optimistic values)
-- `Solid.Store` (typed paths, pure updates, projections, `createSelector`)
-- `Solid.Utility` (`mapArray` keyed / unkeyed / by key, `repeat`)
-- `Solid.Context`
-- `Solid.Web`, `Solid.Web.SSR`
-
-Routing, head tags and start mode:
-
-- `Solid.Router` (`@solidjs/router` 2: `route @"/users/:id"` with params parsed from the path at compile time, `layout`, `createRouter`, `routerView`, `useLocation`, `useNavigate`, `navigateTo`, `useMatch`)
-- `Solid.Router.Path` (`href @"/users/:id/:tab?" { id, tab }`: URLs built from exactly the params a path declares)
-- `Solid.Meta` (`@solidjs/meta` 1.0: `title`, `meta`, `link`, `stylesheet`, `style`, `script`, `base`, `head`, `key`; typed like elements, no provider)
-- `Solid.Start.ServerFunction` (`call :: ServerFunction a b -> a -> Aff b` for `"use server"` functions, with `Serializable` arguments and results)
-- `Solid.Start.RequestEvent` (the current request, cookies, typed `locals`), `Solid.Start.Response` (`httpStatus`, `httpHeader`), `Solid.Start.Middleware`
-
-UI authoring:
-
-- `Solid.JSX` (lazy view descriptions: `text`, `reactive`, `fragment`, `empty`)
-- `Solid.Component` (`component`, `element`, `children`, `createUniqueId`, `lazy`)
-- `Solid.DOM` (any tag or attribute, `classWhen`, `innerHTML`, `ref`, `on`)
-- `Solid.DOM.HTML` / `Solid.DOM.Props` (typed HTML elements and properties, generated from `dom-indexed` by `npm run gen:dom`)
-- `Solid.DOM.SVG` / `Solid.DOM.SVG.Props` (SVG elements and presentation attributes)
-- `Solid.DOM.EventAdapters` (optional adapters built on `web-events`, `web-uievents`, `web-html`, `web-dom`, `web-file`)
-- `Solid.Control` (`when`, `showMaybe`, `forEach` (keyed / unkeyed / by key), `repeat`, `switch`, `loading`, `errored`, `reveal`, `portal`, `dynamic`, hydration controls)
-
-## Design stance
-
-- Bindings over Solid's public API (`solid-js`, `@solidjs/web`, `@solidjs/router`, `@solidjs/meta`, `@solidjs/vite-plugin` start mode), not a reimplementation of Solid. The value added is types that reject incorrect code.
-- Solid-native naming only. No React-style `use*` API layer.
-- Pre-1.0 project. API can change directly when a better design is found.
-- Public wrappers prefer typed errors over throw-based behavior.
-
-For rationale, decisions and findings, see `docs/solid-2-migration.md`.
-
-## Start mode (full-stack apps)
-
-Solid 2 retires SolidStart; its serving layer is start mode in `@solidjs/vite-plugin`. A PureScript app plugs in as the start-mode `app` module (a `Solid.Component.Component`), see `src/Examples/StartMode/Host` and `src/Examples/HackerNews/Host`:
-
-```js
-// vite.config.mjs
-solid({
-  start: { app: "./app.js", node: true },
-  ssr: true,
-  // Compiled FFI lives in output/<Module>/foreign.js, outside the plugin's
-  // default src/** filter. Without this, "use server" functions are not
-  // transformed and ship to the browser.
-  serverFunctions: { filter: { include: ["output/**/foreign.js"] } },
-})
-```
-
-Server functions are ordinary `"use server"` functions in FFI files, declared as `foreign import save :: ServerFunction NewTodo Todo` and called with `Solid.Start.ServerFunction.call`. Arguments and results must be `Serializable` (primitives, `Nullable`, arrays, records): PureScript ADTs don't survive serialization, and using one is a compile error. On the client, `call` refuses to run a function the plugin didn't transform.
-
-## Quick start
-
-Prerequisites:
-
-- Node.js 22.12+ and npm
-- PureScript 0.15 and Spago (`spago` on PATH)
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run tests:
-
-```bash
-npm test
-```
-
-```bash
-npm run test:all
-```
-
-## Example apps
-
-- `src/Examples/Counter.purs`: signals, memos, typed elements and events.
-- `src/Examples/TodoMVC.purs`: TodoMVC on the fine-grained store (toggling a todo updates one row).
-- `src/Examples/Hydration`: an app rendered on the server and hydrated in the browser.
-- `src/Examples/StartMode`: the smallest start-mode app, with a server function.
-- `src/Examples/HackerNews`: typed routes, server functions and streamed SSR against the Hacker News API.
-
-```bash
-npm run build:example:hackernews
-```
-
-```bash
-PORT=3000 npm run start:example:hackernews
-```
-
-## Minimal example
-
-Derived values are pure `Accessor` computations, owned code runs in `Setup`,
-and writes happen in `Effect`:
+## Example
 
 ```purescript
-module Example.Core where
-
-import Prelude
-
-import Data.Tuple (Tuple(..))
-import Data.Tuple.Nested ((/\))
-import Effect (Effect)
-import Effect.Class.Console (log)
-import Solid.Reactivity (createEffect_, createMemo)
-import Solid.Root (createRoot)
-import Solid.Signal (createSignal, modify_)
-
-example :: Effect Unit
-example = do
-  setCount <- createRoot \_ -> do
-    count /\ setCount <- createSignal 1
-    doubled <- createMemo ((_ * 2) <$> count)
-    -- compute (tracked, pure) / apply (untracked, effects allowed)
-    createEffect_ (Tuple <$> count <*> doubled) \(n /\ d) ->
-      log ("count=" <> show n <> ", doubled=" <> show d)
-    pure setCount
-
-  -- Writes are Effects: not allowed inside the root body above.
-  modify_ setCount (_ + 1)
-```
-
-## Getting started UI example
-
-Elements are typed by the attributes and events each one supports
-(`Solid.DOM.HTML`, `Solid.DOM.Props`), and every property or text accepts
-either a plain value or an `Accessor`:
-
-```purescript
-module Example.UI where
+module Example where
 
 import Prelude
 
@@ -162,50 +20,121 @@ import Solid.DOM (classWhen)
 import Solid.DOM.HTML as H
 import Solid.DOM.Props as P
 import Solid.JSX (text)
+import Solid.Reactivity (createMemo)
 import Solid.Signal (createSignal, modify_)
 import Solid.Web (render, requireBody)
 
-clicker :: Component.Component {}
-clicker = Component.component \_ -> do
-  clicks /\ setClicks <- createSignal 0
-  pure $ H.div [ P.class_ "app" ]
+counter :: Component.Component {}
+counter = Component.component \_ -> do
+  count /\ setCount <- createSignal 0
+  doubled <- createMemo ((_ * 2) <$> count)
+  pure $ H.div [ P.class_ "counter" ]
     [ H.button
-        [ P.onClick \_ -> modify_ setClicks (_ + 1)
-        , classWhen "busy" ((_ > 3) <$> clicks)
+        [ P.onClick \_ -> modify_ setCount (_ + 1)
+        , classWhen "big" ((_ > 3) <$> count)
         ]
-        [ text "Click" ]
-    , H.span_ [ text (show <$> clicks) ]
+        [ text "+" ]
+    , H.span_ [ text (show <$> doubled) ]
     ]
 
 main :: Effect Unit
 main = requireBody >>= case _ of
-  Left webError -> log (show webError)
-  Right body -> void (render (Component.element clicker {}) body)
+  Left error -> log (show error)
+  Right body -> void (render (Component.element counter {}) body)
 ```
 
-`P.href 1` or `P.onClick` on an element without click events are type
-errors, and so is `P.type_ InputCheckbox` on a `<button>`.
+## Modules
 
-## Testing strategy in this repo
+- **Reactivity:**
+  - `Solid.Signal`, `Solid.Reactivity`;
+  - `Solid.Setup` (the monad for component bodies and roots);
+  - `Solid.Root`, `Solid.Owner`, `Solid.Lifecycle`, `Solid.Context`, `Solid.Utility`.
+- **Async:**
+  - `Solid.Async` (`createAsync` over `Aff`);
+  - `Solid.Action` (transactional mutations and optimistic values).
+- **Stores:** `Solid.Store` (typed paths, pure updates, projections, `createSelector`).
+- **Views:**
+  - `Solid.JSX`, `Solid.Component`;
+  - `Solid.Component.JS` (use JavaScript Solid components);
+  - `Solid.Control` (conditionals, lists, `loading`, `errored`, portals);
+  - `Solid.DOM`, `Solid.DOM.HTML` / `Solid.DOM.Props`, `Solid.DOM.SVG` / `Solid.DOM.SVG.Props`. The HTML and SVG modules are generated from `dom-indexed` by `npm run gen:dom`.
+- **Rendering:** `Solid.Web` (render, hydrate), `Solid.Web.SSR` (string, async and streamed server rendering).
+- **Routing and head tags:**
+  - `Solid.Router` (`route @"/users/:id"` gives the component `{ id :: String }`);
+  - `Solid.Router.Path` (`href`);
+  - `Solid.Router.Query` (cached route data);
+  - `Solid.Meta`.
+- **Start mode:** `Solid.Start.ServerFunction`, `Solid.Start.RequestEvent`, `Solid.Start.Response`, `Solid.Start.Middleware`.
 
-- `npm test`: client specs (`Test.Main`, rendered against happy-dom, Solid's dev build) and server specs (`Test.Server.Main`, Solid's server dev build). Specs fail on any Solid dev diagnostic.
-- `npm run test:purescript:es`: the same suites compiled with `purs-backend-es`.
-- `npm run test:browser-smoke`: Counter and TodoMVC production bundles in Chromium.
-- `npm run test:hydration`: server render in Node, hydrate in Chromium, DOM reuse and interactivity.
-- `npm run test:start`: the start-mode example built with Vite, SSR, hydration and a server function call.
-- `npm run bench`: the rows benchmark (see `docs/benchmarks`).
-- `npm run test:all`: everything but the bench.
+## Installing
 
-## Repo guide
+Solid 2 is a release candidate, so pin exact versions:
 
-- `src/Solid/*`: PureScript modules and their FFI.
-- `src/Examples/*`: example apps.
-- `scripts/gen-dom.mjs`: generates `Solid.DOM.HTML` / `Solid.DOM.Props` / SVG from `dom-indexed`.
-- `test/`: specs, browser smoke, hydration, start mode and benchmark harnesses.
-- `docs/solid-2-migration.md`: the Solid 2 migration plan, decisions and findings.
+```bash
+npm install --save-exact solid-js@2.0.0-rc.11 @solidjs/web@2.0.0-rc.11
+```
 
-## Project status
+```bash
+npm install --save-exact @solidjs/router@2.0.0-next.31 @solidjs/meta@1.0.0-next.2
+```
 
-Active development, pre-1.0.
+```bash
+npm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0-next.46
+```
 
-If you are evaluating the repo, treat this as a Solid-native PureScript runtime/UI foundation with strong typed boundaries, rather than a finalized stable framework.
+The router and meta packages are needed only for `Solid.Router` and `Solid.Meta`, and the Vite plugin only for start mode. Bundle development builds with the `development` export condition to get Solid's diagnostics.
+
+## Start mode
+
+A start-mode app is a `Component` exported from the plugin's `app` module. Server functions are `"use server"` functions in FFI files, declared as `foreign import save :: ServerFunction NewTodo Todo` and called with `call`. Their arguments and results must be `Serializable`.
+
+Compiled FFI lives in `output/`, outside the plugin's default `src/**` filter, so include it explicitly. Otherwise server functions ship to the browser:
+
+```js
+solid({
+  start: { app: "./app.js", node: true },
+  ssr: true,
+  serverFunctions: { filter: { include: ["output/**/foreign.js"] } },
+})
+```
+
+See `examples/src/StartMode/Host` and `examples/src/HackerNews/Host`.
+
+## Examples
+
+The `examples` workspace package holds:
+
+- `Counter`, `TodoMVC`: client-side apps;
+- `Hydration`: server rendering and hydration;
+- `StartMode`: the smallest full-stack app;
+- `HackerNews`: typed routes, cached server queries and streamed SSR;
+- `Bench`: the rows benchmark.
+
+```bash
+npm run build:example:hackernews
+```
+
+```bash
+PORT=3000 npm run start:example:hackernews
+```
+
+## Development
+
+Requires Node.js 22.12+, PureScript 0.15 and Spago.
+
+```bash
+npm install
+```
+
+```bash
+npm run test:all
+```
+
+| Script | What it runs |
+|---|---|
+| `npm test` | client specs (happy-dom) and server specs, both on Solid's dev build; they fail on any Solid diagnostic |
+| `npm run test:purescript:es` | the same specs compiled with `purs-backend-es` |
+| `npm run test:browser-smoke` | Counter and TodoMVC in Chromium |
+| `npm run test:hydration` | server render in Node, hydration in Chromium |
+| `npm run test:start` | the start-mode example built with Vite and driven in Chromium |
+| `npm run bench`, `npm run bench:reference` | the rows benchmark, and the same app in plain Solid ([results](docs/benchmarks/README.md)) |

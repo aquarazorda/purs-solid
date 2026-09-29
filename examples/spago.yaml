@@ -1,0 +1,23 @@
+package:
+  name: purs-solid-examples
+  dependencies:
+    - aff
+    - aff-promise
+    - arrays
+    - console
+    - dom-indexed
+    - effect
+    - either
+    - exceptions
+    - foldable-traversable
+    - integers
+    - maybe
+    - nullable
+    - ordered-collections
+    - prelude
+    - purs-solid
+    - refs
+    - tuples
+    - web-events
+    - web-html
+    - web-uievents

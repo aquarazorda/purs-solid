@@ -5,37 +5,41 @@ package:
     - aff-promise
     - argonaut-core
     - arraybuffer-types
-    - console
+    - arrays
     - dom-indexed
     - effect
-    - foreign-object
-    - functions
-    - web-touchevents
-    - web-pointerevents
-    - web-clipboard
-    - unsafe-coerce
-    - media-types
     - either
     - exceptions
+    - foreign-object
+    - functions
+    - js-uri
     - maybe
+    - media-types
     - nullable
     - prelude
-    - refs
+    - strings
     - tailrec
     - tuples
+    - unsafe-coerce
+    - web-clipboard
     - web-dom
     - web-events
     - web-fetch
-    - web-file
     - web-html
-    - web-uievents
+    - web-pointerevents
     - web-streams
+    - web-touchevents
+    - web-uievents
   test:
     main: Test.Main
     dependencies:
-      - exceptions
+      - foldable-traversable
+      - partial
+      - refs
       - spec
       - spec-node
+      - transformers
+      - unsafe-reference
 workspace:
   packageSet:
     registry: 73.0.0

@@ -1,5 +1,4 @@
--- | Internal: the store value policy. `Solid.Store` re-exports the classes
--- | without their members, so the policy can't be overridden.
+-- | Internal: not part of the public API.
 module Solid.Internal.Store
   ( Preparer
   , class StoreValue
@@ -16,15 +15,12 @@ import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
 
--- | Prepares a value before it enters a store: freezes every atomic value
--- | inside it so Solid stores it as-is. `null` means nothing to do (primitives,
--- | or records and arrays of primitives), so writing those costs nothing extra.
+-- | Freezes every atomic value inside a value so Solid stores it as-is. `null`
+-- | means nothing to do.
 foreign import data Preparer :: Type
 
--- | How a type is stored. Records and arrays are structural (tracked per
--- | field / element); primitives are plain values; anything else is atomic.
--- | Every type has an instance; the class is sealed (its member isn't
--- | exported), so the policy can't be overridden inconsistently.
+-- | How a type is stored: records and arrays are tracked per field / element;
+-- | anything else is atomic. Every type has an instance.
 class StoreValue :: Type -> Constraint
 class StoreValue a where
   preparer :: Proxy a -> Nullable Preparer

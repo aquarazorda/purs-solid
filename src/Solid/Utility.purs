@@ -1,8 +1,5 @@
--- | Reactive list mapping: the primitives behind list rendering.
--- |
--- | Each variant maps items to results once and reuses them as the list
--- | changes. Mappers run in `Setup` (each item gets its own owner, disposed
--- | when the item leaves the list).
+-- | Reactive list mapping. Results are reused as the list changes; each item
+-- | gets its own owner, disposed when the item leaves the list.
 module Solid.Utility
   ( mapArray
   , mapArrayUnkeyed
@@ -12,8 +9,7 @@ module Solid.Utility
 
 import Prelude
 
-import Effect (Effect)
-import Effect.Uncurried (EffectFn2, EffectFn3, mkEffectFn2, runEffectFn2, runEffectFn3)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, mkEffectFn1, mkEffectFn2, runEffectFn2, runEffectFn3)
 import Solid.Internal.Setup (Setup(..), runSetup)
 import Solid.Signal (Accessor)
 
@@ -46,8 +42,7 @@ foreign import mapArrayUnkeyedImpl
    . EffectFn2 (Accessor (Array a)) (EffectFn2 (Accessor a) Int b) (Accessor (Array b))
 
 -- | Keyed by a derived key: items with the same key share a result, whose item
--- | accessor updates to the newest value (e.g. key records by `_.id` after a
--- | refetch builds fresh records).
+-- | accessor updates to the newest value.
 mapArrayBy
   :: forall a b k
    . (a -> k)
@@ -64,6 +59,6 @@ foreign import mapArrayByImpl
 -- | Maps the indices `0 .. count - 1`; results are reused as `count` changes.
 repeat :: forall b. Accessor Int -> (Int -> Setup b) -> Setup (Accessor (Array b))
 repeat count mapIndex =
-  Setup (runEffectFn2 repeatImpl count (runSetup <<< mapIndex))
+  Setup (runEffectFn2 repeatImpl count (mkEffectFn1 (runSetup <<< mapIndex)))
 
-foreign import repeatImpl :: forall b. EffectFn2 (Accessor Int) (Int -> Effect b) (Accessor (Array b))
+foreign import repeatImpl :: forall b. EffectFn2 (Accessor Int) (EffectFn1 Int b) (Accessor (Array b))

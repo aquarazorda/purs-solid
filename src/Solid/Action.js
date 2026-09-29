@@ -1,9 +1,5 @@
 import { action as solidAction, createOptimistic as solidCreateOptimistic } from "solid-js";
 
-// Drives an `Action` as the generator Solid's `action` expects: `Write` steps
-// run synchronously inside the transaction; `Await` steps yield a promise, and
-// Solid re-enters the transaction and resumes with its result (or throws its
-// error into the generator).
 export const actionImpl = (eliminate) => (toPromise) => (steps) => {
   const done = (value) => ({ tag: "done", value });
   const write = (effect) => ({ tag: "write", effect });
@@ -22,8 +18,7 @@ export const actionImpl = (eliminate) => (toPromise) => (steps) => {
   return (input) => run(input);
 };
 
-// Function values are boxed so Solid doesn't read them as compute/updater
-// functions (same scheme as `Solid.Signal`).
+// Boxed so Solid doesn't treat function values as compute/updater functions.
 const box = (value) => ({ value });
 
 export const createOptimisticImpl = (initial) => {

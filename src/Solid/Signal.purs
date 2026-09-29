@@ -1,19 +1,6 @@
--- | Signals: the writable sources of the reactive graph.
--- |
--- | An `Accessor a` is a reactive value. Reading it inside a computation
--- | (a memo, an effect's compute phase, a reactive attribute) subscribes that
--- | computation to it. `Accessor` is a lawful `Monad`: `map`, `<*>`, `ado` and
--- | `do` build *derived* accessors, which are pure values that recompute when read
--- | (the Solid idiom "derived signals are just functions"). Use
--- | `Solid.Reactivity.createMemo` to cache a derived accessor.
--- |
--- | `Accessor` has no `MonadEffect` instance, so computations can't write
--- | signals or perform side effects. Writes (`set`, `modify`) are `Effect`s:
--- | run them from event handlers or an effect's apply phase.
--- |
--- | Writes are batched until the next microtask flush. After `set`, a read
--- | still returns the previous value until the flush (`Solid.Reactivity.flush`
--- | forces it). `modify` returns the value it wrote.
+-- | Signals: the writable sources of the reactive graph. `map` / `do` on an
+-- | `Accessor` build derived accessors that recompute when read (cache them
+-- | with `Solid.Reactivity.createMemo`). Writes are batched until the next flush.
 module Solid.Signal
   ( Accessor
   , Setter
@@ -41,12 +28,10 @@ import Solid.Internal.Equality (Equality(..), EqualityFn, toEqualityFn)
 import Solid.Internal.Equality (Equality(..), eqEquality) as Exports
 import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
 
--- | A reactive value of type `a`.
 foreign import data Accessor :: Type -> Type
 
 type role Accessor representational
 
--- | The write half of a signal.
 foreign import data Setter :: Type -> Type
 
 type Signal a = Accessor a /\ Setter a
@@ -97,8 +82,7 @@ defaultSignalOptions =
   , equality: DefaultEquals
   }
 
--- | Creates a signal. Allowed in `Effect` (unowned, e.g. in an event handler)
--- | and in `Setup` (owned). Signals need no disposal, so both are safe.
+-- | Works in `Effect` or `Setup`; signals need no disposal.
 createSignal :: forall m a. MonadReactive m => a -> m (Signal a)
 createSignal = createSignalWith defaultSignalOptions
 
@@ -113,17 +97,12 @@ foreign import createSignalImpl
   :: forall a
    . EffectFn4 String String (EqualityFn a) a { get :: Accessor a, set :: Setter a }
 
--- | Reads the current value. Only available in `Effect` (event handlers,
--- | effect apply phases), where reads don't subscribe to anything.
--- |
--- | Reading an async value (`Solid.Async.createAsync`) before its first value
--- | has arrived throws Solid's `NotReadyError`; use `Solid.Async.resolve` to
--- | wait for it instead.
+-- | Reads the current value without subscribing. Throws `NotReadyError` for an
+-- | async value that hasn't loaded yet; use `Solid.Async.resolve` to wait.
 foreign import get :: forall a. Accessor a -> Effect a
 
--- | Reads the current value during setup, deliberately without tracking.
--- | Use it for initial values; for anything that should stay reactive, pass
--- | the `Accessor` on instead.
+-- | Reads the current value during setup without tracking. For initial values;
+-- | pass the `Accessor` on for anything that should stay reactive.
 sample :: forall a. Accessor a -> Setup a
 sample accessor = Setup (untrackImpl accessor)
 

@@ -15,15 +15,8 @@ const equalityOptions = (name, mode, equals) => {
   return options;
 };
 
-// Each computation starts its Aff inside a Promise. The cleanup registered in
-// the same computation runs when a newer computation supersedes it (or on
-// disposal) and kills the fiber; a killed fiber's outcome is ignored.
-// Each computation starts its Aff inside a Promise. The cleanup registered in
-// the same computation runs when a newer computation supersedes it (or on
-// disposal) and kills the fiber; a killed fiber's outcome is ignored.
-//
-// With a codec, the memo holds the *encoded* value (that's what Solid
-// serializes into the page), and a second memo decodes it once per change.
+// With a codec, the memo holds the encoded value (what Solid serializes) and a
+// second memo decodes it.
 export const createAsyncImpl = (start, rep, mode, equals, compute) => {
   const encode = rep.encode;
   const options = equalityOptions(rep.name, encode == null ? mode : "default", equals);
@@ -71,7 +64,7 @@ export const createAsyncImpl = (start, rep, mode, equals, compute) => {
 };
 
 export const refreshImpl = (target) => {
-  // Errors surface through the graph (loading/error boundaries), not here.
+  // Errors surface through the graph, not here.
   solidRefresh(target).catch(() => {});
 };
 

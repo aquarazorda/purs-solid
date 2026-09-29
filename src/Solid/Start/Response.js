@@ -1,9 +1,5 @@
-import { httpHeader, httpStatus } from "@solidjs/web";
+import { httpHeader } from "@solidjs/web";
 
-export const httpStatusImpl = (code) => {
-  httpStatus(code);
-};
+export { httpStatus as httpStatusImpl } from "@solidjs/web";
 
-export const httpHeaderImpl = (name, value, append) => {
-  httpHeader(name, value, append ? { append: true } : undefined);
-};
+export const httpHeaderImpl = (name, value, append) => httpHeader(name, value, append ? { append: true } : undefined);

@@ -1,9 +1,6 @@
--- | Response status and headers declared while rendering (start mode SSR).
--- |
--- | Solid ties these to the current reactive scope: they apply while the
--- | scope is rendered and are withdrawn if it's disposed before the response
--- | head is sent (e.g. a not-found page inside a boundary that recovers).
--- | Hence `Setup`. On the client they do nothing.
+-- | Response status and headers declared while server rendering. They're
+-- | withdrawn if their scope is disposed before the response head is sent.
+-- | On the client they do nothing.
 module Solid.Start.Response
   ( httpStatus
   , httpHeader
