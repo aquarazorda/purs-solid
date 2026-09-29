@@ -19,9 +19,13 @@ module Solid.Meta
 
 import Prelude
 
-import Data.Either (Either(..))
+import Data.Bifunctor (lmap)
+import Data.Either (Either)
 import Data.Maybe (Maybe)
+import Data.Nullable (Nullable, toNullable)
 import Effect (Effect)
+import Effect.Uncurried (EffectFn1, runEffectFn1)
+import Solid.Internal.Error (tryMessage)
 import Solid.JSX (JSX)
 import Solid.Signal (Accessor)
 
@@ -80,11 +84,22 @@ foreign import base :: forall props. { | props } -> JSX
 
 foreign import stylesheet :: forall props. { | props } -> JSX
 
-foreign import useHeadImpl :: forall props. TagDescription props -> Effect (Either String Unit)
+type NullableTagDescription props =
+  { tag :: String
+  , props :: { | props }
+  , setting :: Nullable TagSetting
+  , id :: String
+  , name :: Nullable String
+  }
+
+foreign import useHeadImpl :: forall props. EffectFn1 (NullableTagDescription props) Unit
 
 useHead :: forall props. TagDescription props -> Effect (Either MetaError Unit)
-useHead tagDescription = do
-  result <- useHeadImpl tagDescription
-  pure case result of
-    Left message -> Left (MetaRuntimeError message)
-    Right unitValue -> Right unitValue
+useHead tagDescription =
+  lmap MetaRuntimeError <$> tryMessage (runEffectFn1 useHeadImpl nullableDescription)
+  where
+  nullableDescription =
+    tagDescription
+      { setting = toNullable tagDescription.setting
+      , name = toNullable tagDescription.name
+      }

@@ -21,6 +21,7 @@ module Solid.Start.Server.Function
 
 import Control.Promise as Promise
 import Data.Array as Array
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String as String
@@ -28,8 +29,10 @@ import Data.String.CodeUnits as StringCodeUnits
 import Data.String.Pattern (Pattern(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Aff as Aff
 import Prelude
 
+import Solid.Internal.Error (errorMessage)
 import Solid.Start.Error (StartError(..))
 import Solid.Start.Internal.Serialization (WireCodec, decodeWith, encodeWith)
 
@@ -184,8 +187,8 @@ callWithTransportCachedAff serverFunction namespace hooks transport input = do
 
 httpPostTransport :: String -> SerializedTransportAff
 httpPostTransport endpoint payload = do
-  result <- Promise.toAffE (httpPostTransportImpl endpoint payload)
-  pure case result of
+  result <- Aff.try (Promise.toAffE (httpPostTransportImpl endpoint payload))
+  pure case lmap errorMessage result of
     Left message ->
       case decodeStartErrorWire message of
         Just startError -> Left startError
@@ -210,7 +213,7 @@ dispatchSerialized (ServerFunction serverFunction) serializedInput =
 foreign import httpPostTransportImpl
   :: String
   -> String
-  -> Effect (Promise.Promise (Either String String))
+  -> Effect (Promise.Promise String)
 
 encodeStartErrorWire :: StartError -> String
 encodeStartErrorWire startError =

@@ -3,23 +3,16 @@ import {
   getOwner as solidGetOwner,
   useContext as solidUseContext,
 } from "solid-js";
-import * as Data_Maybe from "../Data.Maybe/index.js";
 
-const isJust = (maybe) =>
-  maybe instanceof Data_Maybe.Just;
+export const createContextImpl = () =>
+  solidCreateContext();
 
-export const createContextImpl = (defaultValue) => () =>
-  isJust(defaultValue)
-    ? solidCreateContext(defaultValue.value0)
-    : solidCreateContext();
+export const createContextWithDefaultImpl = (defaultValue) =>
+  solidCreateContext(defaultValue);
 
-export const useContext = (context) => () => {
-  const value = solidUseContext(context);
-
-  return value === undefined
-    ? Data_Maybe.Nothing.value
-    : Data_Maybe.Just.create(value);
-};
+// Missing context is `undefined`; the PureScript side turns it into `Nothing`.
+export const useContextImpl = (context) =>
+  solidUseContext(context);
 
 export const withContext = (context) => (value) => (action) => () => {
   const owner = solidGetOwner();

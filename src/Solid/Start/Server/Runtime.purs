@@ -17,6 +17,7 @@ module Solid.Start.Server.Runtime
 import Control.Promise as Promise
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toMaybe)
 import Data.String as String
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
@@ -36,19 +37,37 @@ foreign import readRuntimeMethod :: RuntimeRequest -> Effect String
 
 foreign import readRuntimePath :: RuntimeRequest -> Effect String
 
-foreign import readRuntimeHeaders :: RuntimeRequest -> Effect (Array (String /\ String))
+-- | Header and query pairs as they cross the FFI boundary.
+type Pair = { name :: String, value :: String }
 
-foreign import readRuntimeQuery :: RuntimeRequest -> Effect (Array (String /\ String))
+fromPair :: Pair -> String /\ String
+fromPair { name, value } = name /\ value
 
-foreign import readRuntimeBody :: RuntimeRequest -> Effect (Maybe String)
+toPair :: String /\ String -> Pair
+toPair (name /\ value) = { name, value }
+
+foreign import readRuntimeHeadersImpl :: RuntimeRequest -> Effect (Array Pair)
+
+readRuntimeHeaders :: RuntimeRequest -> Effect (Array (String /\ String))
+readRuntimeHeaders = map (map fromPair) <<< readRuntimeHeadersImpl
+
+foreign import readRuntimeQueryImpl :: RuntimeRequest -> Effect (Array Pair)
+
+readRuntimeQuery :: RuntimeRequest -> Effect (Array (String /\ String))
+readRuntimeQuery = map (map fromPair) <<< readRuntimeQueryImpl
+
+foreign import readRuntimeBodyImpl :: RuntimeRequest -> Effect (Nullable String)
+
+readRuntimeBody :: RuntimeRequest -> Effect (Maybe String)
+readRuntimeBody = map toMaybe <<< readRuntimeBodyImpl
 
 foreign import readRuntimeBodyAsync
   :: RuntimeRequest
-  -> Effect (Promise.Promise (Maybe String))
+  -> Effect (Promise.Promise (Nullable String))
 
 foreign import mkRuntimeResponseImpl
   :: Int
-  -> Array (String /\ String)
+  -> Array Pair
   -> String
   -> String
   -> Array String
@@ -56,7 +75,10 @@ foreign import mkRuntimeResponseImpl
 
 foreign import runtimeResponseStatus :: RuntimeResponse -> Int
 
-foreign import runtimeResponseHeaders :: RuntimeResponse -> Array (String /\ String)
+foreign import runtimeResponseHeadersImpl :: RuntimeResponse -> Array Pair
+
+runtimeResponseHeaders :: RuntimeResponse -> Array (String /\ String)
+runtimeResponseHeaders = map fromPair <<< runtimeResponseHeadersImpl
 
 foreign import runtimeResponseBody :: RuntimeResponse -> String
 
@@ -84,7 +106,7 @@ adaptWebRequest runtimeRequest = do
   pathValue <- liftEffect (readRuntimePath runtimeRequest)
   headersValue <- liftEffect (readRuntimeHeaders runtimeRequest)
   queryValue <- liftEffect (readRuntimeQuery runtimeRequest)
-  bodyValue <- Promise.toAffE (readRuntimeBodyAsync runtimeRequest)
+  bodyValue <- toMaybe <$> Promise.toAffE (readRuntimeBodyAsync runtimeRequest)
   pure case Request.parseMethod methodValue of
     Nothing -> Left (EnvironmentError ("Unsupported HTTP method: " <> methodValue))
     Just method ->
@@ -94,7 +116,7 @@ toRuntimeResponse :: Response.Response -> RuntimeResponse
 toRuntimeResponse response =
   mkRuntimeResponseImpl
     (Response.status response)
-    (Response.headers response)
+    (toPair <$> Response.headers response)
     bodyKind
     bodyText
     streamChunks

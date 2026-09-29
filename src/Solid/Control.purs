@@ -38,6 +38,7 @@ module Solid.Control
   ) where
 
 import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toNullable)
 import Effect (Effect)
 import Prelude hiding (when)
 
@@ -65,18 +66,30 @@ whenElseKeyed = whenElseKeyedImpl
 showMaybe :: forall a. Accessor (Maybe a) -> (Accessor a -> Effect JSX) -> JSX
 showMaybe condition render = showMaybeElse condition empty render
 
-foreign import showMaybeElseImpl :: forall a. Accessor (Maybe a) -> JSX -> (Accessor a -> Effect JSX) -> JSX
+foreign import showMaybeElseImpl
+  :: forall a
+   . (Maybe a -> Nullable a)
+  -> Accessor (Maybe a)
+  -> JSX
+  -> (Accessor a -> Effect JSX)
+  -> JSX
 
 showMaybeElse :: forall a. Accessor (Maybe a) -> JSX -> (Accessor a -> Effect JSX) -> JSX
-showMaybeElse = showMaybeElseImpl
+showMaybeElse = showMaybeElseImpl toNullable
 
 showMaybeKeyed :: forall a. Accessor (Maybe a) -> (a -> Effect JSX) -> JSX
 showMaybeKeyed condition render = showMaybeKeyedElse condition empty render
 
-foreign import showMaybeKeyedElseImpl :: forall a. Accessor (Maybe a) -> JSX -> (a -> Effect JSX) -> JSX
+foreign import showMaybeKeyedElseImpl
+  :: forall a
+   . (Maybe a -> Nullable a)
+  -> Accessor (Maybe a)
+  -> JSX
+  -> (a -> Effect JSX)
+  -> JSX
 
 showMaybeKeyedElse :: forall a. Accessor (Maybe a) -> JSX -> (a -> Effect JSX) -> JSX
-showMaybeKeyedElse = showMaybeKeyedElseImpl
+showMaybeKeyedElse = showMaybeKeyedElseImpl toNullable
 
 forEach :: forall a. Accessor (Array a) -> (a -> Effect JSX) -> JSX
 forEach each render = forEachElse each empty render
@@ -120,7 +133,15 @@ foreign import matchWhen :: Accessor Boolean -> JSX -> JSX
 
 foreign import matchWhenKeyed :: Accessor Boolean -> JSX -> JSX
 
-foreign import matchMaybe :: forall a. Accessor (Maybe a) -> (a -> Effect JSX) -> JSX
+foreign import matchMaybeImpl
+  :: forall a
+   . (Maybe a -> Nullable a)
+  -> Accessor (Maybe a)
+  -> (a -> Effect JSX)
+  -> JSX
+
+matchMaybe :: forall a. Accessor (Maybe a) -> (a -> Effect JSX) -> JSX
+matchMaybe = matchMaybeImpl toNullable
 
 switchCases :: Array JSX -> JSX
 switchCases = switchCasesElse empty
@@ -203,13 +224,13 @@ suspenseList revealOrder children =
     (defaultSuspenseListOptions { revealOrder = revealOrder })
     children
 
-foreign import suspenseListImpl :: String -> Maybe String -> Array JSX -> JSX
+foreign import suspenseListImpl :: String -> Nullable String -> Array JSX -> JSX
 
 suspenseListWith :: SuspenseListOptions -> Array JSX -> JSX
 suspenseListWith options children =
   suspenseListImpl
     (toRevealOrderTag options.revealOrder)
-    (toTailTag <$> options.tail)
+    (toNullable (toTailTag <$> options.tail))
     children
 
 toRevealOrderTag :: SuspenseRevealOrder -> String
@@ -239,11 +260,11 @@ defaultPortalOptions =
 portal :: JSX -> JSX
 portal = portalWith defaultPortalOptions
 
-foreign import portalWithImpl :: Maybe Mountable -> Boolean -> Boolean -> JSX -> JSX
+foreign import portalWithImpl :: Nullable Mountable -> Boolean -> Boolean -> JSX -> JSX
 
 portalWith :: PortalOptions -> JSX -> JSX
 portalWith options content =
-  portalWithImpl options.mount options.useShadow options.isSVG content
+  portalWithImpl (toNullable options.mount) options.useShadow options.isSVG content
 
 portalAt :: Maybe Mountable -> JSX -> JSX
 portalAt maybeMount content =

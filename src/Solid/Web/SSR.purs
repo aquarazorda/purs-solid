@@ -5,14 +5,19 @@ module Solid.Web.SSR
   , renderToStringAsync
   , renderToStream
   , hydrationScript
+  , getAssets
   ) where
 
 import Prelude
 
 import Control.Promise as Promise
-import Data.Either (Either(..))
+import Data.Bifunctor (lmap)
+import Data.Either (Either)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Aff as Aff
+import Effect.Uncurried (EffectFn1, runEffectFn1)
+import Solid.Internal.Error (errorMessage, tryMessage)
 
 foreign import data RenderStream :: Type
 
@@ -27,36 +32,33 @@ instance showSsrError :: Show SsrError where
 
 renderToString :: forall a. Effect a -> Effect (Either SsrError String)
 renderToString view =
-  mapError <$> renderToStringImpl view
+  mapError <$> tryMessage (runEffectFn1 renderToStringImpl view)
 
 renderToStringAsync :: forall a. Effect a -> Aff (Either SsrError String)
-renderToStringAsync view = do
-  result <- Promise.toAffE (renderToStringAsyncImpl view)
-  pure (mapError result)
+renderToStringAsync view =
+  lmap (RuntimeError <<< errorMessage) <$> Aff.try (Promise.toAffE (runEffectFn1 renderToStringAsyncImpl view))
 
 renderToStream :: forall a. Effect a -> Effect (Either SsrError RenderStream)
 renderToStream view =
-  mapError <$> renderToStreamImpl view
+  mapError <$> tryMessage (runEffectFn1 renderToStreamImpl view)
 
 hydrationScript :: Effect (Either SsrError String)
 hydrationScript =
-  mapError <$> hydrationScriptImpl
+  mapError <$> tryMessage hydrationScriptImpl
 
-foreign import renderToStringImpl :: forall a. Effect a -> Effect (Either String String)
+getAssets :: Effect (Either SsrError String)
+getAssets =
+  mapError <$> tryMessage getAssetsImpl
 
-foreign import renderToStringAsyncImpl
-  :: forall a
-   . Effect a
-  -> Effect (Promise.Promise (Either String String))
+foreign import renderToStringImpl :: forall a. EffectFn1 (Effect a) String
 
-foreign import renderToStreamImpl
-  :: forall a
-   . Effect a
-  -> Effect (Either String RenderStream)
+foreign import renderToStringAsyncImpl :: forall a. EffectFn1 (Effect a) (Promise.Promise String)
 
-foreign import hydrationScriptImpl :: Effect (Either String String)
+foreign import renderToStreamImpl :: forall a. EffectFn1 (Effect a) RenderStream
+
+foreign import hydrationScriptImpl :: Effect String
+
+foreign import getAssetsImpl :: Effect String
 
 mapError :: forall a. Either String a -> Either SsrError a
-mapError = case _ of
-  Left message -> Left (RuntimeError message)
-  Right value -> Right value
+mapError = lmap RuntimeError

@@ -6,19 +6,28 @@ module Solid.Context
   , withContext
   ) where
 
-import Data.Maybe (Maybe(..))
+import Prelude
+
+import Data.Maybe (Maybe)
+import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
+import Effect.Uncurried (EffectFn1, runEffectFn1)
 
 foreign import data Context :: Type -> Type
 
+foreign import createContextImpl :: forall a. Effect (Context a)
+
 createContext :: forall a. Effect (Context a)
-createContext = createContextImpl Nothing
+createContext = createContextImpl
+
+foreign import createContextWithDefaultImpl :: forall a. EffectFn1 a (Context a)
 
 createContextWithDefault :: forall a. a -> Effect (Context a)
-createContextWithDefault defaultValue = createContextImpl (Just defaultValue)
+createContextWithDefault = runEffectFn1 createContextWithDefaultImpl
 
-foreign import createContextImpl :: forall a. Maybe a -> Effect (Context a)
+foreign import useContextImpl :: forall a. EffectFn1 (Context a) (Nullable a)
 
-foreign import useContext :: forall a. Context a -> Effect (Maybe a)
+useContext :: forall a. Context a -> Effect (Maybe a)
+useContext context = toMaybe <$> runEffectFn1 useContextImpl context
 
 foreign import withContext :: forall a b. Context a -> a -> Effect b -> Effect b

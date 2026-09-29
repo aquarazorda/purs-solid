@@ -14,3 +14,6 @@ generated-docs/
 
 # generated SolidStart alpha app output
 examples/
+
+# spec-node run cache
+.spec-results

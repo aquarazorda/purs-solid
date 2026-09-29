@@ -26,7 +26,8 @@ module Solid.Utility
 
 import Prelude
 
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toMaybe)
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
 import Solid.Signal (Accessor)
@@ -51,12 +52,29 @@ defaultOnOptions =
 
 foreign import batch :: forall a. Effect a -> Effect a
 
-foreign import catchError :: forall a. Effect a -> (String -> Effect Unit) -> Effect (Maybe a)
+foreign import catchErrorImpl
+  :: forall a
+   . (a -> Maybe a)
+  -> Maybe a
+  -> Effect a
+  -> (String -> Effect Unit)
+  -> Effect (Maybe a)
 
-foreign import from
+catchError :: forall a. Effect a -> (String -> Effect Unit) -> Effect (Maybe a)
+catchError = catchErrorImpl Just Nothing
+
+foreign import fromImpl
+  :: forall a
+   . (a -> Maybe a)
+  -> Maybe a
+  -> ((a -> Effect Unit) -> Effect (Effect Unit))
+  -> Effect (Accessor (Maybe a))
+
+from
   :: forall a
    . ((a -> Effect Unit) -> Effect (Effect Unit))
   -> Effect (Accessor (Maybe a))
+from = fromImpl Just Nothing
 
 foreign import fromWithInitial
   :: forall a
@@ -107,7 +125,10 @@ foreign import useTransitionImpl :: Effect TransitionParts
 
 foreign import untrack :: forall a. Effect a -> Effect a
 
-foreign import getOwner :: Effect (Maybe Owner)
+foreign import getOwnerImpl :: Effect (Nullable Owner)
+
+getOwner :: Effect (Maybe Owner)
+getOwner = toMaybe <$> getOwnerImpl
 
 foreign import runWithOwner :: forall a. Owner -> Effect a -> Effect a
 
@@ -115,11 +136,13 @@ on :: forall a b. Accessor a -> (a -> Maybe a -> Effect b) -> Effect b
 on = onWith defaultOnOptions
 
 onWith :: forall a b. OnOptions -> Accessor a -> (a -> Maybe a -> Effect b) -> Effect b
-onWith options accessor run = onImpl accessor options.defer run
+onWith options accessor run = onImpl Just Nothing accessor options.defer run
 
 foreign import onImpl
   :: forall a b
-   . Accessor a
+   . (a -> Maybe a)
+  -> Maybe a
+  -> Accessor a
   -> Boolean
   -> (a -> Maybe a -> Effect b)
   -> Effect b

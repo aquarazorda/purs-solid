@@ -18,7 +18,7 @@ const readRequestBody = async (request) => {
   return Buffer.concat(chunks).toString("utf8");
 };
 
-const toTuple = (left, right) => ({ value0: String(left), value1: String(right) });
+const toPair = (key, value) => [String(key), String(value)];
 
 const toRuntimeRequest = async (request, url) => {
   const method = typeof request.method === "string" ? request.method : "GET";
@@ -26,17 +26,17 @@ const toRuntimeRequest = async (request, url) => {
 
   const headers = Object.entries(request.headers ?? {}).flatMap(([key, value]) => {
     if (Array.isArray(value)) {
-      return value.map((entry) => toTuple(key, entry));
+      return value.map((entry) => toPair(key, entry));
     }
 
     if (typeof value === "string") {
-      return [toTuple(key, value)];
+      return [toPair(key, value)];
     }
 
     return [];
   });
 
-  const query = Array.from(url.searchParams.entries()).map(([key, value]) => toTuple(key, value));
+  const query = Array.from(url.searchParams.entries()).map(([key, value]) => toPair(key, value));
 
   return {
     method,
@@ -45,22 +45,6 @@ const toRuntimeRequest = async (request, url) => {
     query,
     body: body === "" ? null : body,
   };
-};
-
-const toWebHeaders = (pairs) => {
-  const headers = new Headers();
-
-  for (const pair of pairs) {
-    const key = pair?.value0;
-    const value = pair?.value1;
-    if (typeof key !== "string" || key.length === 0 || typeof value !== "string") {
-      continue;
-    }
-
-    headers.append(key, value);
-  }
-
-  return headers;
 };
 
 let outputReadyPromise;
@@ -101,7 +85,8 @@ export default eventHandler(async (event) => {
   const runtimeResponse = serverMain.handleRuntimeRequest(runtimeRequest)();
 
   const status = runtime.runtimeResponseStatus(runtimeResponse);
-  const headers = toWebHeaders(runtime.runtimeResponseHeaders(runtimeResponse));
+  // On Node >= 22 the runtime response is a Web Response, so its headers can be reused directly.
+  const headers = new Headers(runtimeResponse.headers);
   const bodyKind = runtime.runtimeResponseBodyKind(runtimeResponse);
 
   if (bodyKind === "stream") {

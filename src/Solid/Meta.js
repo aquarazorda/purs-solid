@@ -1,25 +1,5 @@
 import { Base as solidBase, Link as solidLink, Meta as solidMeta, MetaProvider as solidMetaProvider, Style as solidStyle, Stylesheet as solidStylesheet, Title as solidTitle, useHead as solidUseHead } from "@solidjs/meta";
 import { createComponent } from "solid-js/web";
-import * as Data_Either from "../Data.Either/index.js";
-import * as Data_Maybe from "../Data.Maybe/index.js";
-import * as Data_Unit from "../Data.Unit/index.js";
-
-const fromMaybe = (maybeValue) =>
-  maybeValue instanceof Data_Maybe.Just
-    ? maybeValue.value0
-    : undefined;
-
-const toErrorMessage = (error) => {
-  if (typeof error === "string") {
-    return error;
-  }
-
-  if (error instanceof Error && typeof error.message === "string") {
-    return error.message;
-  }
-
-  return String(error);
-};
 
 const fallbackDataAttribute = "data-purs-solid-meta-id";
 
@@ -140,22 +120,23 @@ export const base = (props) =>
 export const stylesheet = (props) =>
   createComponent(solidStylesheet, props);
 
-export const useHeadImpl = (tagDescription) => () => {
-  try {
-    solidUseHead({
-      ...tagDescription,
-      setting: fromMaybe(tagDescription.setting),
-      name: fromMaybe(tagDescription.name),
-    });
+// `setting` and `name` arrive as nullable values (converted on the PureScript side).
+export const useHeadImpl = (tagDescription) => {
+  const description = {
+    ...tagDescription,
+    setting: tagDescription.setting ?? undefined,
+    name: tagDescription.name ?? undefined,
+  };
 
-    return Data_Either.Right.create(Data_Unit.unit);
+  try {
+    solidUseHead(description);
   } catch (error) {
-    const message = toErrorMessage(error);
-    if (message.includes("<MetaProvider /> should be in the tree")) {
-      applyHeadFallback(tagDescription);
-      return Data_Either.Right.create(Data_Unit.unit);
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (!message.includes("<MetaProvider /> should be in the tree")) {
+      throw error;
     }
 
-    return Data_Either.Left.create(message);
+    applyHeadFallback(description);
   }
 };

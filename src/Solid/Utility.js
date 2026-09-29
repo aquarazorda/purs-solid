@@ -13,7 +13,9 @@ import {
   useTransition as solidUseTransition,
   untrack as solidUntrack,
 } from "solid-js";
-import * as Data_Maybe from "../Data.Maybe/index.js";
+
+// Functions taking `just`/`nothing` receive `Data.Maybe.Just`/`Nothing` from PureScript,
+// so results that are legitimately `undefined` (e.g. `unit`) stay distinguishable.
 
 export const batch = (action) => () =>
   solidBatch(() => action());
@@ -30,7 +32,7 @@ const toErrorMessage = (error) => {
   return String(error);
 };
 
-export const catchError = (attempt) => (recover) => () =>
+export const catchErrorImpl = (just) => (nothing) => (attempt) => (recover) => () =>
   {
     let failed = false;
 
@@ -50,14 +52,14 @@ export const catchError = (attempt) => (recover) => () =>
       }
     );
 
-    if (failed || result === undefined) {
-      return Data_Maybe.Nothing.value;
+    if (failed) {
+      return nothing;
     }
 
-    return Data_Maybe.Just.create(result);
+    return just(result);
   };
 
-export const from = (subscribe) => () => {
+export const fromImpl = (just) => (nothing) => (subscribe) => () => {
   const stream = solidFrom((set) => {
     const cleanup = subscribe((value) => () => set(value))();
 
@@ -69,8 +71,8 @@ export const from = (subscribe) => () => {
   return () => {
     const current = stream();
     return current === undefined
-      ? Data_Maybe.Nothing.value
-      : Data_Maybe.Just.create(current);
+      ? nothing
+      : just(current);
   };
 };
 
@@ -128,17 +130,13 @@ export const useTransitionImpl = () => {
 export const untrack = (action) => () =>
   solidUntrack(() => action());
 
-export const getOwner = () => {
-  const owner = solidGetOwner();
-  return owner == null
-    ? Data_Maybe.Nothing.value
-    : Data_Maybe.Just.create(owner);
-};
+export const getOwnerImpl = () =>
+  solidGetOwner();
 
 export const runWithOwner = (owner) => (action) => () =>
   solidRunWithOwner(owner, () => action());
 
-export const onImpl = (accessor) => (defer) => (run) => {
+export const onImpl = (just) => (nothing) => (accessor) => (defer) => (run) => {
   let initialized = false;
   let previous;
 
@@ -153,10 +151,10 @@ export const onImpl = (accessor) => (defer) => (run) => {
         return undefined;
       }
 
-      return run(current)(Data_Maybe.Nothing.value)();
+      return run(current)(nothing)();
     }
 
-    const result = run(current)(Data_Maybe.Just.create(previous))();
+    const result = run(current)(just(previous))();
     previous = current;
 
     return result;

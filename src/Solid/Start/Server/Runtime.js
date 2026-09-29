@@ -1,6 +1,5 @@
-import * as Data_Maybe from "../Data.Maybe/index.js";
-
-const tuple = (left) => (right) => ({ value0: left, value1: right });
+// Header/query pairs cross the FFI boundary as `{ name, value }` records.
+const pair = (name, value) => ({ name, value });
 
 const hasRequestCtor = () => typeof Request !== "undefined";
 const hasHeadersCtor = () => typeof Headers !== "undefined";
@@ -40,39 +39,68 @@ const normalizePath = (value) => {
   return value;
 };
 
+const normalizePair = (key, pairValue) => {
+  if (key == null || pairValue == null) {
+    return null;
+  }
+
+  const normalizedKey = String(key).trim();
+  if (normalizedKey.length === 0) {
+    return null;
+  }
+
+  return pair(normalizedKey, String(pairValue));
+};
+
 const normalizePairs = (value) => {
+  const pairs = [];
+
+  const pushPair = (key, pairValue) => {
+    const normalized = normalizePair(key, pairValue);
+    if (normalized != null) {
+      pairs.push(normalized);
+    }
+  };
+
   if (isWebHeaders(value)) {
-    return Array.from(value.entries()).map(([key, pairValue]) => tuple(String(key))(String(pairValue)));
+    for (const [key, pairValue] of value.entries()) {
+      pushPair(key, pairValue);
+    }
+
+    return pairs;
   }
 
   if (Array.isArray(value)) {
-    return value.map((entry) => {
-      if (entry != null && typeof entry === "object" && "value0" in entry && "value1" in entry) {
-        return tuple(String(entry.value0))(String(entry.value1));
+    for (const entry of value) {
+      if (entry != null && typeof entry === "object" && "name" in entry && "value" in entry) {
+        pushPair(entry.name, entry.value);
+        continue;
       }
 
       if (Array.isArray(entry) && entry.length >= 2) {
-        return tuple(String(entry[0]))(String(entry[1]));
+        pushPair(entry[0], entry[1]);
+        continue;
       }
 
-      return tuple("invalid")("invalid");
-    });
+    }
+
+    return pairs;
   }
 
   if (value != null && typeof value === "object") {
-    return Object.entries(value).map(([key, pairValue]) => tuple(String(key))(String(pairValue)));
+    for (const [key, pairValue] of Object.entries(value)) {
+      pushPair(key, pairValue);
+    }
+
+    return pairs;
   }
 
-  return [];
+  return pairs;
 };
 
-const normalizeBody = (value) => {
-  if (value == null) {
-    return Data_Maybe.Nothing.value;
-  }
-
-  return Data_Maybe.Just.create(String(value));
-};
+// Bodies are nullable strings; the PureScript side converts them to `Maybe`.
+const normalizeBody = (value) =>
+  value == null ? null : String(value);
 
 const bodyTextFromRequest = async (request) => {
   if (!isWebRequest(request)) {
@@ -80,14 +108,14 @@ const bodyTextFromRequest = async (request) => {
   }
 
   if (request.method === "GET" || request.method === "HEAD") {
-    return Data_Maybe.Nothing.value;
+    return null;
   }
 
   try {
     const text = await request.clone().text();
-    return text === "" ? Data_Maybe.Nothing.value : Data_Maybe.Just.create(text);
+    return text === "" ? null : text;
   } catch {
-    return Data_Maybe.Nothing.value;
+    return null;
   }
 };
 
@@ -118,7 +146,7 @@ const inferBodyKind = (response) => {
 };
 
 const toResponseInitHeaders = (headers) =>
-  normalizePairs(headers).map((entry) => [entry.value0, entry.value1]);
+  normalizePairs(headers).map((entry) => [entry.name, entry.value]);
 
 const normalizeStreamChunks = (chunks, body) => {
   if (Array.isArray(chunks)) {
@@ -203,7 +231,7 @@ export const readRuntimePath = (request) => () => {
   return parsed == null ? "/" : normalizePath(parsed.pathname);
 };
 
-export const readRuntimeHeaders = (request) => () => {
+export const readRuntimeHeadersImpl = (request) => () => {
   if (isWebRequest(request)) {
     return normalizePairs(request.headers);
   }
@@ -211,14 +239,14 @@ export const readRuntimeHeaders = (request) => () => {
   return normalizePairs(request?.headers);
 };
 
-export const readRuntimeQuery = (request) => () => {
+export const readRuntimeQueryImpl = (request) => () => {
   if (isWebRequest(request)) {
     const parsed = parseUrl(request.url);
     if (parsed == null) {
       return [];
     }
 
-    return Array.from(parsed.searchParams.entries()).map(([key, value]) => tuple(String(key))(String(value)));
+    return Array.from(parsed.searchParams.entries()).map(([key, value]) => pair(String(key), String(value)));
   }
 
   if (request?.query != null) {
@@ -230,10 +258,10 @@ export const readRuntimeQuery = (request) => () => {
     return [];
   }
 
-  return Array.from(parsed.searchParams.entries()).map(([key, value]) => tuple(String(key))(String(value)));
+  return Array.from(parsed.searchParams.entries()).map(([key, value]) => pair(String(key), String(value)));
 };
 
-export const readRuntimeBody = (request) => () => normalizeBody(request?.body);
+export const readRuntimeBodyImpl = (request) => () => normalizeBody(request?.body);
 
 export const readRuntimeBodyAsync = (request) => () =>
   bodyTextFromRequest(request);
@@ -283,7 +311,7 @@ export const runtimeResponseStatus = (response) => {
   return response.status;
 };
 
-export const runtimeResponseHeaders = (response) => {
+export const runtimeResponseHeadersImpl = (response) => {
   if (isWebResponse(response)) {
     return normalizePairs(response.headers);
   }

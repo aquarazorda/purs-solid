@@ -18,9 +18,11 @@ module Solid.Router
 
 import Prelude
 
-import Data.Either (Either(..))
+import Data.Bifunctor (lmap)
+import Data.Either (Either)
 import Effect (Effect)
 
+import Solid.Internal.Error (tryMessage)
 import Solid.JSX (JSX)
 import Solid.Signal (Accessor)
 
@@ -47,9 +49,9 @@ defaultNavigateOptions =
   }
 
 type Navigate =
-  String
-  -> NavigateOptions
-  -> Effect Unit
+  { to :: String -> NavigateOptions -> Effect Unit
+  , by :: Int -> Effect Unit
+  }
 
 foreign import data Location :: Type
 
@@ -59,14 +61,10 @@ foreign import route :: forall props. { | props } -> Array JSX -> JSX
 
 foreign import link :: forall props. { href :: String | props } -> Array JSX -> JSX
 
-foreign import useLocationImpl :: Effect (Either String Location)
+foreign import useLocationImpl :: Effect Location
 
 useLocation :: Effect (Either RouterError Location)
-useLocation = do
-  result <- useLocationImpl
-  pure case result of
-    Left message -> Left (RouterRuntimeError message)
-    Right location -> Right location
+useLocation = lmap RouterRuntimeError <$> tryMessage useLocationImpl
 
 foreign import pathname :: Location -> Accessor String
 
@@ -74,17 +72,15 @@ foreign import search :: Location -> Accessor String
 
 foreign import hash :: Location -> Accessor String
 
-foreign import useNavigateImpl :: Effect (Either String Navigate)
+foreign import useNavigateImpl :: Effect Navigate
 
 useNavigate :: Effect (Either RouterError Navigate)
-useNavigate = do
-  result <- useNavigateImpl
-  pure case result of
-    Left message -> Left (RouterRuntimeError message)
-    Right navigateTo -> Right navigateTo
+useNavigate = lmap RouterRuntimeError <$> tryMessage useNavigateImpl
 
 navigate :: Navigate -> String -> Effect Unit
 navigate navigateTo destination =
-  navigateTo destination defaultNavigateOptions
+  navigateTo.to destination defaultNavigateOptions
 
-foreign import navigateBy :: Navigate -> Int -> Effect Unit
+navigateBy :: Navigate -> Int -> Effect Unit
+navigateBy navigateTo delta =
+  navigateTo.by delta

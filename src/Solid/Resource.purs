@@ -18,10 +18,15 @@ module Solid.Resource
 
 import Prelude
 
-import Data.Either (Either(..))
-import Data.Maybe (Maybe)
+import Data.Bifunctor (bimap)
+import Data.Either (Either(..), either)
+import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
+import Effect.Exception (throwException)
+import Effect.Exception as Exception
+import Solid.Internal.Error (tryMessage)
 import Solid.Signal (Accessor)
 
 foreign import data Resource :: Type -> Type
@@ -76,10 +81,7 @@ createResource
    . (ResourceFetchInfo a r -> Effect (Either String a))
   -> Effect (Resource a /\ ResourceActions a r)
 createResource fetcher =
-  toPair <$> createResourceImpl fetcher
-  where
-  toPair :: ResourceParts a r -> Resource a /\ ResourceActions a r
-  toPair parts = parts.resource /\ parts.actions
+  toPair <$> createResourceImpl Just Nothing (orThrow <<< fetcher)
 
 createResourceFrom
   :: forall s a r
@@ -87,39 +89,50 @@ createResourceFrom
   -> (s -> ResourceFetchInfo a r -> Effect (Either String a))
   -> Effect (Resource a /\ ResourceActions a r)
 createResourceFrom source fetcher =
-  toPair <$> createResourceFromImpl source fetcher
-  where
-  toPair :: ResourceParts a r -> Resource a /\ ResourceActions a r
-  toPair parts = parts.resource /\ parts.actions
+  toPair <$> createResourceFromImpl Just Nothing (sourceBoxImpl (\m -> toNullable ({ value: _ } <$> m)) source) (\s -> orThrow <<< fetcher s)
+
+toPair :: forall a r. ResourceParts a r -> Resource a /\ ResourceActions a r
+toPair parts = parts.resource /\ parts.actions
+
+-- | Solid signals fetch failures by throwing; `Left` becomes a thrown `Error`.
+orThrow :: forall a. Effect (Either String a) -> Effect a
+orThrow = (_ >>= either (throwException <<< Exception.error) pure)
 
 foreign import createResourceImpl
   :: forall a r
-   . (ResourceFetchInfo a r -> Effect (Either String a))
+   . (forall x. x -> Maybe x)
+  -> (forall x. Maybe x)
+  -> (ResourceFetchInfo a r -> Effect a)
   -> Effect (ResourceParts a r)
+
+foreign import data SourceBox :: Type -> Type
+
+-- | Wraps a `Maybe` source as Solid expects: `{ value }` when present, `undefined` otherwise.
+foreign import sourceBoxImpl
+  :: forall s
+   . (Maybe s -> Nullable { value :: s })
+  -> Accessor (Maybe s)
+  -> SourceBox s
 
 foreign import createResourceFromImpl
   :: forall s a r
-   . Accessor (Maybe s)
-  -> (s -> ResourceFetchInfo a r -> Effect (Either String a))
+   . (forall x. x -> Maybe x)
+  -> (forall x. Maybe x)
+  -> SourceBox s
+  -> (s -> ResourceFetchInfo a r -> Effect a)
   -> Effect (ResourceParts a r)
 
 value :: forall a. Resource a -> Effect (Either ResourceReadError (Maybe a))
-value resource = do
-  result <- valueImpl resource
-  pure case result of
-    Left message -> Left (ResourceReadError message)
-    Right current -> Right current
+value resource =
+  bimap ResourceReadError toMaybe <$> tryMessage (readValueImpl resource)
 
 latest :: forall a. Resource a -> Effect (Either ResourceReadError (Maybe a))
-latest resource = do
-  result <- latestImpl resource
-  pure case result of
-    Left message -> Left (ResourceReadError message)
-    Right current -> Right current
+latest resource =
+  bimap ResourceReadError toMaybe <$> tryMessage (readLatestImpl resource)
 
-foreign import valueImpl :: forall a. Resource a -> Effect (Either String (Maybe a))
+foreign import readValueImpl :: forall a. Resource a -> Effect (Nullable a)
 
-foreign import latestImpl :: forall a. Resource a -> Effect (Either String (Maybe a))
+foreign import readLatestImpl :: forall a. Resource a -> Effect (Nullable a)
 
 state :: forall a. Resource a -> Effect (Either ResourceStateError ResourceState)
 state resource = do
@@ -136,8 +149,21 @@ foreign import stateTagImpl :: forall a. Resource a -> Effect String
 
 foreign import loading :: forall a. Resource a -> Effect Boolean
 
-foreign import error :: forall a. Resource a -> Effect (Maybe String)
+foreign import errorImpl :: forall a. Resource a -> Effect (Nullable String)
 
-foreign import mutate :: forall a r. ResourceActions a r -> Maybe a -> Effect Unit
+error :: forall a. Resource a -> Effect (Maybe String)
+error resource = toMaybe <$> errorImpl resource
 
-foreign import refetch :: forall a r. ResourceActions a r -> Maybe r -> Effect Unit
+foreign import mutateImpl :: forall a r. ResourceActions a r -> Nullable a -> Effect Unit
+
+mutate :: forall a r. ResourceActions a r -> Maybe a -> Effect Unit
+mutate actions next = mutateImpl actions (toNullable next)
+
+foreign import refetchImpl :: forall a r. ResourceActions a r -> Effect Unit
+
+foreign import refetchWithImpl :: forall a r. ResourceActions a r -> r -> Effect Unit
+
+refetch :: forall a r. ResourceActions a r -> Maybe r -> Effect Unit
+refetch actions = case _ of
+  Just info -> refetchWithImpl actions info
+  Nothing -> refetchImpl actions

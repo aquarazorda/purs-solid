@@ -1,9 +1,9 @@
-export const mkRuntimeRequest = (method) => (path) => (headers) => (query) => (body) => ({
+export const mkRuntimeRequestImpl = (method) => (path) => (headers) => (query) => (body) => ({
   method,
   path,
   headers,
   query,
-  body: body?.value0
+  body
 });
 
 export const mkWebRuntimeRequest = () =>
@@ -16,3 +16,23 @@ export const mkWebRuntimeRequest = () =>
     },
     body: "{\"ping\":true}"
   });
+
+export const mkRuntimeRequestWithInvalidPairs = {
+  method: "GET",
+  path: "/api/users",
+  headers: [
+    { name: "accept", value: "application/json" },
+    ["x-test", "ok"],
+    null,
+    { name: "", value: "drop-me" },
+    { key: "invalid" }
+  ],
+  query: [
+    { name: "page", value: "2" },
+    ["debug", "1"],
+    ["invalid"],
+    { name: "", value: "drop-me" },
+    true
+  ],
+  body: null
+};

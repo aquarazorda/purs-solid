@@ -1,22 +1,10 @@
 import {
+  getAssets as solidGetAssets,
   generateHydrationScript as solidGenerateHydrationScript,
   renderToStream as solidRenderToStream,
   renderToString as solidRenderToString,
   renderToStringAsync as solidRenderToStringAsync,
-} from "solid-js/web";
-import * as Data_Either from "../Data.Either/index.js";
-
-const toErrorMessage = (error) => {
-  if (typeof error === "string") {
-    return error;
-  }
-
-  if (error instanceof Error && typeof error.message === "string") {
-    return error.message;
-  }
-
-  return String(error);
-};
+} from "solid-js/web/dist/server.js";
 
 const requireFunction = (candidate, name) => {
   if (typeof candidate !== "function") {
@@ -26,41 +14,23 @@ const requireFunction = (candidate, name) => {
   return candidate;
 };
 
-export const renderToStringImpl = (view) => () => {
+export const renderToStringImpl = (view) =>
+  requireFunction(solidRenderToString, "renderToString")(() => view());
+
+// Synchronous failures surface as a rejected promise so callers only handle one error path.
+export const renderToStringAsyncImpl = (view) => {
   try {
-    const renderFn = requireFunction(solidRenderToString, "renderToString");
-    return Data_Either.Right.create(renderFn(() => view()));
+    return Promise.resolve(requireFunction(solidRenderToStringAsync, "renderToStringAsync")(() => view()));
   } catch (error) {
-    return Data_Either.Left.create(toErrorMessage(error));
+    return Promise.reject(error);
   }
 };
 
-export const renderToStringAsyncImpl = (view) => () => {
-  try {
-    const renderFn = requireFunction(solidRenderToStringAsync, "renderToStringAsync");
+export const renderToStreamImpl = (view) =>
+  requireFunction(solidRenderToStream, "renderToStream")(() => view());
 
-    return Promise.resolve(renderFn(() => view()))
-      .then((html) => Data_Either.Right.create(html))
-      .catch((error) => Data_Either.Left.create(toErrorMessage(error)));
-  } catch (error) {
-    return Promise.resolve(Data_Either.Left.create(toErrorMessage(error)));
-  }
-};
+export const hydrationScriptImpl = () =>
+  requireFunction(solidGenerateHydrationScript, "generateHydrationScript")();
 
-export const renderToStreamImpl = (view) => () => {
-  try {
-    const renderFn = requireFunction(solidRenderToStream, "renderToStream");
-    return Data_Either.Right.create(renderFn(() => view()));
-  } catch (error) {
-    return Data_Either.Left.create(toErrorMessage(error));
-  }
-};
-
-export const hydrationScriptImpl = () => {
-  try {
-    const scriptFn = requireFunction(solidGenerateHydrationScript, "generateHydrationScript");
-    return Data_Either.Right.create(scriptFn());
-  } catch (error) {
-    return Data_Either.Left.create(toErrorMessage(error));
-  }
-};
+export const getAssetsImpl = () =>
+  requireFunction(solidGetAssets, "getAssets")();

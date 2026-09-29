@@ -12,12 +12,10 @@ import {
   SuspenseList as solidSuspenseList,
   Switch as solidSwitch,
 } from "solid-js/web";
-import * as Data_Maybe from "../Data.Maybe/index.js";
-
-const fromMaybe = (maybeValue) =>
-  maybeValue instanceof Data_Maybe.Just
-    ? maybeValue.value0
-    : undefined;
+// `Maybe` values are converted by the PureScript side: functions taking a `toNullable`
+// argument receive `Data.Nullable.toNullable`, and plain options arrive already nullable.
+const fromNullable = (value) =>
+  value == null ? undefined : value;
 
 const toErrorMessage = (error) => {
   if (typeof error === "string") {
@@ -50,19 +48,19 @@ export const whenElseKeyedImpl = (condition) => (fallback) => (content) =>
     children: content,
   });
 
-export const showMaybeElseImpl = (condition) => (fallback) => (render) =>
+export const showMaybeElseImpl = (toNullable) => (condition) => (fallback) => (render) =>
   createComponent(solidShow, {
     get when() {
-      return fromMaybe(condition());
+      return fromNullable(toNullable(condition()));
     },
     fallback,
     children: (valueAccessor) => render(() => valueAccessor())(),
   });
 
-export const showMaybeKeyedElseImpl = (condition) => (fallback) => (render) =>
+export const showMaybeKeyedElseImpl = (toNullable) => (condition) => (fallback) => (render) =>
   createComponent(solidShow, {
     get when() {
-      return fromMaybe(condition());
+      return fromNullable(toNullable(condition()));
     },
     keyed: true,
     fallback,
@@ -113,10 +111,10 @@ export const matchWhenKeyed = (condition) => (content) =>
     children: content,
   });
 
-export const matchMaybe = (condition) => (render) =>
+export const matchMaybeImpl = (toNullable) => (condition) => (render) =>
   createComponent(solidMatch, {
     get when() {
-      return fromMaybe(condition());
+      return fromNullable(toNullable(condition()));
     },
     children: (value) => render(value)(),
   });
@@ -165,13 +163,13 @@ export const suspenseImpl = (fallback) => (content) =>
 export const suspenseListImpl = (revealOrder) => (tail) => (children) =>
   createComponent(solidSuspenseList, {
     revealOrder,
-    tail: fromMaybe(tail),
+    tail: fromNullable(tail),
     children,
   });
 
 export const portalWithImpl = (maybeMount) => (useShadow) => (isSVG) => (content) =>
   createComponent(solidPortal, {
-    mount: fromMaybe(maybeMount),
+    mount: fromNullable(maybeMount),
     useShadow,
     isSVG,
     children: content,

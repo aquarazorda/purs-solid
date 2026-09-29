@@ -5,6 +5,10 @@ package:
     - aff-promise
     - console
     - effect
+    - exceptions
+    - maybe
+    - either
+    - nullable
     - prelude
     - tuples
     - web-dom
@@ -16,6 +20,8 @@ package:
     main: Test.Main
     dependencies:
       - exceptions
+      - spec
+      - spec-node
 workspace:
   packageSet:
     registry: 73.0.0

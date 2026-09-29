@@ -10,10 +10,15 @@ module Solid.Web
   , requireMountById
   ) where
 
+import Prelude
+
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
-import Prelude
+import Effect.Uncurried (EffectFn1, EffectFn2, runEffectFn1, runEffectFn2)
+import Solid.Internal.Error (tryMessage)
 
 foreign import data Mountable :: Type
 
@@ -33,36 +38,32 @@ instance showWebError :: Show WebError where
 foreign import isServer :: Boolean
 
 render :: forall a. Effect a -> Mountable -> Effect (Either WebError (Effect Unit))
-render view mount = do
-  result <- renderImpl view mount
-  pure case result of
-    Left message ->
-      if message == clientOnlyMessage then
-        Left (ClientOnlyApi message)
-      else
-        Left (RuntimeError message)
-    Right disposer ->
-      Right disposer
+render view mount
+  | isServer =
+      pure (Left (ClientOnlyApi clientOnlyMessage))
+  | otherwise =
+      lmap RuntimeError <$> tryMessage (runEffectFn2 renderImpl view mount)
 
 hydrate :: forall a. Effect a -> Mountable -> Effect (Either WebError (Effect Unit))
-hydrate view mount = do
-  result <- hydrateImpl view mount
-  pure case result of
-    Left message ->
-      if message == clientOnlyMessage then
-        Left (ClientOnlyApi message)
-      else
-        Left (RuntimeError message)
-    Right disposer ->
-      Right disposer
+hydrate view mount
+  | isServer =
+      pure (Left (ClientOnlyApi clientOnlyMessage))
+  | otherwise =
+      lmap RuntimeError <$> tryMessage (runEffectFn2 hydrateImpl view mount)
 
-foreign import renderImpl :: forall a. Effect a -> Mountable -> Effect (Either String (Effect Unit))
+foreign import renderImpl :: forall a. EffectFn2 (Effect a) Mountable (Effect Unit)
 
-foreign import hydrateImpl :: forall a. Effect a -> Mountable -> Effect (Either String (Effect Unit))
+foreign import hydrateImpl :: forall a. EffectFn2 (Effect a) Mountable (Effect Unit)
 
-foreign import documentBody :: Effect (Maybe Mountable)
+documentBody :: Effect (Maybe Mountable)
+documentBody = toMaybe <$> documentBodyImpl
 
-foreign import mountById :: String -> Effect (Maybe Mountable)
+foreign import documentBodyImpl :: Effect (Nullable Mountable)
+
+mountById :: String -> Effect (Maybe Mountable)
+mountById id = toMaybe <$> runEffectFn1 mountByIdImpl id
+
+foreign import mountByIdImpl :: EffectFn1 String (Nullable Mountable)
 
 requireBody :: Effect (Either WebError Mountable)
 requireBody = do

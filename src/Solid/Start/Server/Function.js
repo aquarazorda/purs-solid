@@ -1,22 +1,8 @@
-import * as Data_Either from "../Data.Either/index.js";
-
-const toErrorMessage = (error) => {
-  if (typeof error === "string") {
-    return error;
-  }
-
-  if (error instanceof Error && typeof error.message === "string") {
-    return error.message;
-  }
-
-  return String(error);
-};
-
+// Resolves with the response text. Failures reject with an Error whose message is
+// either a `START_ERROR:<kind>:<text>` wire string or a transport description.
 export const httpPostTransportImpl = (endpoint) => (payload) => () => {
   if (typeof fetch !== "function") {
-    return Promise.resolve(
-      Data_Either.Left.create("fetch is unavailable in current runtime")
-    );
+    return Promise.reject(new Error("fetch is unavailable in current runtime"));
   }
 
   return fetch(endpoint, {
@@ -26,20 +12,18 @@ export const httpPostTransportImpl = (endpoint) => (payload) => () => {
       "accept": "text/plain",
     },
     body: payload,
-  })
-    .then(async (response) => {
-      const text = await response.text();
+  }).then(async (response) => {
+    const text = await response.text();
 
-      if (!response.ok) {
-        const errorKind = response.headers.get("x-start-error-kind");
-        if (typeof errorKind === "string" && errorKind.length > 0) {
-          return Data_Either.Left.create(`START_ERROR:${errorKind}:${text}`);
-        }
-
-        return Data_Either.Left.create(`HTTP ${response.status}: ${text}`);
+    if (!response.ok) {
+      const errorKind = response.headers.get("x-start-error-kind");
+      if (typeof errorKind === "string" && errorKind.length > 0) {
+        throw new Error(`START_ERROR:${errorKind}:${text}`);
       }
 
-      return Data_Either.Right.create(text);
-    })
-    .catch((error) => Data_Either.Left.create(toErrorMessage(error)));
+      throw new Error(`HTTP ${response.status}: ${text}`);
+    }
+
+    return text;
+  });
 };
