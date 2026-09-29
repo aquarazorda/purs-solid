@@ -21,6 +21,7 @@ import {
   getNextElement,
   insert,
   isServer,
+  memo,
   Namespaces,
   Portal,
   ref as solidRef,
@@ -59,19 +60,39 @@ const realizeAll = (items) => {
   return out;
 };
 
+// A reactive region anywhere but directly inside an element (a component's
+// result, a control-flow branch, a fragment) is wrapped in a memo, as compiled
+// Solid does for top-level expressions. The memo is owned by the current
+// scope, so errors reach the enclosing `Errored` and cleanup follows the owner.
+// Consumers such as a parent's `insert` would otherwise evaluate a bare
+// function in *their* scope.
 export const realize = (jsx) => {
   if (typeof jsx === "function") return jsx();
   if (jsx instanceof Reactive) {
     const read = jsx.read;
-    return () => realize(read());
+    return memo(() => realize(read()));
   }
   if (Array.isArray(jsx)) return realizeAll(jsx);
   if (jsx instanceof Prerealized) return jsx.value;
   return jsx;
 };
 
-const realizeChildren = (children) =>
-  children.length === 1 ? realize(children[0]) : realizeAll(children);
+// Directly inside an element, the element's own `insert` effect (created in
+// the current scope) tracks the region, so no extra memo is needed.
+const realizeChild = (jsx) => {
+  if (jsx instanceof Reactive) {
+    const read = jsx.read;
+    return () => realize(read());
+  }
+  return realize(jsx);
+};
+
+const realizeChildren = (children) => {
+  if (children.length === 1) return realizeChild(children[0]);
+  const out = new Array(children.length);
+  for (let i = 0; i < children.length; i += 1) out[i] = realizeChild(children[i]);
+  return out;
+};
 
 export const textJsx = (value) => value;
 

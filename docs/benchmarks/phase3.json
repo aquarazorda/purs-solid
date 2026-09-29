@@ -1,54 +1,54 @@
 {
   "label": "phase3",
-  "date": "2026-09-29T21:44:49.964Z",
+  "date": "2026-09-29T21:52:56.355Z",
   "solid": "2.0.0-rc.11",
   "node": "22.17.1",
   "chromium": "145.0.7632.6",
   "bundleBytes": {
-    "minified": 99758,
-    "gzip": 35207,
-    "brotli": 31643
+    "minified": 100029,
+    "gzip": 35286,
+    "brotli": 31724
   },
   "reactiveAttributeProbe": "reactive-ok",
   "operations": {
     "create 1k rows": {
-      "median": 19.25,
-      "min": 18.9,
+      "median": 19.6,
+      "min": 17.6,
       "samples": 10
     },
     "replace 1k rows": {
-      "median": 19.35,
-      "min": 18,
+      "median": 19.5,
+      "min": 17.5,
       "samples": 10
     },
     "update every 10th row": {
-      "median": 8.1,
-      "min": 4.5,
+      "median": 6.9,
+      "min": 5.1,
       "samples": 10
     },
     "swap rows": {
-      "median": 2.1,
-      "min": 1.5,
+      "median": 2.35,
+      "min": 1.6,
       "samples": 10
     },
     "select row": {
-      "median": 3.8,
-      "min": 0.2,
+      "median": 4.65,
+      "min": 1.6,
       "samples": 10
     },
     "append 1k rows": {
-      "median": 22.05,
+      "median": 19.25,
       "min": 17.1,
       "samples": 10
     },
     "clear 1k rows": {
-      "median": 4.05,
-      "min": 1.8,
+      "median": 2.35,
+      "min": 1.7,
       "samples": 10
     },
     "create 10k rows": {
-      "median": 171.4,
-      "min": 166.4,
+      "median": 173.6,
+      "min": 166.1,
       "samples": 5
     }
   }

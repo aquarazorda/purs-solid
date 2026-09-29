@@ -237,7 +237,7 @@ Medians on this machine, headless Chromium, click to next frame. Operations unde
 The bundle is dominated by Solid 2's reactive core (`@solidjs/signals`: 57 kB minified); the purs-solid view runtime is about 3 kB. `Effect.Aff` (7 kB) comes in through `Component.lazy` and `Solid.Async`.
 
 **Findings**
-- **Probable upstream bug (rc.11), not yet reported.** An error thrown inside a reactive region under `Errored` calls the fallback but renders nothing, and a region that fails after an update keeps its old content. This reproduces in plain JS. Errors thrown during component setup are caught correctly. A pending spec documents it.
+- **Not a Solid bug (initially misdiagnosed):** `errored` showed an empty fallback for errors thrown inside `JSX.reactive`. A reactive region returned as a component's result was a bare function, so the *parent's* `insert` evaluated it, outside the boundary. Compiled Solid wraps top-level expressions in `memo`, and the runtime now does the same everywhere except direct element children, where the element's own `insert` is already owned correctly (so rows pay nothing extra). With compiled-shaped code, Solid's `Errored` handles both initial and later failures.
 - Merged class values render in prop order.
 
 ### Phase 4 — SSR and hydration

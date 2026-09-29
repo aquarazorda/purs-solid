@@ -21,11 +21,12 @@ import Solid.DOM.Props as P
 import Solid.DOM.SVG as S
 import Solid.DOM.SVG.Props as SP
 import Solid.JSX (text)
+import Solid.JSX as JSX
 import Solid.Setup (liftSetup)
 import Solid.Signal (Accessor, Setter, createSignal, set)
 import Solid.Signal as Signal
 import Test.Solid (Mounted, attribute, click, html, inputText, mount, namespaceOf, query, refEq, settle, solidIt)
-import Test.Spec (Spec, describe, pending)
+import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Effect (Effect)
 import Web.DOM.Element (Element)
@@ -213,11 +214,23 @@ spec = describe "views" do
       html mounted >>= shouldEqual "ready"
       liftEffect mounted.dispose
 
-    -- Solid 2.0.0-rc.11: an error thrown inside a reactive region (an
-    -- `insert` render effect) under `Errored` calls the fallback but renders
-    -- nothing, and a region failing after an update keeps its old content.
-    -- Reproduces in plain JS; see docs/solid-2-migration.md.
-    pending "errored catches errors thrown inside reactive regions (upstream rc.11)"
+    solidIt "errored catches errors from a reactive region, initially and after updates" do
+      broken <- signal false
+      let
+        region = Component.component \_ -> pure $
+          JSX.reactive $ broken.get <#> \isBroken ->
+            if isBroken then unsafeCrashWith "later" else text "fine"
+        initiallyBroken = Component.component \_ -> pure $
+          JSX.reactive (pure unit <#> \_ -> unsafeCrashWith "boom")
+        boundary content = Control.errored (\err _ -> pure (text (message <$> err))) content
+      first <- mount (boundary (Component.element initiallyBroken {}))
+      html first >>= shouldEqual "boom"
+      liftEffect first.dispose
+      second <- mount (boundary (Component.element region {}))
+      html second >>= shouldEqual "fine"
+      write broken true
+      html second >>= shouldEqual "later"
+      liftEffect second.dispose
 
   describe "components and context" do
     solidIt "components receive plain record props" do
