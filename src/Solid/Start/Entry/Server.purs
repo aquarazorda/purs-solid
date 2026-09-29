@@ -59,7 +59,7 @@ renderDocumentHtmlWithAssets
   -> App
   -> Effect (Either StartError String)
 renderDocumentHtmlWithAssets config metaDoc scriptAssets app = do
-  renderResult <- SSR.renderToStringWithHead (runApp app)
+  renderResult <- SSR.renderToStringWithHead SSR.defaultRenderOptions (runApp app)
   hydrationResult <- SSR.hydrationScript
   pure case renderResult, hydrationResult of
     Left (SSR.RuntimeError message), _ -> Left (EnvironmentError message)

@@ -22,6 +22,14 @@ Status: in progress on branch `solid-2`. Planned 2026-09-30.
 
 ## Design rules
 
+**Scope: bindings, not a reimplementation.** purs-solid calls Solid's public API (`solid-js`, `@solidjs/web`, and later `@solidjs/router` / `@solidjs/meta`). It never reimplements or reaches into Solid internals. The JS side exists only where a PureScript type can't express a JS idiom directly, for example:
+- turning lazy `JSX` into what `insert` accepts;
+- boxing `Just false` for `Show`;
+- freezing ADTs before they enter a store;
+- driving `action`'s generator protocol.
+
+Because PureScript can't use Solid's JSX compiler, elements go through the public `dynamic(() => tag, { static: true })`, and Solid does client rendering, hydration and SSR itself. We don't hand-write compiled output against compiler-target helpers (`getNextElement`, `ssrElement`, `assign`, `sharedConfig`). An experiment doing that was 15–25% faster at bulk creation, but it would make Solid's hydration and SSR internals ours to maintain.
+
 Solid 2's principles, expressed so that the PureScript type checker enforces them.
 
 1. **Derived values are pure; writes are effects.** Solid 2 throws on writes in owned scopes (`REACTIVE_WRITE_IN_OWNED_SCOPE`) and splits effects into a tracked compute phase and an apply phase.
@@ -188,11 +196,12 @@ Medians on this machine, headless Chromium, click to next frame. Operations unde
   - Control-flow content goes through getters, so hidden branches are never created (on 1.x `whenElse` built both).
   - `text` and every prop accept a plain value or an `Accessor` (`ToBinding` instance chain).
   - `JSX.reactive :: Accessor JSX -> JSX` is the explicit reactive region.
-- [x] **Element creation without per-element memos.**
-  - Client: `document.createElement` (or `getNextElement` when hydrating) plus one `assign` of the static props, which creates no computation. There is at most one render effect per element for its reactive props (`assign` diffs), and refs run unowned.
-  - Children are created after their parent, matching the server's hydration-key order.
-  - Server: `ssrElement` with reactive props as getters and children as a getter.
+- [x] **Elements via Solid's public `dynamic(() => tag, { static: true })`** (cached per tag; no memo per element).
+  - Solid creates or claims the element and applies props with `spread`, on the client and the server. Reactive props are getters, and children are a getter, so they're created after their parent (hydration order).
+  - `xmlns` is passed only for SVG tags that also exist in HTML.
   - Several `class` props merge into one class value.
+  - A first version hand-wrote the compiled-output path against compiler-target helpers. It was dropped to stay on public API (see Scope).
+  - Reactive regions outside element children are wrapped in `createMemo(…, { sync: true })`, as compiled Solid does for top-level expressions, so errors reach the enclosing `errored` boundary.
 - [x] **Typed props from `dom-indexed`.**
   - `scripts/gen-dom.mjs` (`npm run gen:dom`) generates `Solid.DOM.HTML` (112 elements; void elements take no children) and `Solid.DOM.Props` (192 helpers).
   - Each helper is `forall r v a. ToBinding v a => AttrValue a => v -> Prop (label :: a | r)`: the element's row fixes the value type, so `P.type_` takes `InputType` on `<input>` and `ButtonType` on `<button>`.
@@ -221,18 +230,18 @@ Medians on this machine, headless Chromium, click to next frame. Operations unde
   - 76 client and 13 server specs pass on both backends.
   - Browser smoke (`npm run test:browser-smoke`) now drives production bundles of Counter and TodoMVC in Chromium: 22 checks, and it fails on any page error or console warning.
 
-**Benchmark (`docs/benchmarks/phase3.json`)**
+**Benchmark (`docs/benchmarks/phase3.json`, public `dynamic()` path)**
 
-| Operation | 1.x | Phase 1 (transitional) | Phase 3 |
-|---|---|---|---|
-| create 1k rows | 20.4 ms | 25.7 ms | **19.3 ms** |
-| replace 1k rows | 25.9 ms | 27.3 ms | **19.4 ms** |
-| update every 10th row | 9.2 ms | 7.3 ms | 8.1 ms |
-| swap rows | 9.3 ms | 4.7 ms | **2.1 ms** |
-| select row | n/a (no reactive attributes) | n/a | **3.8 ms** |
-| append 1k rows | 24.4 ms | 26.3 ms | **22.1 ms** |
-| create 10k rows | 230 ms | 258 ms | **171 ms** |
-| bundle min / gzip | 35.6 kB / 12.5 kB | 81.3 kB / 29.6 kB | 99.8 kB / 35.2 kB |
+| Operation | 1.x | Phase 1 (transitional) | Phase 3 | (dropped compiler-style path) |
+|---|---|---|---|---|
+| create 1k rows | 20.4 ms | 25.7 ms | 21.6 ms | 19.6 ms |
+| replace 1k rows | 25.9 ms | 27.3 ms | 23.5 ms | 19.5 ms |
+| update every 10th row | 9.2 ms | 7.3 ms | 9.0 ms | 6.9 ms |
+| swap rows | 9.3 ms | 4.7 ms | 2.5 ms | 2.4 ms |
+| select row | n/a (no reactive attributes) | n/a | 3.0 ms | 4.7 ms |
+| append 1k rows | 24.4 ms | 26.3 ms | 23.0 ms | 19.3 ms |
+| create 10k rows | 230 ms | 258 ms | 221 ms | 174 ms |
+| bundle min / gzip | 35.6 kB / 12.5 kB | 81.3 kB / 29.6 kB | 108.2 kB / 38.1 kB | 100.0 kB / 35.3 kB |
 
 The bundle is dominated by Solid 2's reactive core (`@solidjs/signals`: 57 kB minified); the purs-solid view runtime is about 3 kB. `Effect.Aff` (7 kB) comes in through `Component.lazy` and `Solid.Async`.
 
@@ -240,8 +249,22 @@ The bundle is dominated by Solid 2's reactive core (`@solidjs/signals`: 57 kB mi
 - **Not a Solid bug (initially misdiagnosed):** `errored` showed an empty fallback for errors thrown inside `JSX.reactive`. A reactive region returned as a component's result was a bare function, so the *parent's* `insert` evaluated it, outside the boundary. Compiled Solid wraps top-level expressions in `memo`, and the runtime now does the same everywhere except direct element children, where the element's own `insert` is already owned correctly (so rows pay nothing extra). With compiled-shaped code, Solid's `Errored` handles both initial and later failures.
 - Merged class values render in prop order.
 
-### Phase 4 — SSR and hydration
-`renderToString`, `renderToStream`, `HydrationScript`, `NoHydration` / `Hydration`, and the `ssrSource` / `deferStream` options. Add an SSR → hydrate smoke test.
+### Phase 4 — SSR and hydration ✅
+- [x] **`Solid.Web.SSR`**
+  - `renderToString(With)`, `renderToStringWithHead` (replaces `getAssets` via `onHead`), `renderToStringAsync(With)` (awaits `renderToStream`), `renderToReadableStream :: RenderOptions -> JSX -> Effect (Either SsrError (ReadableStream Uint8Array))`, and `hydrationScript(With nonce)`.
+  - `RenderOptions` has `nonce`, `renderId` and `noScripts`.
+  - A Solid stream can be consumed only once, so each function picks its consumer; no stream object is handed out.
+- [x] **Async data across the server/client boundary (`Solid.Async`)**
+  - Solid serializes server-resolved async values into the page. PureScript ADTs don't survive that as-is (default backend: constructors are lost), so `AsyncOptions.ssr` makes the choice explicit:
+    - `onClient` (default): no serialization; the server renders the loading fallback.
+    - `serialized`: requires the sealed `Serializable` class (primitives, arrays, records). Any other type is a compile error with a message pointing to `withCodec`.
+    - `withCodec encode decode`: via argonaut `Json`. The memo holds the encoded value; a second memo decodes it once per change.
+  - `deferStream` is exposed.
+- [x] **Tests**
+  - `Test.Server.SSR` (9 specs): hydration keys, escaping, reactive props rendered once, events and refs omitted, SVG, client-default async, serialized async, a codec round-trip for an ADT, sync fallback, the readable stream, the nonce, and `noScripts`.
+  - Server specs now run with the `development` condition, so they also fail on Solid diagnostics.
+  - `npm run test:hydration` (`test/hydration/run-hydration.mjs`, `Examples.Hydration.*`) does server render in Node and hydration in Chromium with the production bundle. Its 14 checks: every server element is claimed (none recreated); the serialized async value is not refetched; handlers, reactive attributes and classes, keyed rows plus an appended row, the conditional branch and the SVG namespace all work after hydration; and there are no mismatch warnings.
+  - Totals: 77 client and 21 server specs, 22 browser-smoke checks, 14 hydration checks.
 
 ### Phase 5 — Ecosystem (last; still prerelease)
 Meta 1.0 → Router 2 → start mode (after the server-functions spike).

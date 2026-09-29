@@ -18,8 +18,19 @@ const equalityOptions = (name, mode, equals) => {
 // Each computation starts its Aff inside a Promise. The cleanup registered in
 // the same computation runs when a newer computation supersedes it (or on
 // disposal) and kills the fiber; a killed fiber's outcome is ignored.
-export const createAsyncImpl = (start, name, mode, equals, compute) => {
-  const value = createMemo(() => {
+// Each computation starts its Aff inside a Promise. The cleanup registered in
+// the same computation runs when a newer computation supersedes it (or on
+// disposal) and kills the fiber; a killed fiber's outcome is ignored.
+//
+// With a codec, the memo holds the *encoded* value (that's what Solid
+// serializes into the page), and a second memo decodes it once per change.
+export const createAsyncImpl = (start, rep, mode, equals, compute) => {
+  const encode = rep.encode;
+  const options = equalityOptions(rep.name, encode == null ? mode : "default", equals);
+  options.ssrSource = rep.source;
+  if (rep.deferStream) options.deferStream = true;
+
+  const source = createMemo(() => {
     const aff = compute();
 
     return new Promise((resolve, reject) => {
@@ -27,7 +38,7 @@ export const createAsyncImpl = (start, name, mode, equals, compute) => {
       const cancel = start(aff)((result) => () => {
         if (!done) {
           done = true;
-          resolve(result);
+          resolve(encode == null ? result : encode(result));
         }
       })((error) => () => {
         if (!done) {
@@ -43,9 +54,20 @@ export const createAsyncImpl = (start, name, mode, equals, compute) => {
         }
       });
     });
-  }, equalityOptions(name, mode, equals));
+  }, options);
 
-  return { value, refresh: value };
+  if (rep.decode == null) return { value: source, refresh: source };
+
+  const decode = rep.decode;
+  const value = createMemo(
+    () =>
+      rep.either((message) => {
+        throw new Error(`purs-solid: could not decode server value: ${message}`);
+      })((decoded) => decoded)(decode(source())),
+    equalityOptions("", mode, equals)
+  );
+
+  return { value, refresh: source };
 };
 
 export const refreshImpl = (target) => {

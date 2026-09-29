@@ -6,14 +6,23 @@ import {
   renderToString as solidRenderToString,
 } from "@solidjs/web";
 
-export const renderToStringImpl = (realize, view) =>
-  solidRenderToString(() => realize(view));
+const toOptions = (rep) => {
+  const options = {};
+  if (rep.nonce != null) options.nonce = rep.nonce;
+  if (rep.renderId != null) options.renderId = rep.renderId;
+  if (rep.noScripts) options.noScripts = true;
+  return options;
+};
+
+export const renderToStringImpl = (realize, rep, view) =>
+  solidRenderToString(() => realize(view), toOptions(rep));
 
 // `onHead` delivers everything head-bound (useHead winners, asset links,
 // styles) when the output has no `</head>`, i.e. when the host owns the document.
-export const renderToStringWithHeadImpl = (realize, view) => {
+export const renderToStringWithHeadImpl = (realize, rep, view) => {
   let head = "";
   const html = solidRenderToString(() => realize(view), {
+    ...toOptions(rep),
     onHead: (value) => {
       head = value;
     },
@@ -21,18 +30,18 @@ export const renderToStringWithHeadImpl = (realize, view) => {
   return { html, head };
 };
 
-// Solid 2 removed `renderToStringAsync`; awaiting a stream yields the fully
-// settled HTML. Synchronous failures surface as a rejected promise.
-export const renderToStringAsyncImpl = (realize, view) => {
+// Awaiting a render stream yields the fully settled HTML (Solid 2's
+// replacement for `renderToStringAsync`). Synchronous failures reject.
+export const renderToStringAsyncImpl = (realize, rep, view) => {
   try {
-    return Promise.resolve(solidRenderToStream(() => realize(view)));
+    return Promise.resolve(solidRenderToStream(() => realize(view), toOptions(rep)));
   } catch (error) {
     return Promise.reject(error);
   }
 };
 
-export const renderToStreamImpl = (realize, view) =>
-  solidRenderToStream(() => realize(view));
+export const renderToReadableStreamImpl = (realize, rep, view) =>
+  solidRenderToStream(() => realize(view), toOptions(rep)).readable;
 
-export const hydrationScriptImpl = () =>
-  solidGenerateHydrationScript();
+export const hydrationScriptImpl = (nonce) =>
+  solidGenerateHydrationScript(nonce == null ? {} : { nonce });

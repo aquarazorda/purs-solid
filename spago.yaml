@@ -3,6 +3,8 @@ package:
   dependencies:
     - aff
     - aff-promise
+    - argonaut-core
+    - arraybuffer-types
     - console
     - dom-indexed
     - effect
@@ -26,6 +28,7 @@ package:
     - web-file
     - web-html
     - web-uievents
+    - web-streams
   test:
     main: Test.Main
     dependencies:

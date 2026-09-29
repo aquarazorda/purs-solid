@@ -10,9 +10,21 @@
 -- | While the first value loads, reading the accessor suspends the nearest
 -- | loading boundary. After that, a pending update keeps showing the previous
 -- | value; ask `isPending` to show that something is in flight.
+-- |
+-- | **Server rendering.** By default an async value loads on the client
+-- | (`OnClient`): the server renders the loading fallback and nothing is
+-- | serialized. To load on the server and hand the result to the client with
+-- | the page, choose `serialized` (for plain data: primitives, arrays,
+-- | records) or `withCodec` (anything else, e.g. via argonaut-codecs). This
+-- | is explicit because PureScript ADTs don't survive serialization as-is.
 module Solid.Async
   ( AsyncOptions
   , defaultAsyncOptions
+  , AsyncSsr
+  , onClient
+  , serialized
+  , withCodec
+  , module Exports
   , createAsync
   , createAsyncWith
   , Refresh
@@ -26,7 +38,11 @@ module Solid.Async
 import Prelude
 
 import Control.Promise (Promise, toAffE)
-import Data.Either (either)
+import Data.Argonaut.Core (Json)
+import Data.Either (Either, either)
+import Data.Nullable (Nullable, notNull, null)
+import Solid.Internal.Serializable (class Serializable)
+import Solid.Internal.Serializable (class Serializable) as Exports
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
 import Effect.Aff (Aff, killFiber, launchAff_, runAff)
@@ -39,13 +55,40 @@ import Solid.Signal (Accessor)
 type AsyncOptions a =
   { name :: String
   , equality :: Equality a
+  -- | Where the value loads during server rendering.
+  , ssr :: AsyncSsr a
+  -- | Hold the streamed shell until this value is ready (instead of streaming
+  -- | its loading fallback first).
+  , deferStream :: Boolean
   }
 
 defaultAsyncOptions :: forall a. AsyncOptions a
 defaultAsyncOptions =
   { name: ""
   , equality: DefaultEquals
+  , ssr: onClient
+  , deferStream: false
   }
+
+-- | Where an async value loads when the page is server-rendered.
+newtype AsyncSsr a = AsyncSsr
+  { source :: String
+  , encode :: Nullable (a -> Json)
+  , decode :: Nullable (Json -> Either String a)
+  }
+
+-- | Load on the client; the server renders the loading fallback.
+onClient :: forall a. AsyncSsr a
+onClient = AsyncSsr { source: "client", encode: null, decode: null }
+
+-- | Load on the server and send the value with the page. Only for types that
+-- | serialize as-is (`Serializable`: primitives, arrays, records of them).
+serialized :: forall a. Serializable a => AsyncSsr a
+serialized = AsyncSsr { source: "server", encode: null, decode: null }
+
+-- | Load on the server and send the value encoded as JSON.
+withCodec :: forall a. (a -> Json) -> (Json -> Either String a) -> AsyncSsr a
+withCodec encode decode = AsyncSsr { source: "server", encode: notNull encode, decode: notNull decode }
 
 -- | The capability to re-run one async value's work even though its inputs
 -- | haven't changed (Solid 1's `refetch`). Only `createAsync` produces it, so
@@ -57,10 +100,13 @@ createAsync = createAsyncWith defaultAsyncOptions
 
 createAsyncWith :: forall a. AsyncOptions a -> Accessor (Aff a) -> Setup (Accessor a /\ Refresh a)
 createAsyncWith options compute = Setup do
-  parts <- runEffectFn5 createAsyncImpl start options.name mode equals compute
+  parts <- runEffectFn5 createAsyncImpl start rep mode equals compute
   pure (parts.value /\ parts.refresh)
   where
   { mode, equals } = toEqualityFn options.equality
+  AsyncSsr ssr = options.ssr
+  rep :: AsyncRep a
+  rep = { name: options.name, source: ssr.source, encode: ssr.encode, decode: ssr.decode, deferStream: options.deferStream, either }
 
 -- | Starts an `Aff`, reporting its outcome; the returned effect kills it.
 start :: forall a. Aff a -> (a -> Effect Unit) -> (Error -> Effect Unit) -> Effect (Effect Unit)
@@ -68,11 +114,20 @@ start aff onValue onError = do
   fiber <- runAff (either onError onValue) aff
   pure (launchAff_ (killFiber (error "purs-solid: superseded async value") fiber))
 
+type AsyncRep a =
+  { name :: String
+  , source :: String
+  , encode :: Nullable (a -> Json)
+  , decode :: Nullable (Json -> Either String a)
+  , deferStream :: Boolean
+  , either :: forall r. (String -> r) -> (a -> r) -> Either String a -> r
+  }
+
 foreign import createAsyncImpl
   :: forall a
    . EffectFn5
        (Aff a -> (a -> Effect Unit) -> (Error -> Effect Unit) -> Effect (Effect Unit))
-       String
+       (AsyncRep a)
        String
        (EqualityFn a)
        (Accessor (Aff a))

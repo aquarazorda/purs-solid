@@ -1,6 +1,7 @@
 import {
   children as solidChildren,
   createComponent,
+  createMemo,
   Errored,
   For,
   Hydration,
@@ -10,23 +11,16 @@ import {
   NoHydration,
   Repeat,
   Reveal,
-  sharedConfig,
   Show,
   Switch,
 } from "solid-js";
 import {
-  assign,
   dynamic,
-  effect,
-  getNextElement,
-  insert,
   isServer,
-  memo,
+  MathMLElements,
   Namespaces,
   Portal,
-  ref as solidRef,
-  runHydrationEvents,
-  ssrElement,
+  SVGElements,
 } from "@solidjs/web";
 
 // ---------------------------------------------------------------------------
@@ -70,7 +64,7 @@ export const realize = (jsx) => {
   if (typeof jsx === "function") return jsx();
   if (jsx instanceof Reactive) {
     const read = jsx.read;
-    return memo(() => realize(read()));
+    return createMemo(() => realize(read()), { sync: true });
   }
   if (Array.isArray(jsx)) return realizeAll(jsx);
   if (jsx instanceof Prerealized) return jsx.value;
@@ -128,97 +122,56 @@ const mergeClasses = (classes) =>
 const classValue = (entry) =>
   entry.classes === undefined ? readProp(entry) : entry.classes.map(readProp);
 
-// Client: static props are assigned once (no computation); reactive props
-// share one render effect per element, and `assign` diffs against the
-// previous values. Elements with only static props create no computations.
-const applyProps = (node, props) => {
-  let statics;
-  let reactives;
-  let refs;
+// Elements go through Solid's public `dynamic(() => tag, { static: true })`:
+// Solid creates (or, when hydrating, claims) the element and applies props
+// with `spread`, on the client and on the server. Reactive props are getters,
+// and children are a getter so they're created after their parent.
+const staticComponents = new Map();
+
+const staticComponent = (tag) => {
+  let component = staticComponents.get(tag);
+  if (component === undefined) {
+    component = dynamic(() => tag, { static: true });
+    staticComponents.set(tag, component);
+  }
+  return component;
+};
+
+const propsObject = (namespace, tag, props, children) => {
+  // Solid picks the namespace for known SVG / MathML tags; `xmlns` is only
+  // needed for tags that also exist in HTML (`a`, `title`, `script`, `style`).
+  const object = {};
+  if (namespace === 1 && !SVGElements.has(tag)) object.xmlns = Namespaces.svg;
+  else if (namespace === 2 && !MathMLElements.has(tag)) object.xmlns = Namespaces.mathml;
   let classes;
+  let refs;
 
   for (let i = 0; i < props.length; i += 1) {
     const prop = props[i];
     if (prop.m === REF) (refs ??= []).push(prop.v);
     else if (prop.k === "class") (classes ??= []).push(prop);
-    else if (prop.m === REACTIVE) (reactives ??= []).push(prop);
-    else (statics ??= {})[prop.k] = prop.v;
-  }
-
-  if (classes !== undefined) {
-    const entry = mergeClasses(classes);
-    if (entry.m === REACTIVE) (reactives ??= []).push({ k: "class", m: REACTIVE, v: () => classValue(entry) });
-    else (statics ??= {}).class = classValue(entry);
-  }
-
-  if (statics !== undefined) assign(node, statics, true, {}, true);
-
-  if (reactives !== undefined) {
-    const previous = {};
-    effect(
-      () => {
-        const next = {};
-        for (let i = 0; i < reactives.length; i += 1) next[reactives[i].k] = reactives[i].v();
-        return next;
-      },
-      (next) => {
-        assign(node, next, true, previous, true);
-      }
-    );
-  }
-
-  if (refs !== undefined) {
-    for (let i = 0; i < refs.length; i += 1) {
-      const callback = refs[i];
-      solidRef(() => callback, node);
-    }
-  }
-};
-
-const createNode = (namespace, tag) =>
-  namespace === 0
-    ? document.createElement(tag)
-    : document.createElementNS(namespace === 1 ? Namespaces.svg : Namespaces.mathml, tag);
-
-// The element is created (or claimed, when hydrating) before its children, in
-// the same order the server assigns hydration keys.
-const clientElement = (namespace, tag, props, children) => {
-  const hydrating = sharedConfig.hydrating;
-  const node = hydrating ? getNextElement() : createNode(namespace, tag);
-  if (props.length > 0) applyProps(node, props);
-  if (hydrating) runHydrationEvents();
-  if (children.length > 0) insert(node, realizeChildren(children));
-  return node;
-};
-
-// Server: `ssrElement` reads props once; events and refs don't render.
-// Children are a getter so they render after the element's hydration key.
-const serverElement = (tag, props, children) => {
-  const object = {};
-  let classes;
-
-  for (let i = 0; i < props.length; i += 1) {
-    const prop = props[i];
-    if (prop.m === REF || prop.m === EVENT) continue;
-    if (prop.k === "class") (classes ??= []).push(prop);
     else if (prop.m === REACTIVE) Object.defineProperty(object, prop.k, { get: prop.v, enumerable: true });
+    else if (prop.m === EVENT && isServer) continue;
     else object[prop.k] = prop.v;
   }
 
   if (classes !== undefined) {
     const entry = mergeClasses(classes);
-    Object.defineProperty(object, "class", { get: () => classValue(entry), enumerable: true });
+    if (entry.m === REACTIVE) Object.defineProperty(object, "class", { get: () => classValue(entry), enumerable: true });
+    else object.class = classValue(entry);
   }
+
+  if (refs !== undefined && !isServer) object.ref = refs.length === 1 ? refs[0] : refs;
 
   if (children.length > 0) {
     Object.defineProperty(object, "children", { get: () => realizeChildren(children), enumerable: true });
   }
 
-  return ssrElement(tag, object, undefined, true);
+  return object;
 };
 
 export const elementImpl = (namespace, tag, props, children) => () =>
-  isServer ? serverElement(tag, props, children) : clientElement(namespace, tag, props, children);
+  createComponent(staticComponent(tag), propsObject(namespace, tag, props, children));
 
 // ---------------------------------------------------------------------------
 // Components

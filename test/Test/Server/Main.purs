@@ -21,14 +21,14 @@ import Test.Start.Runtime as StartRuntime
 import Test.Start.Server as StartServer
 import Test.Start.ServerFunction as StartServerFunction
 import Test.Start.Session as StartSession
-import Test.WebSSR as WebSSR
+import Test.Server.SSR as SSR
 
 main :: Effect Unit
 main = runSpecAndExitProcess [ consoleReporter ] spec
 
 spec :: Spec Unit
 spec = describe "server" do
-  it "Web SSR" WebSSR.run
+  SSR.spec
   it "Start core" (liftEffect StartCore.run)
   it "Start entry" (liftEffect StartEntry.run)
   it "Start routing" (liftEffect StartRouting.run)

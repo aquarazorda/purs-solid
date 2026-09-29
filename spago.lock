@@ -7,6 +7,8 @@
           "dependencies": [
             "aff",
             "aff-promise",
+            "argonaut-core",
+            "arraybuffer-types",
             "console",
             "dom-indexed",
             "effect",
@@ -28,6 +30,7 @@
             "web-file",
             "web-html",
             "web-pointerevents",
+            "web-streams",
             "web-touchevents",
             "web-uievents"
           ]
@@ -1837,6 +1840,21 @@
         "prelude",
         "unsafe-coerce",
         "web-events"
+      ]
+    },
+    "web-streams": {
+      "type": "registry",
+      "version": "4.0.0",
+      "integrity": "sha256-iKQbHh/3wNOWyGTZmWJZ1Yuri9J/wQIJKXcxrELaHVo=",
+      "dependencies": [
+        "arraybuffer-types",
+        "effect",
+        "exceptions",
+        "js-promise",
+        "maybe",
+        "nullable",
+        "prelude",
+        "tuples"
       ]
     },
     "web-touchevents": {
