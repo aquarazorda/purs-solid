@@ -13,7 +13,7 @@ import Solid.Start.Entry.Client as ClientEntry
 
 main :: Effect Unit
 main = do
-  let app = StartApp.createApp (pure (Component.element Example.app {}))
+  let app = StartApp.createApp (Component.element Example.app {})
   hydrateResult <- ClientEntry.bootstrapInBody ClientEntry.HydrateMode app
   case hydrateResult of
     Right _dispose ->

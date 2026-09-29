@@ -9,7 +9,8 @@ import Effect.Class (liftEffect)
 import Solid.Component as Component
 import Solid.JSX as JSX
 import Solid.Root (createRoot)
-import Test.Solid (jsxValue, solidIt)
+import Solid.DOM.HTML as H
+import Test.Solid (html, jsxValue, mount, solidIt)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 
@@ -24,11 +25,14 @@ spec = describe "Solid.Component" do
       jsxValue view
     rendered `shouldEqual` "hello ada"
 
-  solidIt "children resolves once into an accessor" do
-    rendered <- liftEffect do
-      resolved <- createRoot \_ -> Component.children (pure (JSX.text "child"))
-      jsxValue resolved
-    rendered `shouldEqual` "child"
+  solidIt "children resolves once and can be placed in the view" do
+    let
+      wrapper = Component.component \props -> do
+        resolved <- Component.children (pure props.child)
+        pure (H.section_ [ JSX.reactive resolved ])
+    mounted <- mount (Component.element wrapper { child: JSX.text "child" })
+    html mounted >>= shouldEqual "<section>child</section>"
+    liftEffect mounted.dispose
 
   solidIt "createUniqueId returns distinct ids" do
     ids <- liftEffect $ createRoot \_ -> do

@@ -24,7 +24,7 @@ renderDocumentForRoute routePath =
     [ "/dist/examples/solid-start.js" ]
     app
   where
-  app = StartApp.createApp (pure (Component.element (Example.appWithRoute routePath) {}))
+  app = StartApp.createApp (Component.element (Example.appWithRoute routePath) {})
 
 prerenderEntries :: Array Prerender.PrerenderEntry
 prerenderEntries =

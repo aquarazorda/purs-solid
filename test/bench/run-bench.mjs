@@ -71,6 +71,7 @@ const scenarios = [
   { name: "replace 1k rows", setup: ["run"], timed: "run", check: { rows: 1000 } },
   { name: "update every 10th row", setup: ["run"], timed: "update", check: { rows: 1000, firstLabelSuffix: " !!!" } },
   { name: "swap rows", setup: ["run"], timed: "swaprows", check: { rows: 1000, swapped: true } },
+  { name: "select row", setup: ["run"], timedSelector: "#tbody tr:nth-child(2) td:nth-child(2) a", check: { rows: 1000, selectedIndex: 1 } },
   { name: "append 1k rows", setup: ["run"], timed: "add", check: { rows: 2000 } },
   { name: "clear 1k rows", setup: ["run"], timed: "clear", check: { rows: 0 } },
   { name: "create 10k rows", setup: ["clear"], timed: "runlots", check: { rows: 10000 }, warmup: 1, samples: 5 },
@@ -82,7 +83,7 @@ const measure = async (page, scenario) => {
   const timings = [];
 
   for (let i = 0; i < warmup + samples; i += 1) {
-    const result = await page.evaluate(async ({ setup, timed }) => {
+    const result = await page.evaluate(async ({ setup, timed, timedSelector }) => {
       const frame = () => new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
       const click = (id) => document.getElementById(id).click();
       const rowIds = () => Array.from(document.querySelectorAll("#tbody tr td:first-child"), (td) => td.textContent);
@@ -93,8 +94,9 @@ const measure = async (page, scenario) => {
       }
 
       const before = rowIds();
+      const target = timedSelector ? document.querySelector(timedSelector) : document.getElementById(timed);
       const t0 = performance.now();
-      click(timed);
+      target.click();
       await frame();
       const elapsed = performance.now() - t0;
       const after = rowIds();
@@ -105,6 +107,7 @@ const measure = async (page, scenario) => {
         rows: after.length,
         firstLabel,
         swapped: before.length > 998 && after[1] === before[998] && after[998] === before[1],
+        selected: Array.from(document.querySelectorAll("#tbody tr"), (tr, i) => (tr.classList.contains("danger") ? i : -1)).filter((i) => i >= 0),
       };
     }, scenario);
 
@@ -114,6 +117,9 @@ const measure = async (page, scenario) => {
     }
     if (check.firstLabelSuffix && !result.firstLabel?.endsWith(check.firstLabelSuffix)) {
       throw new Error(`${scenario.name}: first label not updated (${result.firstLabel})`);
+    }
+    if (check.selectedIndex !== undefined && (result.selected.length !== 1 || result.selected[0] !== check.selectedIndex)) {
+      throw new Error(`${scenario.name}: expected only row ${check.selectedIndex} selected, got ${JSON.stringify(result.selected)}`);
     }
     if (check.swapped && !result.swapped) {
       throw new Error(`${scenario.name}: rows 1 and 998 were not swapped`);

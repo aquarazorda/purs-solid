@@ -5,6 +5,14 @@ module Test.Solid
   , expectDiagnostic
   , jsxValue
   , refEq
+  , Mounted
+  , mount
+  , html
+  , query
+  , click
+  , inputText
+  , attribute
+  , namespaceOf
   ) where
 
 import Prelude
@@ -17,7 +25,12 @@ import Data.Either (either)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
+import Data.Maybe (Maybe)
+import Data.Nullable (Nullable, toMaybe)
+import Solid.JSX (JSX)
 import Solid.Reactivity (flush)
+import Solid.Web as Web
+import Web.DOM.Element (Element)
 import Test.Spec (Spec, it)
 
 type Diagnostic = { code :: String, severity :: String, message :: String }
@@ -62,3 +75,41 @@ foreign import jsxValue :: forall jsx. jsx -> Effect String
 
 -- | Reference equality (`===`), for asserting identity is preserved.
 foreign import refEq :: forall a. a -> a -> Boolean
+
+type Mounted = { root :: Element, dispose :: Effect Unit }
+
+-- | Renders `view` into a fresh container attached to `document.body`.
+mount :: JSX -> Aff Mounted
+mount view = do
+  container <- liftEffect createContainer
+  result <- liftEffect (Web.render view container)
+  dispose <- either (liftEffect <<< throw <<< show) pure result
+  settle
+  pure { root: container, dispose: dispose *> removeContainer container }
+
+foreign import createContainer :: Effect Element
+foreign import removeContainer :: Element -> Effect Unit
+
+-- | The container's inner HTML (after letting pending updates apply).
+html :: Mounted -> Aff String
+html mounted = settle *> liftEffect (innerHtml mounted.root)
+
+foreign import innerHtml :: Element -> Effect String
+
+query :: String -> Mounted -> Aff (Maybe Element)
+query selector mounted = liftEffect (toMaybe <$> querySelectorImpl selector mounted.root)
+
+foreign import querySelectorImpl :: String -> Element -> Effect (Nullable Element)
+
+-- | Dispatches a bubbling click (reaches Solid's delegated handlers).
+foreign import click :: Element -> Effect Unit
+
+-- | Sets an input's value and dispatches a bubbling `input` event.
+foreign import inputText :: String -> Element -> Effect Unit
+
+attribute :: String -> Element -> Effect (Maybe String)
+attribute name element = toMaybe <$> attributeImpl name element
+
+foreign import attributeImpl :: String -> Element -> Effect (Nullable String)
+
+foreign import namespaceOf :: Element -> Effect String

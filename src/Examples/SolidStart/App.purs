@@ -19,11 +19,10 @@ import Examples.SolidStart.Navigation (navigateToRoute)
 import Examples.SolidStart.RouteView (HnRoute(..), RouteView(..), resolveRouteView)
 import Examples.SolidStart.View.HackerNews (HnStoriesState, HnStoryState, HnUserState, hackerNewsContent, initialHnStoriesState, initialHnStoryState, initialHnUserState)
 import Solid.Component as Component
-import Solid.Control as Control
-import Solid.DOM as DOM
-import Solid.DOM.Events as Events
-import Solid.DOM.HTML as HTML
-import Solid.JSX (JSX)
+import Solid.DOM.HTML as H
+import Solid.DOM.Props as P
+import Solid.JSX (JSX, text)
+import Solid.JSX as JSX
 import Solid.Lifecycle (onSettled)
 import Solid.Meta as Meta
 import Solid.Reactivity (createEffect_, createMemo)
@@ -33,19 +32,19 @@ import Solid.Signal (Accessor, Setter, createSignal, get, modify, set)
 
 notFoundContent :: Setter String -> String -> JSX
 notFoundContent setCurrentRoute routePath =
-  HTML.section { className: "item-view" }
-    [ HTML.div { className: "item-view-header" }
-        [ HTML.h1_ [ DOM.text "Route not found" ]
-        , HTML.p { className: "meta" }
-            [ DOM.text "No route matched: "
-            , DOM.text routePath
+  H.section [ P.class_ "item-view" ]
+    [ H.div [ P.class_ "item-view-header" ]
+        [ H.h1_ [ text "Route not found" ]
+        , H.p [ P.class_ "meta" ]
+            [ text "No route matched: "
+            , text routePath
             ]
-        , HTML.p { className: "meta" }
-            [ HTML.a
-                { href: routeHref "/"
-                , onClick: Events.handler_ (navigateToRoute "/" setCurrentRoute)
-                }
-                [ DOM.text "Back to feed" ]
+        , H.p [ P.class_ "meta" ]
+            [ H.a
+                [ P.href (routeHref "/")
+                , P.onClick \_ -> (navigateToRoute "/" setCurrentRoute)
+                ]
+                [ text "Back to feed" ]
             ]
         ]
     ]
@@ -73,14 +72,14 @@ navLink
   -> String
   -> JSX
 navLink setCurrentRoute setHnPage activeClass routeId label =
-  HTML.a
-    { className: activeClass
-    , href: routeHref routeId
-    , onClick: Events.handler_ do
+  H.a
+    [ P.class_ activeClass
+    , P.href (routeHref routeId)
+    , P.onClick \_ -> do
         _ <- set setHnPage 1
         navigateToRoute routeId setCurrentRoute
-    }
-    [ HTML.strong_ [ DOM.text label ] ]
+    ]
+    [ H.strong_ [ text label ] ]
 
 routeTitle :: RouteView -> String
 routeTitle = case _ of
@@ -291,25 +290,25 @@ mkApp resolveInitialRoute = Component.component \_ -> do
   -- Solid 2 forbids `onCleanup` inside `onSettled`; the callback returns its cleanup.
   onSettled $ RouterNavigation.subscribeRouteChanges basePath (set setCurrentRoute)
 
-  pure $ HTML.div_
-    [ HTML.header { className: "header" }
-        [ HTML.nav { className: "inner" }
+  pure $ H.div_
+    [ H.header [ P.class_ "header" ]
+        [ H.nav [ P.class_ "inner" ]
             [ navLink setCurrentRoute setHnPage topLinkClass "/" "HN"
             , navLink setCurrentRoute setHnPage newLinkClass "/new" "New"
             , navLink setCurrentRoute setHnPage showLinkClass "/show" "Show"
             , navLink setCurrentRoute setHnPage askLinkClass "/ask" "Ask"
             , navLink setCurrentRoute setHnPage jobLinkClass "/job" "Jobs"
-            , HTML.a
-                { className: "github"
-                , href: "http://github.com/solidjs/solid"
-                , target: "_blank"
-                , rel: "noreferrer"
-                }
-                [ DOM.text "Built with Solid" ]
+            , H.a
+                [ P.class_ "github"
+                , P.href "http://github.com/solidjs/solid"
+                , P.target "_blank"
+                , P.rel "noreferrer"
+                ]
+                [ text "Built with Solid" ]
             ]
         ]
-    , HTML.div { className: "view" }
-        [ Control.dynamicTag "div" { children: routeNode } ]
+    , H.div [ P.class_ "view" ]
+        [ JSX.reactive routeNode ]
     ]
 
 app :: Component.Component {}

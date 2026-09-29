@@ -6,11 +6,10 @@ module Solid.Start.App
   , defaultStartConfig
   ) where
 
-import Effect (Effect)
-
 import Solid.JSX (JSX)
 
-newtype App = App (Effect JSX)
+-- | The root view of a Start app.
+newtype App = App JSX
 
 type StartConfig =
   { basePath :: String
@@ -18,11 +17,11 @@ type StartConfig =
   , isDev :: Boolean
   }
 
-createApp :: Effect JSX -> App
-createApp renderApp = App renderApp
+createApp :: JSX -> App
+createApp = App
 
-runApp :: App -> Effect JSX
-runApp (App renderApp) = renderApp
+runApp :: App -> JSX
+runApp (App view) = view
 
 defaultStartConfig :: StartConfig
 defaultStartConfig =

@@ -8,6 +8,7 @@ module Bench.Rows
 
 import Prelude
 
+import DOM.HTML.Indexed.ButtonType (ButtonType(..))
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Maybe (fromMaybe)
@@ -18,13 +19,14 @@ import Effect.Class.Console (log)
 import Effect.Ref as Ref
 import Solid.Component as Component
 import Solid.Control as Control
-import Solid.DOM as DOM
-import Solid.DOM.Events as Events
-import Solid.DOM.HTML as HTML
-import Solid.JSX (JSX)
+import Solid.DOM (classWhen)
+import Solid.DOM.HTML as H
+import Solid.DOM.Props as P
+import Solid.JSX (JSX, text)
 import Solid.Setup (Setup, liftSetup)
-import Solid.Signal (Accessor, Setter, createSignal, get, modify, modify_, set)
-import Solid.Web (render, requireMountById)
+import Solid.Signal (Accessor, Setter, createSignal, get, modify_, set)
+import Solid.Store (createSelector)
+import Solid.Web (render, requireElementById)
 
 type RowItem =
   { id :: Int
@@ -83,16 +85,16 @@ app = Component.component \_ -> do
   seed <- liftSetup (Ref.new 42)
   nextId <- liftSetup (Ref.new 0)
   rows /\ setRows <- createSignal ([] :: Array RowItem)
+  selected /\ setSelected <- createSignal 0
+  isSelected <- createSelector show selected
   probe /\ _ <- createSignal "reactive-ok"
 
   let
-    replaceWith count = do
-      fresh <- buildRows seed nextId count
-      void (set setRows fresh)
+    replaceWith count = buildRows seed nextId count >>= set setRows
 
     append count = do
       fresh <- buildRows seed nextId count
-      void (modify setRows (_ <> fresh))
+      modify_ setRows (_ <> fresh)
 
     updateEveryTenth = do
       current <- get rows
@@ -101,43 +103,42 @@ app = Component.component \_ -> do
         when (i `mod` 10 == 0) do
           modify_ row.setLabel (_ <> " !!!")
 
-    removeRow id =
-      void (modify setRows (Array.filter (\row -> row.id /= id)))
+    removeRow id = modify_ setRows (Array.filter (\row -> row.id /= id))
 
     button id label action =
-      HTML.button { id, type: "button", onClick: Events.handler_ action } [ DOM.text label ]
+      H.button [ P.id id, P.type_ ButtonButton, P.onClick \_ -> action ] [ text label ]
 
-    renderRow :: RowItem -> Setup JSX
-    renderRow row = pure $ HTML.tr_
-      [ HTML.td { className: "col-md-1" } [ DOM.text (show row.id) ]
-      , HTML.td { className: "col-md-4" } [ Control.dynamicTag "a" { children: row.label } ]
-      , HTML.td { className: "col-md-1" }
-          [ HTML.a { className: "remove", onClick: Events.handler_ (removeRow row.id) } [ DOM.text "x" ] ]
-      , HTML.td { className: "col-md-6" } []
+    renderRow :: RowItem -> Accessor Int -> Setup JSX
+    renderRow row _ = pure $ H.tr [ classWhen "danger" (isSelected row.id) ]
+      [ H.td [ P.class_ "col-md-1" ] [ text (show row.id) ]
+      , H.td [ P.class_ "col-md-4" ] [ H.a [ P.onClick \_ -> set setSelected row.id ] [ text row.label ] ]
+      , H.td [ P.class_ "col-md-1" ]
+          [ H.a [ P.class_ "remove", P.onClick \_ -> removeRow row.id ] [ text "x" ] ]
+      , H.td [ P.class_ "col-md-6" ] []
       ]
 
-  pure $ HTML.div { className: "container" }
-    [ HTML.div { className: "jumbotron" }
+  pure $ H.div [ P.class_ "container" ]
+    [ H.div [ P.class_ "jumbotron" ]
         [ button "run" "Create 1,000 rows" (replaceWith 1000)
         , button "runlots" "Create 10,000 rows" (replaceWith 10000)
         , button "add" "Append 1,000 rows" (append 1000)
         , button "update" "Update every 10th row" updateEveryTenth
-        , button "clear" "Clear" (void (set setRows []))
-        , button "swaprows" "Swap Rows" (void (modify setRows (swapAt 1 998)))
+        , button "clear" "Clear" (set setRows [])
+        , button "swaprows" "Swap Rows" (modify_ setRows (swapAt 1 998))
         ]
     -- Probe: is an Accessor passed as an attribute value applied reactively?
-    , HTML.input { id: "reactive-attr-probe", value: probe } []
-    , HTML.table { className: "table" }
-        [ HTML.tbody { id: "tbody" } [ Control.forEach rows renderRow ] ]
+    , H.input [ P.id "reactive-attr-probe", P.value probe ]
+    , H.table [ P.class_ "table" ]
+        [ H.tbody [ P.id "tbody" ] [ Control.forEach rows renderRow ] ]
     ]
 
 main :: Effect Unit
 main = do
-  mountResult <- requireMountById "main"
+  mountResult <- requireElementById "main"
   case mountResult of
     Left webError -> log ("Mount error: " <> show webError)
     Right mountNode -> do
-      renderResult <- render (pure (Component.element app {})) mountNode
+      renderResult <- render (Component.element app {}) mountNode
       case renderResult of
         Left webError -> log ("Render error: " <> show webError)
         Right _ -> pure unit

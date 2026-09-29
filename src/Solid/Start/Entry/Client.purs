@@ -11,7 +11,8 @@ import Effect (Effect)
 import Prelude
 
 import Solid.Start.App (App, runApp)
-import Solid.Web (Mountable, WebError)
+import Solid.Web (WebError)
+import Web.DOM.Element (Element)
 import Solid.Web as Web
 
 data ClientMode
@@ -38,7 +39,7 @@ instance showClientEntryError :: Show ClientEntryError where
     RenderFailure webError -> "RenderFailure " <> show webError
     HydrateFailure webError -> "HydrateFailure " <> show webError
 
-bootstrapAt :: ClientMode -> App -> Mountable -> Effect (Either ClientEntryError (Effect Unit))
+bootstrapAt :: ClientMode -> App -> Element -> Effect (Either ClientEntryError (Effect Unit))
 bootstrapAt mode app mount =
   case mode of
     RenderMode -> do
@@ -54,7 +55,7 @@ bootstrapAt mode app mount =
 
 bootstrapAtId :: ClientMode -> String -> App -> Effect (Either ClientEntryError (Effect Unit))
 bootstrapAtId mode mountId app = do
-  mountResult <- Web.requireMountById mountId
+  mountResult <- Web.requireElementById mountId
   case mountResult of
     Left webError -> pure (Left (MountFailure webError))
     Right mount -> bootstrapAt mode app mount

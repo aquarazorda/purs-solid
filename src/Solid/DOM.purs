@@ -1,76 +1,77 @@
+-- | Building DOM elements.
+-- |
+-- | Typed elements live in `Solid.DOM.HTML` / `Solid.DOM.SVG`, and typed
+-- | properties in `Solid.DOM.Props`. Each property value may be fixed or an
+-- | `Accessor` (then it's reactive):
+-- |
+-- | ```purescript
+-- | import Solid.DOM.HTML as H
+-- | import Solid.DOM.Props as P
+-- |
+-- | H.button [ P.class_ "btn", P.disabled isSaving, P.onClick \_ -> save ]
+-- |   [ text "Save" ]
+-- | ```
+-- |
+-- | This module has the untyped escape hatches (any tag, any attribute) and
+-- | props that aren't element-specific.
 module Solid.DOM
-  ( text
+  ( module Exports
   , element
   , element_
-  , div
-  , div_
-  , span
-  , span_
-  , button
-  , button_
-  , input
-  , input_
-  , form
-  , form_
-  , ul
-  , ul_
-  , li
-  , li_
+  , attr
+  , dataAttr
+  , ariaAttr
+  , classWhen
+  , innerHTML
+  , ref
+  , on
   ) where
 
-import Solid.JSX (JSX)
-import Solid.JSX as JSX
+import Prelude
 
-text :: String -> JSX
-text = JSX.text
+import Effect (Effect)
+import Solid.Internal.View (class ToBinding, JSX, Namespace(..), Prop, bindingProp, binding, elementWith, eventProp, refProp)
+import Solid.Internal.View (class ToBinding, JSX, Prop) as Exports
+import Web.DOM.Element (Element)
+import Web.Event.Event (Event)
+import Foreign.Object as Object
 
-foreign import element
-  :: forall props
-   . String
-  -> { | props }
-  -> Array JSX
-  -> JSX
+-- | An element by tag name, accepting any property (no attribute checking).
+element :: forall r. String -> Array (Prop r) -> Array JSX -> JSX
+element = elementWith HtmlNamespace
 
-foreign import element_ :: String -> Array JSX -> JSX
+element_ :: String -> Array JSX -> JSX
+element_ tag = elementWith HtmlNamespace tag []
 
-div :: forall props. { | props } -> Array JSX -> JSX
-div = element "div"
+-- | Any attribute by its DOM name, on any element.
+attr :: forall r v. ToBinding v String => String -> v -> Prop r
+attr name value = bindingProp name identity (binding value)
 
-div_ :: Array JSX -> JSX
-div_ = element_ "div"
+-- | `data-<name>`.
+dataAttr :: forall r v. ToBinding v String => String -> v -> Prop r
+dataAttr name = attr ("data-" <> name)
 
-span :: forall props. { | props } -> Array JSX -> JSX
-span = element "span"
+-- | `aria-<name>`.
+ariaAttr :: forall r v. ToBinding v String => String -> v -> Prop r
+ariaAttr name = attr ("aria-" <> name)
 
-span_ :: Array JSX -> JSX
-span_ = element_ "span"
+-- | Adds the class `name` while the condition holds. Combines with `class_`
+-- | and other `classWhen`s on the same element:
+-- | `[ P.class_ "todo", classWhen "done" isDone ]`.
+classWhen :: forall r v. ToBinding v Boolean => String -> v -> Prop (class :: String | r)
+classWhen name condition = bindingProp "class" (Object.singleton name) (binding condition)
 
-button :: forall props. { | props } -> Array JSX -> JSX
-button = element "button"
+-- | Sets the element's content from an HTML string. The string is **not**
+-- | escaped: only pass trusted or sanitized HTML.
+innerHTML :: forall r v. ToBinding v String => v -> Prop r
+innerHTML value = bindingProp "innerHTML" identity (binding value)
 
-button_ :: Array JSX -> JSX
-button_ = element_ "button"
+-- | Runs with the element once it's created.
+ref :: forall r. (Element -> Effect Unit) -> Prop r
+ref = refProp
 
-input :: forall props. { | props } -> Array JSX -> JSX
-input = element "input"
-
-input_ :: Array JSX -> JSX
-input_ = element_ "input"
-
-form :: forall props. { | props } -> Array JSX -> JSX
-form = element "form"
-
-form_ :: Array JSX -> JSX
-form_ = element_ "form"
-
-ul :: forall props. { | props } -> Array JSX -> JSX
-ul = element "ul"
-
-ul_ :: Array JSX -> JSX
-ul_ = element_ "ul"
-
-li :: forall props. { | props } -> Array JSX -> JSX
-li = element "li"
-
-li_ :: Array JSX -> JSX
-li_ = element_ "li"
+-- | A listener for any event by DOM name, for custom events and events
+-- | without a typed helper. Solid lowercases the name, and delegates it when
+-- | it's one of the events Solid delegates.
+on :: forall r. String -> (Event -> Effect Unit) -> Prop r
+on name = eventProp ("on" <> name)

@@ -16,7 +16,8 @@ import Data.Either (Either)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff as Aff
-import Effect.Uncurried (EffectFn1, runEffectFn1)
+import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Solid.Internal.View (JSX, Realized, realize)
 import Solid.Internal.Error (errorMessage, tryMessage)
 
 foreign import data RenderStream :: Type
@@ -30,17 +31,17 @@ instance showSsrError :: Show SsrError where
   show = case _ of
     RuntimeError message -> "RuntimeError " <> show message
 
-renderToString :: forall a. Effect a -> Effect (Either SsrError String)
+renderToString :: JSX -> Effect (Either SsrError String)
 renderToString view =
-  mapError <$> tryMessage (runEffectFn1 renderToStringImpl view)
+  mapError <$> tryMessage (runEffectFn2 renderToStringImpl realize view)
 
-renderToStringAsync :: forall a. Effect a -> Aff (Either SsrError String)
+renderToStringAsync :: JSX -> Aff (Either SsrError String)
 renderToStringAsync view =
-  lmap (RuntimeError <<< errorMessage) <$> Aff.try (Promise.toAffE (runEffectFn1 renderToStringAsyncImpl view))
+  lmap (RuntimeError <<< errorMessage) <$> Aff.try (Promise.toAffE (runEffectFn2 renderToStringAsyncImpl realize view))
 
-renderToStream :: forall a. Effect a -> Effect (Either SsrError RenderStream)
+renderToStream :: JSX -> Effect (Either SsrError RenderStream)
 renderToStream view =
-  mapError <$> tryMessage (runEffectFn1 renderToStreamImpl view)
+  mapError <$> tryMessage (runEffectFn2 renderToStreamImpl realize view)
 
 hydrationScript :: Effect (Either SsrError String)
 hydrationScript =
@@ -49,19 +50,19 @@ hydrationScript =
 -- | Renders to HTML and also returns the head-bound markup (`useHead` tags,
 -- | asset links, styles) for a host that owns the `<head>` template.
 -- | Replaces Solid 1's `getAssets`.
-renderToStringWithHead :: forall a. Effect a -> Effect (Either SsrError { html :: String, head :: String })
+renderToStringWithHead :: JSX -> Effect (Either SsrError { html :: String, head :: String })
 renderToStringWithHead view =
-  mapError <$> tryMessage (runEffectFn1 renderToStringWithHeadImpl view)
+  mapError <$> tryMessage (runEffectFn2 renderToStringWithHeadImpl realize view)
 
-foreign import renderToStringImpl :: forall a. EffectFn1 (Effect a) String
+foreign import renderToStringImpl :: EffectFn2 (JSX -> Realized) JSX String
 
-foreign import renderToStringAsyncImpl :: forall a. EffectFn1 (Effect a) (Promise.Promise String)
+foreign import renderToStringAsyncImpl :: EffectFn2 (JSX -> Realized) JSX (Promise.Promise String)
 
-foreign import renderToStreamImpl :: forall a. EffectFn1 (Effect a) RenderStream
+foreign import renderToStreamImpl :: EffectFn2 (JSX -> Realized) JSX RenderStream
 
 foreign import hydrationScriptImpl :: Effect String
 
-foreign import renderToStringWithHeadImpl :: forall a. EffectFn1 (Effect a) { html :: String, head :: String }
+foreign import renderToStringWithHeadImpl :: EffectFn2 (JSX -> Realized) JSX { html :: String, head :: String }
 
 mapError :: forall a. Either String a -> Either SsrError a
 mapError = lmap RuntimeError

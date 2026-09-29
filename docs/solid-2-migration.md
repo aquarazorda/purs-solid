@@ -182,9 +182,63 @@ Medians on this machine, headless Chromium, click to next frame. Operations unde
 
 **Finding:** Solid 2 keeps an element's proxy (and so its row) across a `reconcile` only while something reads that element's fields. Rendered rows always do; a test has to observe the fields too.
 
-### Phase 3 — View layer
-JSX thunks, static elements, typed props, components, control flow, context, portal, dynamic, refs and directives. Generate the HTML and SVG modules.
-Exit: UI tests and browser smoke pass, and the benchmark is compared with the baseline.
+### Phase 3 — View layer ✅
+- [x] **`JSX` is a lazy description** (`Solid.Internal.View`, one FFI file, because everything needs `realize`).
+  - Building JSX does nothing; rendering creates fresh DOM, so a value can be reused.
+  - Control-flow content goes through getters, so hidden branches are never created (on 1.x `whenElse` built both).
+  - `text` and every prop accept a plain value or an `Accessor` (`ToBinding` instance chain).
+  - `JSX.reactive :: Accessor JSX -> JSX` is the explicit reactive region.
+- [x] **Element creation without per-element memos.**
+  - Client: `document.createElement` (or `getNextElement` when hydrating) plus one `assign` of the static props, which creates no computation. There is at most one render effect per element for its reactive props (`assign` diffs), and refs run unowned.
+  - Children are created after their parent, matching the server's hydration-key order.
+  - Server: `ssrElement` with reactive props as getters and children as a getter.
+  - Several `class` props merge into one class value.
+- [x] **Typed props from `dom-indexed`.**
+  - `scripts/gen-dom.mjs` (`npm run gen:dom`) generates `Solid.DOM.HTML` (112 elements; void elements take no children) and `Solid.DOM.Props` (192 helpers).
+  - Each helper is `forall r v a. ToBinding v a => AttrValue a => v -> Prop (label :: a | r)`: the element's row fixes the value type, so `P.type_` takes `InputType` on `<input>` and `ButtonType` on `<button>`.
+  - Event helpers are typed by the row (`onClick :: (MouseEvent -> Effect Unit) -> ...`).
+  - Verified compile errors: a number as `href`, `onClick` on `<br>`, `InputCheckbox` on `<button>`, `checked` on `<div>`, a number as `value`.
+  - `Solid.DOM.AttrValue` renders primitives, `MediaType` and all `dom-indexed` enums, and is open for user instances.
+  - `Solid.DOM.SVG` / `Solid.DOM.SVG.Props`: 76 elements on one SVG row, 54 presentation attributes with their case-sensitive DOM names.
+  - `Solid.DOM`: `element`, `attr`, `dataAttr`, `ariaAttr`, `classWhen`, `innerHTML` (documented as not escaped), `ref`, `on`.
+  - Removed: `Solid.DOM.Events`, `Solid.DOM.Typed*`, and the untyped record props.
+- [x] **`Solid.Control`**
+  - `when` / `whenElse` (condition, content, fallback).
+  - `showMaybe(Else)` and `showMaybeKeyed(Else)`, where `Just false` / `Just 0` still count as present.
+  - `forEach` (keyed), `forEachUnkeyed` (replaces `Index`), `forEachBy`, `repeat`.
+  - `switch` over a typed `Case` (`match`, `matchMaybe`).
+  - `loading`, `errored` (the fallback gets `Accessor Error` and a `reset :: Effect Unit`).
+  - `reveal { order, collapsed }`, `portal` / `portalAt :: Element`, `dynamic`, `noHydration` / `hydration`.
+- [x] **Components** take plain records and have `Setup` bodies. `children` returns content that's already rendered, and `lazy :: Aff (Component p)`.
+- [x] **Mounting:** `Solid.Web.render` / `hydrate :: JSX -> Element -> ...` (`web-dom` `Element`; `Mountable` removed). `Solid.Web.SSR` takes `JSX`. `Solid.Start.App` wraps a `JSX` value.
+- [x] **Examples ported:**
+  - Counter.
+  - TodoMVC, rewritten on the fine-grained store: each row reads only its own fields.
+  - Hacker News (view and app), converted mechanically.
+  - The bench, with the new **select row** scenario (`createSelector` + `classWhen`).
+- [x] **Tests**
+  - Client specs run against a real DOM (happy-dom via `--import=./test/setup-dom.mjs`). `Test.Core.View` has 20 specs covering elements, reactive attributes and text, boolean attributes, DOM properties, delegated events, input events, refs, SVG namespaces, dispose, JSX reuse, lazy branches, falsy `Just`, keyed row identity on reorder, unkeyed lists and `repeat`, `switch`, `errored`, `loading` with `createAsync`, component props and context.
+  - 76 client and 13 server specs pass on both backends.
+  - Browser smoke (`npm run test:browser-smoke`) now drives production bundles of Counter and TodoMVC in Chromium: 22 checks, and it fails on any page error or console warning.
+
+**Benchmark (`docs/benchmarks/phase3.json`)**
+
+| Operation | 1.x | Phase 1 (transitional) | Phase 3 |
+|---|---|---|---|
+| create 1k rows | 20.4 ms | 25.7 ms | **19.3 ms** |
+| replace 1k rows | 25.9 ms | 27.3 ms | **19.4 ms** |
+| update every 10th row | 9.2 ms | 7.3 ms | 8.1 ms |
+| swap rows | 9.3 ms | 4.7 ms | **2.1 ms** |
+| select row | n/a (no reactive attributes) | n/a | **3.8 ms** |
+| append 1k rows | 24.4 ms | 26.3 ms | **22.1 ms** |
+| create 10k rows | 230 ms | 258 ms | **171 ms** |
+| bundle min / gzip | 35.6 kB / 12.5 kB | 81.3 kB / 29.6 kB | 99.8 kB / 35.2 kB |
+
+The bundle is dominated by Solid 2's reactive core (`@solidjs/signals`: 57 kB minified); the purs-solid view runtime is about 3 kB. `Effect.Aff` (7 kB) comes in through `Component.lazy` and `Solid.Async`.
+
+**Findings**
+- **Probable upstream bug (rc.11), not yet reported.** An error thrown inside a reactive region under `Errored` calls the fallback but renders nothing, and a region that fails after an update keeps its old content. This reproduces in plain JS. Errors thrown during component setup are caught correctly. A pending spec documents it.
+- Merged class values render in prop order.
 
 ### Phase 4 — SSR and hydration
 `renderToString`, `renderToStream`, `HydrationScript`, `NoHydration` / `Hydration`, and the `ssrSource` / `deferStream` options. Add an SSR → hydrate smoke test.

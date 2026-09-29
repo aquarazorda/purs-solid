@@ -19,7 +19,7 @@ run = do
   liftEffect do
     rendered <- expectRight
       "renderToString returns HTML"
-      =<< SSR.renderToString (pure (JSX.text "hello-ssr"))
+      =<< SSR.renderToString ((JSX.text "hello-ssr"))
     assertEqual "renderToString output is non-empty" true (StringCodeUnits.length rendered > 0)
 
     script <- expectRight
@@ -27,14 +27,14 @@ run = do
       =<< SSR.hydrationScript
     assertEqual "hydrationScript output is non-empty" true (StringCodeUnits.length script > 0)
 
-    streamResult <- SSR.renderToStream (pure (JSX.text "stream-ssr"))
+    streamResult <- SSR.renderToStream ((JSX.text "stream-ssr"))
     case streamResult of
       Left errorValue ->
         throw ("renderToStream should return Right, got " <> show errorValue)
       Right _stream ->
         pure unit
 
-  asyncResult <- SSR.renderToStringAsync (pure (JSX.text "async-ssr"))
+  asyncResult <- SSR.renderToStringAsync ((JSX.text "async-ssr"))
   liftEffect do
     asyncHtml <- expectRight "renderToStringAsync returns HTML" asyncResult
     assertEqual

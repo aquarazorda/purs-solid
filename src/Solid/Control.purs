@@ -1,274 +1,166 @@
+-- | Control flow: conditionals, lists, async and error boundaries.
+-- |
+-- | Content arguments are lazy `JSX`: a branch is only created while it's
+-- | shown. Render callbacks run in `Setup`, so each rendered item or branch
+-- | can hold its own state, and it's disposed when the item leaves.
 module Solid.Control
   ( when
-  , whenKeyed
   , whenElse
-  , whenElseKeyed
   , showMaybe
   , showMaybeElse
   , showMaybeKeyed
   , showMaybeKeyedElse
   , forEach
   , forEachElse
-  , forEachWithIndex
-  , forEachWithIndexElse
-  , indexEach
-  , indexEachElse
-  , matchWhen
-  , matchWhenKeyed
+  , forEachUnkeyed
+  , forEachBy
+  , repeat
+  , Case
+  , match
   , matchMaybe
-  , switchCases
-  , switchCasesElse
-  , dynamicTag
-  , dynamicComponent
-  , errorBoundary
-  , errorBoundaryWith
-  , noHydration
-  , suspense
-  , SuspenseRevealOrder(..)
-  , SuspenseTail(..)
-  , SuspenseListOptions
-  , defaultSuspenseListOptions
-  , suspenseList
-  , suspenseListWith
-  , PortalOptions
-  , defaultPortalOptions
+  , switch
+  , switch_
+  , loading
+  , errored
+  , RevealOrder(..)
+  , reveal
   , portal
-  , portalWith
   , portalAt
+  , dynamic
+  , noHydration
+  , hydration
   ) where
 
-import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable, toNullable)
-import Effect (Effect)
-import Solid.Internal.Setup (Setup)
 import Prelude hiding (when)
 
+import Data.Function.Uncurried (runFn2, runFn3, runFn4)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Nullable (Nullable, notNull, null, toNullable)
+import Effect (Effect)
+import Effect.Exception (Error)
 import Solid.Component (Component)
-import Solid.JSX (JSX, empty)
+import Solid.Internal.Setup (Setup, runSetup)
+import Solid.Internal.View (JSX, WhenValue, empty, erroredImpl, forByImpl, forImpl, forUnkeyedImpl, hydrationImpl, loadingImpl, matchImpl, matchMaybeImpl, noHydrationImpl, portalImpl, repeatImpl, revealImpl, showImpl, showMaybeImpl, showMaybeKeyedImpl, switchImpl, whenValue)
+import Solid.Internal.View as View
 import Solid.Signal (Accessor)
-import Solid.Web (Mountable)
+import Web.DOM.Element (Element)
 
+-- | `content` while the condition holds.
 when :: Accessor Boolean -> JSX -> JSX
-when condition content = whenElse condition empty content
+when condition content = runFn3 showImpl condition empty content
 
-foreign import whenElseImpl :: Accessor Boolean -> JSX -> JSX -> JSX
-
+-- | `content` while the condition holds, `fallback` otherwise.
 whenElse :: Accessor Boolean -> JSX -> JSX -> JSX
-whenElse = whenElseImpl
+whenElse condition content fallback = runFn3 showImpl condition fallback content
 
-whenKeyed :: Accessor Boolean -> JSX -> JSX
-whenKeyed condition content = whenElseKeyed condition empty content
+toWhen :: forall a. Accessor (Maybe a) -> Accessor (Nullable (WhenValue a))
+toWhen = map (maybe null (notNull <<< whenValue))
 
-foreign import whenElseKeyedImpl :: Accessor Boolean -> JSX -> JSX -> JSX
-
-whenElseKeyed :: Accessor Boolean -> JSX -> JSX -> JSX
-whenElseKeyed = whenElseKeyedImpl
-
+-- | Renders while the value is `Just`. The branch is created once and reads
+-- | the current value through the accessor.
 showMaybe :: forall a. Accessor (Maybe a) -> (Accessor a -> Setup JSX) -> JSX
-showMaybe condition render = showMaybeElse condition empty render
+showMaybe value render = showMaybeElse value render empty
 
-foreign import showMaybeElseImpl
-  :: forall a
-   . (Maybe a -> Nullable a)
-  -> Accessor (Maybe a)
-  -> JSX
-  -> (Accessor a -> Setup JSX)
-  -> JSX
+showMaybeElse :: forall a. Accessor (Maybe a) -> (Accessor a -> Setup JSX) -> JSX -> JSX
+showMaybeElse value render fallback = runFn3 showMaybeImpl (toWhen value) fallback (runSetup <<< render)
 
-showMaybeElse :: forall a. Accessor (Maybe a) -> JSX -> (Accessor a -> Setup JSX) -> JSX
-showMaybeElse = showMaybeElseImpl toNullable
-
+-- | Renders while the value is `Just`, re-creating the branch whenever the
+-- | value changes (by identity).
 showMaybeKeyed :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> JSX
-showMaybeKeyed condition render = showMaybeKeyedElse condition empty render
+showMaybeKeyed value render = showMaybeKeyedElse value render empty
 
-foreign import showMaybeKeyedElseImpl
-  :: forall a
-   . (Maybe a -> Nullable a)
-  -> Accessor (Maybe a)
-  -> JSX
-  -> (a -> Setup JSX)
-  -> JSX
+showMaybeKeyedElse :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> JSX -> JSX
+showMaybeKeyedElse value render fallback = runFn3 showMaybeKeyedImpl (toWhen value) fallback (runSetup <<< render)
 
-showMaybeKeyedElse :: forall a. Accessor (Maybe a) -> JSX -> (a -> Setup JSX) -> JSX
-showMaybeKeyedElse = showMaybeKeyedElseImpl toNullable
+-- | A list keyed by item identity (`===`): an item's view is created once and
+-- | moved when the item moves. Use store `items` or stable values for items.
+forEach :: forall a. Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX
+forEach items render = forEachElse items render empty
 
-forEach :: forall a. Accessor (Array a) -> (a -> Setup JSX) -> JSX
-forEach each render = forEachElse each empty render
+forEachElse :: forall a. Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX -> JSX
+forEachElse items render fallback = runFn3 forImpl items fallback (\item index -> runSetup (render item index))
 
-foreign import forEachElseImpl :: forall a. Accessor (Array a) -> JSX -> (a -> Setup JSX) -> JSX
+-- | A list keyed by position: the view at each index stays, and its item
+-- | accessor updates when a different value lands there.
+forEachUnkeyed :: forall a. Accessor (Array a) -> (Accessor a -> Int -> Setup JSX) -> JSX
+forEachUnkeyed items render = runFn3 forUnkeyedImpl items empty (\item index -> runSetup (render item index))
 
-forEachElse :: forall a. Accessor (Array a) -> JSX -> (a -> Setup JSX) -> JSX
-forEachElse = forEachElseImpl
+-- | A list keyed by a derived key (e.g. `_.id`): items with the same key share
+-- | a view, whose item accessor updates to the newest value.
+forEachBy :: forall a k. (a -> k) -> Accessor (Array a) -> (Accessor a -> Accessor Int -> Setup JSX) -> JSX
+forEachBy key items render = runFn4 forByImpl key items empty (\item index -> runSetup (render item index))
 
-forEachWithIndex
-  :: forall a
-   . Accessor (Array a)
-  -> (a -> Accessor Int -> Setup JSX)
-  -> JSX
-forEachWithIndex each render = forEachWithIndexElse each empty render
+-- | Renders the indices `0 .. count - 1`.
+repeat :: Accessor Int -> (Int -> Setup JSX) -> JSX
+repeat count render = runFn3 repeatImpl count empty (runSetup <<< render)
 
-foreign import forEachWithIndexElseImpl
-  :: forall a
-   . Accessor (Array a)
-  -> JSX
-  -> (a -> Accessor Int -> Setup JSX)
-  -> JSX
+-- | One case of a `switch`.
+newtype Case = Case JSX
 
-forEachWithIndexElse
-  :: forall a
-   . Accessor (Array a)
-  -> JSX
-  -> (a -> Accessor Int -> Setup JSX)
-  -> JSX
-forEachWithIndexElse = forEachWithIndexElseImpl
+match :: Accessor Boolean -> JSX -> Case
+match condition content = Case (runFn2 matchImpl condition content)
 
-indexEach :: forall a. Accessor (Array a) -> (Accessor a -> Setup JSX) -> JSX
-indexEach each render = indexEachElse each empty render
+matchMaybe :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> Case
+matchMaybe value render = Case (runFn2 matchMaybeImpl (toWhen value) (runSetup <<< render))
 
-foreign import indexEachElseImpl :: forall a. Accessor (Array a) -> JSX -> (Accessor a -> Setup JSX) -> JSX
+-- | The first case whose condition holds, else `fallback`.
+switch :: Array Case -> JSX -> JSX
+switch cases fallback = runFn2 switchImpl (caseJsx <$> cases) fallback
+  where
+  caseJsx (Case jsx) = jsx
 
-indexEachElse :: forall a. Accessor (Array a) -> JSX -> (Accessor a -> Setup JSX) -> JSX
-indexEachElse = indexEachElseImpl
+switch_ :: Array Case -> JSX
+switch_ cases = switch cases empty
 
-foreign import matchWhen :: Accessor Boolean -> JSX -> JSX
+-- | Shows `fallback` while async values read by `content` load for the first
+-- | time. Later updates keep the current content visible (ask
+-- | `Solid.Async.isPending` to show that something is in flight).
+loading :: JSX -> JSX -> JSX
+loading fallback content = runFn2 loadingImpl fallback content
 
-foreign import matchWhenKeyed :: Accessor Boolean -> JSX -> JSX
+-- | Renders the fallback if `content` throws. The fallback receives the error
+-- | and a `reset` effect (call it from an event handler) that retries.
+errored :: (Accessor Error -> Effect Unit -> Setup JSX) -> JSX -> JSX
+errored renderFallback content =
+  runFn2 erroredImpl (\error reset -> runSetup (renderFallback error reset)) content
 
-foreign import matchMaybeImpl
-  :: forall a
-   . (Maybe a -> Nullable a)
-  -> Accessor (Maybe a)
-  -> (a -> Setup JSX)
-  -> JSX
+-- | How `reveal` shows its loading children.
+data RevealOrder
+  -- | In order: each waits for the ones before it.
+  = Sequential
+  -- | All at once, when all are ready.
+  | Together
+  -- | Each as soon as it's ready.
+  | Natural
 
-matchMaybe :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> JSX
-matchMaybe = matchMaybeImpl toNullable
+derive instance Eq RevealOrder
 
-switchCases :: Array JSX -> JSX
-switchCases = switchCasesElse empty
+-- | Coordinates the loading boundaries among `children`. With `collapsed`,
+-- | boundaries not yet revealed show nothing instead of their fallbacks.
+reveal :: { order :: RevealOrder, collapsed :: Boolean } -> Array JSX -> JSX
+reveal options children = runFn3 revealImpl order options.collapsed children
+  where
+  order = case options.order of
+    Sequential -> "sequential"
+    Together -> "together"
+    Natural -> "natural"
 
-foreign import switchCasesElseImpl :: JSX -> Array JSX -> JSX
+-- | Renders `content` into `document.body` (client only).
+portal :: JSX -> JSX
+portal = runFn2 portalImpl null
 
-switchCasesElse :: JSX -> Array JSX -> JSX
-switchCasesElse = switchCasesElseImpl
+-- | Renders `content` into `mount` (client only).
+portalAt :: Element -> JSX -> JSX
+portalAt mount = runFn2 portalImpl (toNullable (Just mount))
 
-foreign import dynamicTag
-  :: forall props
-   . String
-  -> { | props }
-  -> JSX
+-- | Renders whichever component the accessor currently holds.
+dynamic :: forall props. Accessor (Component { | props }) -> { | props } -> JSX
+dynamic source props = runFn2 View.dynamicImpl source props
 
-foreign import dynamicComponent
-  :: forall props
-   . Component { | props }
-  -> { | props }
-  -> JSX
-
-foreign import errorBoundaryImpl :: JSX -> JSX -> JSX
-
-errorBoundary :: JSX -> JSX -> JSX
-errorBoundary = errorBoundaryImpl
-
-foreign import errorBoundaryWithImpl :: (String -> Effect Unit -> Setup JSX) -> JSX -> JSX
-
-errorBoundaryWith :: (String -> Effect Unit -> Setup JSX) -> JSX -> JSX
-errorBoundaryWith = errorBoundaryWithImpl
-
-foreign import noHydrationImpl :: JSX -> JSX
-
+-- | Server-rendered content that isn't hydrated.
 noHydration :: JSX -> JSX
 noHydration = noHydrationImpl
 
-foreign import suspenseImpl :: JSX -> JSX -> JSX
-
-suspense :: JSX -> JSX -> JSX
-suspense = suspenseImpl
-
-data SuspenseRevealOrder
-  = Forwards
-  | Backwards
-  | Together
-
-derive instance eqSuspenseRevealOrder :: Eq SuspenseRevealOrder
-
-instance showSuspenseRevealOrder :: Show SuspenseRevealOrder where
-  show = case _ of
-    Forwards -> "Forwards"
-    Backwards -> "Backwards"
-    Together -> "Together"
-
-data SuspenseTail
-  = Collapsed
-  | Hidden
-
-derive instance eqSuspenseTail :: Eq SuspenseTail
-
-instance showSuspenseTail :: Show SuspenseTail where
-  show = case _ of
-    Collapsed -> "Collapsed"
-    Hidden -> "Hidden"
-
-type SuspenseListOptions =
-  { revealOrder :: SuspenseRevealOrder
-  , tail :: Maybe SuspenseTail
-  }
-
-defaultSuspenseListOptions :: SuspenseListOptions
-defaultSuspenseListOptions =
-  { revealOrder: Forwards
-  , tail: Nothing
-  }
-
-suspenseList :: SuspenseRevealOrder -> Array JSX -> JSX
-suspenseList revealOrder children =
-  suspenseListWith
-    (defaultSuspenseListOptions { revealOrder = revealOrder })
-    children
-
-foreign import suspenseListImpl :: String -> Nullable String -> Array JSX -> JSX
-
-suspenseListWith :: SuspenseListOptions -> Array JSX -> JSX
-suspenseListWith options children =
-  suspenseListImpl
-    (toRevealOrderTag options.revealOrder)
-    (toNullable (toTailTag <$> options.tail))
-    children
-
-toRevealOrderTag :: SuspenseRevealOrder -> String
-toRevealOrderTag = case _ of
-  Forwards -> "forwards"
-  Backwards -> "backwards"
-  Together -> "together"
-
-toTailTag :: SuspenseTail -> String
-toTailTag = case _ of
-  Collapsed -> "collapsed"
-  Hidden -> "hidden"
-
-type PortalOptions =
-  { mount :: Maybe Mountable
-  , useShadow :: Boolean
-  , isSVG :: Boolean
-  }
-
-defaultPortalOptions :: PortalOptions
-defaultPortalOptions =
-  { mount: Nothing
-  , useShadow: false
-  , isSVG: false
-  }
-
-portal :: JSX -> JSX
-portal = portalWith defaultPortalOptions
-
-foreign import portalWithImpl :: Nullable Mountable -> Boolean -> Boolean -> JSX -> JSX
-
-portalWith :: PortalOptions -> JSX -> JSX
-portalWith options content =
-  portalWithImpl (toNullable options.mount) options.useShadow options.isSVG content
-
-portalAt :: Maybe Mountable -> JSX -> JSX
-portalAt maybeMount content =
-  portalWith
-    (defaultPortalOptions { mount = maybeMount })
-    content
+-- | Re-enables hydration inside `noHydration`.
+hydration :: JSX -> JSX
+hydration = hydrationImpl

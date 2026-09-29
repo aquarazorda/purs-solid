@@ -9,7 +9,9 @@ import Prelude
 import Data.String.CodeUnits as StringCodeUnits
 import Effect (Effect)
 
+import Solid.Component as Component
 import Solid.JSX as JSX
+import Solid.Setup (liftSetup)
 import Solid.Router.Navigation as RouterNavigation
 import Solid.Start.App as StartApp
 
@@ -54,8 +56,11 @@ routeDescription = case _ of
 
 mkApp :: Effect String -> StartApp.App
 mkApp resolveInitialRoute =
-  StartApp.createApp do
-    routePath <- resolveInitialRoute
+  StartApp.createApp $ Component.element root {}
+  where
+  root = Component.component \_ -> do
+    -- Reads the request/location path once; no reactive writes.
+    routePath <- liftSetup resolveInitialRoute
     pure (JSX.text (routeDescription (resolveRoute routePath)))
 
 app :: StartApp.App

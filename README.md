@@ -15,16 +15,16 @@ This repository is a library project, not an app template. It provides typed Pur
 
 Core reactivity and lifecycle:
 
-- `Solid.Signal`
-- `Solid.Reactivity`
-- `Solid.Root`
-- `Solid.Utility` (`batch`, `catchError`, `from`, `mapArray`, `indexArray`, `mergeProps`, `splitProps`, `observable`, `startTransition`, `useTransition`, and related helpers)
-- `Solid.Lifecycle`
-- `Solid.Resource`
+- `Solid.Setup` (the monad for owned code: component bodies, roots, list mappers)
+- `Solid.Signal` (`Accessor` is a `Monad`; signals, `get`, `set`, `modify`)
+- `Solid.Reactivity` (memos, split effects, reactions, `flush`)
+- `Solid.Root`, `Solid.Owner`, `Solid.Lifecycle` (`onCleanup`, `onSettled`)
+- `Solid.Async` (`createAsync` over `Aff`, `isPending`, `latest`, `refresh`, `resolve`)
+- `Solid.Action` (transactional async mutations, optimistic values)
+- `Solid.Store` (typed paths, pure updates, projections, `createSelector`)
+- `Solid.Utility` (`mapArray` keyed / unkeyed / by key, `repeat`)
 - `Solid.Context`
-- `Solid.Store`
-- `Solid.Web`
-- `Solid.Web.SSR`
+- `Solid.Web`, `Solid.Web.SSR`
 
 Routing and navigation:
 
@@ -41,14 +41,13 @@ Document head:
 
 UI authoring:
 
-- `Solid.JSX`
+- `Solid.JSX` (lazy view descriptions: `text`, `reactive`, `fragment`, `empty`)
 - `Solid.Component` (`component`, `element`, `children`, `createUniqueId`, `lazy`)
-- `Solid.DOM` (generic + common HTML tags)
-- `Solid.DOM.HTML` (full HTML constructors)
-- `Solid.DOM.SVG` (full SVG constructors)
-- `Solid.DOM.Events` (thin handler helpers over `Web.Event.Event`)
+- `Solid.DOM` (any tag or attribute, `classWhen`, `innerHTML`, `ref`, `on`)
+- `Solid.DOM.HTML` / `Solid.DOM.Props` (typed HTML elements and properties, generated from `dom-indexed` by `npm run gen:dom`)
+- `Solid.DOM.SVG` / `Solid.DOM.SVG.Props` (SVG elements and presentation attributes)
 - `Solid.DOM.EventAdapters` (optional adapters built on `web-events`, `web-uievents`, `web-html`, `web-dom`, `web-file`)
-- `Solid.Control` (`Show`/`For`/`Index`/`Switch`/`Match` wrappers, `ErrorBoundary`, `Suspense`, `SuspenseList`, `NoHydration`, `Dynamic`, `Portal`, and related helpers)
+- `Solid.Control` (`when`, `showMaybe`, `forEach` (keyed / unkeyed / by key), `repeat`, `switch`, `loading`, `errored`, `reveal`, `portal`, `dynamic`, hydration controls)
 
 ## Design stance
 
@@ -168,7 +167,9 @@ example = do
 
 ## Getting started UI example
 
-This example mounts a small component into `document.body` using `Solid.Web.requireBody` and `Solid.Web.render`.
+Elements are typed by the attributes and events each one supports
+(`Solid.DOM.HTML`, `Solid.DOM.Props`), and every property or text accepts
+either a plain value or an `Accessor`:
 
 ```purescript
 module Example.UI where
@@ -180,41 +181,33 @@ import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Class.Console (log)
 import Solid.Component as Component
-import Solid.DOM as DOM
-import Solid.DOM.Events as Events
-import Solid.Signal (createSignal, modify)
+import Solid.DOM (classWhen)
+import Solid.DOM.HTML as H
+import Solid.DOM.Props as P
+import Solid.JSX (text)
+import Solid.Signal (createSignal, modify_)
 import Solid.Web (render, requireBody)
 
-main :: Effect Unit
-main = do
+clicker :: Component.Component {}
+clicker = Component.component \_ -> do
   clicks /\ setClicks <- createSignal 0
+  pure $ H.div [ P.class_ "app" ]
+    [ H.button
+        [ P.onClick \_ -> modify_ setClicks (_ + 1)
+        , classWhen "busy" ((_ > 3) <$> clicks)
+        ]
+        [ text "Click" ]
+    , H.span_ [ text (show <$> clicks) ]
+    ]
 
-  app <- pure $ Component.component \_ ->
-    pure $ DOM.div { className: "app" }
-      [ DOM.span_ [ DOM.text "purs-solid mounted" ]
-      , DOM.button
-          { onClick: Events.handler_ do
-              _ <- modify setClicks (_ + 1)
-              pure unit
-          }
-          [ DOM.text "Click" ]
-      ]
-
-  mountResult <- requireBody
-  case mountResult of
-    Left webError ->
-      log ("Mount error: " <> show webError)
-
-    Right mountNode -> do
-      renderResult <- render (pure (Component.element app {})) mountNode
-      case renderResult of
-        Left webError ->
-          log ("Render error: " <> show webError)
-        Right _dispose ->
-          pure unit
+main :: Effect Unit
+main = requireBody >>= case _ of
+  Left webError -> log (show webError)
+  Right body -> void (render (Component.element clicker {}) body)
 ```
 
-Note: this snippet keeps the disposer in scope as `_dispose`. In a real app you may store and call it to unmount.
+`P.href 1` or `P.onClick` on an element without click events are type
+errors, and so is `P.type_ InputCheckbox` on a `<button>`.
 
 ## Testing strategy in this repo
 

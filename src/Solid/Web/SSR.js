@@ -6,14 +6,14 @@ import {
   renderToString as solidRenderToString,
 } from "@solidjs/web";
 
-export const renderToStringImpl = (view) =>
-  solidRenderToString(() => view());
+export const renderToStringImpl = (realize, view) =>
+  solidRenderToString(() => realize(view));
 
 // `onHead` delivers everything head-bound (useHead winners, asset links,
 // styles) when the output has no `</head>`, i.e. when the host owns the document.
-export const renderToStringWithHeadImpl = (view) => {
+export const renderToStringWithHeadImpl = (realize, view) => {
   let head = "";
-  const html = solidRenderToString(() => view(), {
+  const html = solidRenderToString(() => realize(view), {
     onHead: (value) => {
       head = value;
     },
@@ -23,16 +23,16 @@ export const renderToStringWithHeadImpl = (view) => {
 
 // Solid 2 removed `renderToStringAsync`; awaiting a stream yields the fully
 // settled HTML. Synchronous failures surface as a rejected promise.
-export const renderToStringAsyncImpl = (view) => {
+export const renderToStringAsyncImpl = (realize, view) => {
   try {
-    return Promise.resolve(solidRenderToStream(() => view()));
+    return Promise.resolve(solidRenderToStream(() => realize(view)));
   } catch (error) {
     return Promise.reject(error);
   }
 };
 
-export const renderToStreamImpl = (view) =>
-  solidRenderToStream(() => view());
+export const renderToStreamImpl = (realize, view) =>
+  solidRenderToStream(() => realize(view));
 
 export const hydrationScriptImpl = () =>
   solidGenerateHydrationScript();

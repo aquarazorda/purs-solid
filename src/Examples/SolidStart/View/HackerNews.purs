@@ -21,10 +21,10 @@ import Examples.SolidStart.Navigation (navigateToRoute)
 import Examples.SolidStart.RouteView (HnRoute(..))
 import Solid.Component as Component
 import Solid.Control as Control
-import Solid.DOM as DOM
-import Solid.DOM.Events as Events
-import Solid.DOM.HTML as HTML
-import Solid.JSX (JSX)
+import Solid.DOM (innerHTML)
+import Solid.DOM.HTML as H
+import Solid.DOM.Props as P
+import Solid.JSX (JSX, text)
 import Solid.Reactivity (createMemo)
 import Solid.Signal (Accessor, Setter, createSignal, get, set)
 
@@ -100,13 +100,13 @@ isExternalStoryUrl url =
 
 renderStoryListItem :: Setter String -> HackerNews.Story -> JSX
 renderStoryListItem setCurrentRoute story =
-  HTML.li { className: "news-item" }
-    ( [ HTML.span { className: "score" } [ DOM.text (maybe "-" show story.points) ]
-      , HTML.span { className: "title" }
+  H.li [ P.class_ "news-item" ]
+    ( [ H.span [ P.class_ "score" ] [ text (maybe "-" show story.points) ]
+      , H.span [ P.class_ "title" ]
           ( [ titleNode ] <> hostNode
           )
-      , HTML.br_ []
-      , HTML.span { className: "meta" }
+      , H.br_
+      , H.span [ P.class_ "meta" ]
           (if story.storyType == "job" then jobMeta else linkMeta)
       ]
         <> storyTypeNode
@@ -118,112 +118,112 @@ renderStoryListItem setCurrentRoute story =
     case story.url of
       Just url
         | isExternalStoryUrl url ->
-            HTML.a
-              { href: url
-              , target: "_blank"
-              , rel: "noreferrer"
-              }
-              [ DOM.text story.title ]
+            H.a
+              [ P.href url
+              , P.target "_blank"
+              , P.rel "noreferrer"
+              ]
+              [ text story.title ]
       _ ->
-        HTML.a
-          { href: routeHref path
-          , onClick: Events.handler_ (navigateToRoute path setCurrentRoute)
-          }
-          [ DOM.text story.title ]
+        H.a
+          [ P.href (routeHref path)
+          , P.onClick \_ -> (navigateToRoute path setCurrentRoute)
+          ]
+          [ text story.title ]
 
   hostNode =
     case story.domain of
       Just domainName ->
-        [ HTML.span { className: "host" } [ DOM.text (" (" <> domainName <> ")") ] ]
+        [ H.span [ P.class_ "host" ] [ text (" (" <> domainName <> ")") ] ]
       Nothing ->
         []
 
   linkMeta =
-    [ DOM.text "by "
+    [ text "by "
     , storyUserNode
-    , DOM.text (" " <> story.timeAgo <> " | ")
-    , HTML.a
-        { href: routeHref path
-        , onClick: Events.handler_ (navigateToRoute path setCurrentRoute)
-        }
-        [ DOM.text (commentsLabel story.commentsCount) ]
+    , text (" " <> story.timeAgo <> " | ")
+    , H.a
+        [ P.href (routeHref path)
+        , P.onClick \_ -> (navigateToRoute path setCurrentRoute)
+        ]
+        [ text (commentsLabel story.commentsCount) ]
     ]
 
   jobMeta =
-    [ HTML.a
-        { href: routeHref path
-        , onClick: Events.handler_ (navigateToRoute path setCurrentRoute)
-        }
-        [ DOM.text story.timeAgo ]
+    [ H.a
+        [ P.href (routeHref path)
+        , P.onClick \_ -> (navigateToRoute path setCurrentRoute)
+        ]
+        [ text story.timeAgo ]
     ]
 
   storyUserNode =
     case story.user of
       Just userId ->
-        HTML.a
-          { href: routeHref (userRoutePath userId)
-          , onClick: Events.handler_ (navigateToRoute (userRoutePath userId) setCurrentRoute)
-          }
-          [ DOM.text userId ]
+        H.a
+          [ P.href (routeHref (userRoutePath userId))
+          , P.onClick \_ -> (navigateToRoute (userRoutePath userId) setCurrentRoute)
+          ]
+          [ text userId ]
       Nothing ->
-        HTML.span_ [ DOM.text "anonymous" ]
+        H.span_ [ text "anonymous" ]
 
   storyTypeNode =
     if story.storyType == "link" then
       []
     else
-      [ DOM.text " "
-      , HTML.span { className: "label" } [ DOM.text story.storyType ]
+      [ text " "
+      , H.span [ P.class_ "label" ] [ text story.storyType ]
       ]
 
 hackerNewsFeedContent :: Setter String -> Setter Int -> HnStoriesState -> HackerNews.FeedType -> JSX
 hackerNewsFeedContent setCurrentRoute setHnPage storiesState activeFeed =
-  HTML.div { className: "news-view" }
-    [ HTML.div { className: "news-list-nav" }
+  H.div [ P.class_ "news-view" ]
+    [ H.div [ P.class_ "news-list-nav" ]
         [ prevNode
-        , HTML.span_ [ DOM.text ("page " <> show storiesState.page) ]
+        , H.span_ [ text ("page " <> show storiesState.page) ]
         , nextNode
         ]
-    , HTML.main { className: "news-list" }
-        [ HTML.ul_ listItems
+    , H.main [ P.class_ "news-list" ]
+        [ H.ul_ listItems
         ]
     ]
   where
   prevNode =
     if storiesState.page > 1 then
-      HTML.a
-        { className: "page-link"
-        , href: routeHref (HackerNews.feedRoutePath activeFeed)
-        , onClick: Events.handler_ do
+      H.a
+        [ P.class_ "page-link"
+        , P.href (routeHref (HackerNews.feedRoutePath activeFeed))
+        , P.onClick \_ -> do
             _ <- set setHnPage (storiesState.page - 1)
             pure unit
-        }
-        [ DOM.text "< prev" ]
+        ]
+        [ text "< prev" ]
     else
-      HTML.span { className: "page-link disabled" } [ DOM.text "< prev" ]
+      H.span [ P.class_ "page-link disabled" ] [ text "< prev" ]
 
   nextNode =
     if Array.length storiesState.items >= 29 then
-      HTML.a
-        { className: "page-link"
-        , href: routeHref (HackerNews.feedRoutePath activeFeed)
-        , onClick: Events.handler_ do
+      H.a
+        [ P.class_ "page-link"
+        , P.href (routeHref (HackerNews.feedRoutePath activeFeed))
+        , P.onClick \_ -> do
             _ <- set setHnPage (storiesState.page + 1)
             pure unit
-        }
-        [ DOM.text "more >" ]
+        ]
+        [ text "more >" ]
     else
-      HTML.span { className: "page-link disabled" } [ DOM.text "more >" ]
+      H.span [ P.class_ "page-link disabled" ] [ text "more >" ]
 
   listItems =
     case storiesState.error of
       Just message ->
-        [ HTML.li { className: "news-item" } [ DOM.text ("Could not load stories: " <> message) ] ]
+        [ H.li [ P.class_ "news-item" ] [ text ("Could not load stories: " <> message) ] ]
       Nothing ->
         if storiesState.loading && Array.null storiesState.items then
-          [ HTML.li { className: "news-item" } [ DOM.text "Loading stories..." ] ]
+          [ H.li [ P.class_ "news-item" ] [ text "Loading stories..." ] ]
         else if Array.null storiesState.items then
-          [ HTML.li { className: "news-item" } [ DOM.text "No stories found." ] ]
+          [ H.li [ P.class_ "news-item" ] [ text "No stories found." ] ]
         else
           map (renderStoryListItem setCurrentRoute) storiesState.items
 
@@ -253,15 +253,15 @@ renderCommentNode
   -> Accessor String
   -> JSX
 renderCommentNode setCurrentRoute (HackerNews.Comment comment) isOpen setIsOpen toggleLabel toggleClass =
-  HTML.li { className: "comment" }
-    ( [ HTML.div { className: "by" }
+  H.li [ P.class_ "comment" ]
+    ( [ H.div [ P.class_ "by" ]
           [ userNode
-          , DOM.text (" " <> comment.timeAgo <> " ago")
+          , text (" " <> comment.timeAgo <> " ago")
           ]
-      , HTML.div
-          { className: "text"
-          , innerHTML: comment.content
-          }
+      , H.div
+          [ P.class_ "text"
+          , innerHTML comment.content
+          ]
           []
       ]
         <> childNodes
@@ -270,64 +270,64 @@ renderCommentNode setCurrentRoute (HackerNews.Comment comment) isOpen setIsOpen 
   userNode =
     case comment.user of
       Just userId ->
-        HTML.a
-          { href: routeHref (userRoutePath userId)
-          , onClick: Events.handler_ (navigateToRoute (userRoutePath userId) setCurrentRoute)
-          }
-          [ DOM.text userId ]
+        H.a
+          [ P.href (routeHref (userRoutePath userId))
+          , P.onClick \_ -> (navigateToRoute (userRoutePath userId) setCurrentRoute)
+          ]
+          [ text userId ]
       Nothing ->
-        HTML.span_ [ DOM.text "anonymous" ]
+        H.span_ [ text "anonymous" ]
 
   childNodes =
     if Array.null comment.comments then
       []
     else
-      [ HTML.div { className: toggleClass }
-          [ HTML.a
-              { onClick: Events.handler_ do
+      [ H.div [ P.class_ toggleClass ]
+          [ H.a
+              [ P.onClick \_ -> do
                   current <- get isOpen
                   _ <- set setIsOpen (not current)
                   pure unit
-              }
-              [ Control.dynamicTag "span" { children: toggleLabel } ]
+              ]
+              [ H.span_ [ text toggleLabel ] ]
           ]
       , Control.when isOpen
-          (HTML.ul { className: "comment-children" } (map (\child -> Component.element commentComponent { setCurrentRoute, comment: child }) comment.comments))
+          (H.ul [ P.class_ "comment-children" ] (map (\child -> Component.element commentComponent { setCurrentRoute, comment: child }) comment.comments))
       ]
 
 hackerNewsStoryContent :: Setter String -> HnStoryState -> String -> JSX
 hackerNewsStoryContent setCurrentRoute storyState _storyId =
   case storyState.error of
     Just message ->
-      HTML.div { className: "item-view" }
-        [ HTML.div { className: "item-view-header" }
-            [ HTML.h1_ [ DOM.text ("Could not load story: " <> message) ] ]
+      H.div [ P.class_ "item-view" ]
+        [ H.div [ P.class_ "item-view-header" ]
+            [ H.h1_ [ text ("Could not load story: " <> message) ] ]
         ]
 
     Nothing ->
       case storyState.item of
         Nothing ->
-          HTML.div { className: "item-view" }
-            [ HTML.div { className: "item-view-header" }
-                [ HTML.h1_ [ DOM.text (if storyState.loading then "Loading story..." else "Story not found.") ] ]
+          H.div [ P.class_ "item-view" ]
+            [ H.div [ P.class_ "item-view-header" ]
+                [ H.h1_ [ text (if storyState.loading then "Loading story..." else "Story not found.") ] ]
             ]
 
         Just story ->
-          HTML.div { className: "item-view" }
-            [ HTML.div { className: "item-view-header" }
+          H.div [ P.class_ "item-view" ]
+            [ H.div [ P.class_ "item-view-header" ]
                 ( [ titleNode ]
                     <> hostNode
-                    <> [ HTML.p { className: "meta" }
-                           [ DOM.text (maybe "-" show story.points)
-                           , DOM.text " points | by "
+                    <> [ H.p [ P.class_ "meta" ]
+                           [ text (maybe "-" show story.points)
+                           , text " points | by "
                            , userNode
-                           , DOM.text (" " <> story.timeAgo <> " ago")
+                           , text (" " <> story.timeAgo <> " ago")
                            ]
                        ]
                 )
-            , HTML.div { className: "item-view-comments" }
-                [ HTML.p { className: "item-view-comments-header" }
-                    [ DOM.text
+            , H.div [ P.class_ "item-view-comments" ]
+                [ H.p [ P.class_ "item-view-comments-header" ]
+                    [ text
                         ( if story.commentsCount == 0 then
                             "No comments yet."
                           else
@@ -335,9 +335,9 @@ hackerNewsStoryContent setCurrentRoute storyState _storyId =
                         )
                     ]
                 , if Array.null story.comments then
-                    HTML.p_ []
+                    H.p_ []
                   else
-                    HTML.ul { className: "comment-children" }
+                    H.ul [ P.class_ "comment-children" ]
                       (map (\comment -> Component.element commentComponent { setCurrentRoute, comment }) story.comments)
                 ]
             ]
@@ -346,85 +346,85 @@ hackerNewsStoryContent setCurrentRoute storyState _storyId =
             case story.url of
               Just url
                 | isExternalStoryUrl url ->
-                    HTML.a
-                      { href: url
-                      , target: "_blank"
-                      , rel: "noreferrer"
-                      }
-                      [ HTML.h1_ [ DOM.text story.title ] ]
+                    H.a
+                      [ P.href url
+                      , P.target "_blank"
+                      , P.rel "noreferrer"
+                      ]
+                      [ H.h1_ [ text story.title ] ]
               _ ->
-                HTML.h1_ [ DOM.text story.title ]
+                H.h1_ [ text story.title ]
 
           hostNode =
             case story.domain of
               Just domainName ->
-                [ HTML.span { className: "host" } [ DOM.text ("(" <> domainName <> ")") ] ]
+                [ H.span [ P.class_ "host" ] [ text ("(" <> domainName <> ")") ] ]
               Nothing ->
                 []
 
           userNode =
             case story.user of
               Just userId ->
-                HTML.a
-                  { href: routeHref (userRoutePath userId)
-                  , onClick: Events.handler_ (navigateToRoute (userRoutePath userId) setCurrentRoute)
-                  }
-                  [ DOM.text userId ]
+                H.a
+                  [ P.href (routeHref (userRoutePath userId))
+                  , P.onClick \_ -> (navigateToRoute (userRoutePath userId) setCurrentRoute)
+                  ]
+                  [ text userId ]
               Nothing ->
-                HTML.span_ [ DOM.text "anonymous" ]
+                H.span_ [ text "anonymous" ]
 
 hackerNewsUserContent :: HnUserState -> String -> JSX
 hackerNewsUserContent userState requestedUserId =
   case userState.error of
     Just message ->
-      HTML.section { className: "user-view" }
-        [ HTML.h1_ [ DOM.text ("Could not load user " <> requestedUserId <> ": " <> message) ] ]
+      H.section [ P.class_ "user-view" ]
+        [ H.h1_ [ text ("Could not load user " <> requestedUserId <> ": " <> message) ] ]
 
     Nothing ->
       case userState.user of
         Nothing ->
-          HTML.section { className: "user-view" }
-            [ HTML.h1_ [ DOM.text (if userState.loading then "Loading user..." else "User not found.") ] ]
+          H.section [ P.class_ "user-view" ]
+            [ H.h1_ [ text (if userState.loading then "Loading user..." else "User not found.") ] ]
 
         Just user ->
-          HTML.section { className: "user-view" }
-            [ HTML.h1_ [ DOM.text ("User : " <> user.id) ]
-            , HTML.ul { className: "meta" }
-                ( [ HTML.li_
-                      [ HTML.span { className: "label" } [ DOM.text "Created:" ]
-                      , DOM.text (" " <> user.createdLabel)
+          H.section [ P.class_ "user-view" ]
+            [ H.h1_ [ text ("User : " <> user.id) ]
+            , H.ul [ P.class_ "meta" ]
+                ( [ H.li_
+                      [ H.span [ P.class_ "label" ] [ text "Created:" ]
+                      , text (" " <> user.createdLabel)
                       ]
-                  , HTML.li_
-                      [ HTML.span { className: "label" } [ DOM.text "Karma:" ]
-                      , DOM.text (" " <> show user.karma)
+                  , H.li_
+                      [ H.span [ P.class_ "label" ] [ text "Karma:" ]
+                      , text (" " <> show user.karma)
                       ]
                   ]
                     <> aboutNode
                 )
-            , HTML.p { className: "links" }
-                [ HTML.a
-                    { href: "https://news.ycombinator.com/submitted?id=" <> user.id
-                    , target: "_blank"
-                    , rel: "noreferrer"
-                    }
-                    [ DOM.text "submissions" ]
-                , DOM.text " | "
-                , HTML.a
-                    { href: "https://news.ycombinator.com/threads?id=" <> user.id
-                    , target: "_blank"
-                    , rel: "noreferrer"
-                    }
-                    [ DOM.text "comments" ]
+            , H.p [ P.class_ "links" ]
+                [ H.a
+                    [ P.href ("https://news.ycombinator.com/submitted?id=" <> user.id)
+                    , P.target "_blank"
+                    , P.rel "noreferrer"
+                    ]
+                    [ text "submissions" ]
+                , text " | "
+                , H.a
+                    [ P.href ("https://news.ycombinator.com/threads?id=" <> user.id)
+                    , P.target "_blank"
+                    , P.rel "noreferrer"
+                    ]
+                    [ text "comments" ]
                 ]
             ]
           where
           aboutNode =
             case user.about of
               Just aboutHtml ->
-                [ HTML.li
-                    { className: "about"
-                    , innerHTML: aboutHtml
-                    }
+                [ H.li
+                    [ P.class_ "about"
+                    , innerHTML aboutHtml
+                    ]
                     []
                 ]
               Nothing ->

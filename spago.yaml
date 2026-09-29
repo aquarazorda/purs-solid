@@ -4,10 +4,18 @@ package:
     - aff
     - aff-promise
     - console
+    - dom-indexed
     - effect
+    - foreign-object
+    - functions
+    - web-touchevents
+    - web-pointerevents
+    - web-clipboard
+    - unsafe-coerce
+    - media-types
+    - either
     - exceptions
     - maybe
-    - either
     - nullable
     - prelude
     - refs

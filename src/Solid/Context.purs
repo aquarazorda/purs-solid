@@ -13,7 +13,8 @@ module Solid.Context
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Solid.Internal.Setup (Setup(..), runSetup)
-import Solid.JSX (JSX)
+import Data.Function.Uncurried (runFn3)
+import Solid.Internal.View (JSX, provideImpl)
 
 foreign import data Context :: Type -> Type
 
@@ -36,6 +37,4 @@ foreign import useContextImpl :: forall a. EffectFn1 (Context a) a
 -- | Provides `value` to `children`. The children are `Setup` so they run
 -- | inside the provider, where `useContext` sees the value.
 provide :: forall a. Context a -> a -> Setup JSX -> JSX
-provide context value children = provideImpl context value (runSetup children)
-
-foreign import provideImpl :: forall a. Context a -> a -> Effect JSX -> JSX
+provide context value children = runFn3 provideImpl context value (runSetup children)

@@ -4,6 +4,8 @@ module Test.Start.Entry
 
 import Prelude
 
+import Web.DOM.Element (Element)
+
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.String as String
@@ -21,11 +23,11 @@ import Solid.Start.Server.Response as Response
 import Solid.Web as Web
 import Test.Assert (assertEqual, expectRight)
 
-foreign import serverMountStub :: Web.Mountable
+foreign import serverMountStub :: Element
 
 run :: Effect Unit
 run = do
-  let app = App.createApp (pure (JSX.text "entry-ssr"))
+  let app = App.createApp ((JSX.text "entry-ssr"))
 
   appHtml <- expectRight
     "renderAppHtml renders app through SSR"
@@ -126,7 +128,7 @@ run = do
     Left clientError ->
       assertEqual
         "bootstrapAtId returns typed mount-id error without DOM"
-        (Client.MountFailure (Web.MissingMount "No mount element found for id: app"))
+        (Client.MountFailure (Web.MissingMount "No element found for id: app"))
         clientError
     Right _ ->
       throw "bootstrapAtId should fail without DOM"
@@ -138,7 +140,7 @@ run = do
         "bootstrapAt render maps web error to ClientEntryError"
         ( Client.RenderFailure
             ( Web.ClientOnlyApi
-                "Client-only API called on the server side. Run client-only code in onMount, or conditionally run client-only component with <Show>."
+                "Client-only API called on the server. Render on the server with Solid.Web.SSR, or run this code from onSettled."
             )
         )
         clientError
@@ -152,7 +154,7 @@ run = do
         "bootstrapAt hydrate maps web error to ClientEntryError"
         ( Client.HydrateFailure
             ( Web.ClientOnlyApi
-                "Client-only API called on the server side. Run client-only code in onMount, or conditionally run client-only component with <Show>."
+                "Client-only API called on the server. Render on the server with Solid.Web.SSR, or run this code from onSettled."
             )
         )
         clientError

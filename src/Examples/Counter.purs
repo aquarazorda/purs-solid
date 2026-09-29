@@ -2,6 +2,7 @@ module Examples.Counter where
 
 import Prelude
 
+import DOM.HTML.Indexed.ButtonType (ButtonType(..))
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Tuple.Nested ((/\))
@@ -9,12 +10,10 @@ import Effect (Effect)
 import Effect.Class.Console (log)
 import Solid.Component as Component
 import Solid.Control as Control
-import Solid.DOM as DOM
-import Solid.DOM.Events as Events
-import Solid.DOM.HTML as HTML
-import Solid.JSX (JSX)
+import Solid.DOM.HTML as H
+import Solid.DOM.Props as P
+import Solid.JSX (text)
 import Solid.Reactivity (createMemo)
-import Solid.Setup (Setup)
 import Solid.Signal (createSignal, get, modify_, set)
 import Solid.Web (render, requireBody)
 
@@ -28,8 +27,6 @@ counterApp = Component.component \_ -> do
 
   trend <- createMemo $ count <#> \n ->
     if n == 0 then "balanced" else if n > 0 then "positive" else "negative"
-
-  eventsEmpty <- createMemo (Array.null <$> events)
 
   let
     appendEvent :: String -> Effect Unit
@@ -57,45 +54,41 @@ counterApp = Component.component \_ -> do
       set setStep next
       appendEvent ("Step set to " <> show next)
 
-    clearEvents :: Effect Unit
-    clearEvents = set setEvents []
+    button label action = H.button [ P.type_ ButtonButton, P.onClick \_ -> action ] [ text label ]
 
-    renderEvent :: String -> Setup JSX
-    renderEvent message = pure (HTML.li_ [ DOM.text message ])
-
-  pure $ HTML.main { className: "counter-shell" }
-    [ HTML.section { className: "counter-card" }
-        [ HTML.h1_ [ DOM.text "Signal Counter" ]
-        , HTML.p { className: "counter-subtitle" }
-            [ DOM.text "A small example focused on signals, memos, and list rendering." ]
-        , HTML.div { className: "counter-readout" }
-            [ HTML.span { className: "counter-value" } [ Control.dynamicTag "strong" { children: count } ]
-            , HTML.span { className: "counter-meta" }
-                [ DOM.text "Doubled: "
-                , Control.dynamicTag "span" { children: doubled }
-                , DOM.text " | Trend: "
-                , Control.dynamicTag "span" { children: trend }
+  pure $ H.main [ P.class_ "counter-shell" ]
+    [ H.section [ P.class_ "counter-card" ]
+        [ H.h1_ [ text "Signal Counter" ]
+        , H.p [ P.class_ "counter-subtitle" ]
+            [ text "A small example focused on signals, memos, and list rendering." ]
+        , H.div [ P.class_ "counter-readout" ]
+            [ H.span [ P.class_ "counter-value" ] [ H.strong_ [ text (show <$> count) ] ]
+            , H.span [ P.class_ "counter-meta" ]
+                [ text "Doubled: "
+                , H.span_ [ text (show <$> doubled) ]
+                , text " | Trend: "
+                , H.span [ P.class_ trend ] [ text trend ]
                 ]
             ]
-        , HTML.div { className: "counter-actions" }
-            [ HTML.button { onClick: Events.handler_ subtractStep } [ DOM.text "- step" ]
-            , HTML.button { onClick: Events.handler_ addStep } [ DOM.text "+ step" ]
-            , HTML.button { onClick: Events.handler_ resetCount } [ DOM.text "Reset" ]
+        , H.div [ P.class_ "counter-actions" ]
+            [ button "- step" subtractStep
+            , button "+ step" addStep
+            , button "Reset" resetCount
             ]
-        , HTML.div { className: "counter-presets" }
-            [ DOM.text "Step presets:"
-            , HTML.button { onClick: Events.handler_ (setPresetStep 1) } [ DOM.text "1" ]
-            , HTML.button { onClick: Events.handler_ (setPresetStep 2) } [ DOM.text "2" ]
-            , HTML.button { onClick: Events.handler_ (setPresetStep 5) } [ DOM.text "5" ]
+        , H.div [ P.class_ "counter-presets" ]
+            [ text "Step presets:"
+            , button "1" (setPresetStep 1)
+            , button "2" (setPresetStep 2)
+            , button "5" (setPresetStep 5)
             ]
-        , HTML.section { className: "counter-log" }
-            [ HTML.div { className: "counter-log-head" }
-                [ HTML.h2_ [ DOM.text "Event log" ]
-                , HTML.button { onClick: Events.handler_ clearEvents } [ DOM.text "Clear" ]
+        , H.section [ P.class_ "counter-log" ]
+            [ H.div [ P.class_ "counter-log-head" ]
+                [ H.h2_ [ text "Event log" ]
+                , button "Clear" (set setEvents [])
                 ]
-            , Control.whenElse eventsEmpty
-                (HTML.p { className: "counter-empty" } [ DOM.text "No events yet." ])
-                (HTML.ol_ [ Control.forEach events renderEvent ])
+            , Control.whenElse ((not <<< Array.null) <$> events)
+                (H.ol_ [ Control.forEachUnkeyed events \message _ -> pure (H.li_ [ text message ]) ])
+                (H.p [ P.class_ "counter-empty" ] [ text "No events yet." ])
             ]
         ]
     ]
@@ -104,13 +97,9 @@ main :: Effect Unit
 main = do
   mountResult <- requireBody
   case mountResult of
-    Left webError ->
-      log ("Mount error: " <> show webError)
-
+    Left webError -> log ("Mount error: " <> show webError)
     Right mountNode -> do
-      renderResult <- render (pure (Component.element counterApp {})) mountNode
+      renderResult <- render (Component.element counterApp {}) mountNode
       case renderResult of
-        Left webError ->
-          log ("Render error: " <> show webError)
-        Right _dispose ->
-          pure unit
+        Left webError -> log ("Render error: " <> show webError)
+        Right _dispose -> pure unit

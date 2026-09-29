@@ -7,7 +7,6 @@ import Prelude
 
 import Effect (Effect)
 import Effect.Class (liftEffect)
-import Test.Control as Control
 import Test.Core.Action as Action
 import Test.Core.Async as Async
 import Test.Core.Component as Component
@@ -17,13 +16,11 @@ import Test.Core.Reactivity as Reactivity
 import Test.Core.Signal as Signal
 import Test.Core.Store as Store
 import Test.Core.Utility as Utility
+import Test.Core.View as View
 import Test.EventAdapters as EventAdapters
 import Test.Spec (Spec, describe, it, pending)
 import Test.Spec.Reporter (consoleReporter)
 import Test.Spec.Runner.Node (runSpecAndExitProcess)
-import Test.TypedDOM as TypedDOM
-import Test.UI as UI
-import Test.Web as Web
 
 main :: Effect Unit
 main = runSpecAndExitProcess [ consoleReporter ] spec
@@ -40,11 +37,8 @@ spec = describe "client" do
     Store.spec
     Action.spec
     Component.spec
-  describe "view (transitional until Phase 3)" do
-    it "Control" (liftEffect Control.run)
+    View.spec
+  describe "DOM adapters" do
     it "Event adapters" (liftEffect EventAdapters.run)
-    it "Typed DOM" (liftEffect TypedDOM.run)
-    it "UI" (liftEffect UI.run)
-    it "Web" (liftEffect Web.run)
   describe "pending migration" do
     pending "Meta (Phase 5: @solidjs/meta 1.0 has no MetaProvider)"
