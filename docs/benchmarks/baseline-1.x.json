@@ -1,0 +1,50 @@
+{
+  "label": "baseline-1.x",
+  "date": "2026-09-29T20:47:39.897Z",
+  "solid": "1.9.11",
+  "node": "22.17.1",
+  "chromium": "145.0.7632.6",
+  "bundleBytes": {
+    "minified": 35586,
+    "gzip": 12518,
+    "brotli": 11328
+  },
+  "reactiveAttributeProbe": "function () { [native code] }",
+  "operations": {
+    "create 1k rows": {
+      "median": 20.35,
+      "min": 19,
+      "samples": 10
+    },
+    "replace 1k rows": {
+      "median": 25.9,
+      "min": 22,
+      "samples": 10
+    },
+    "update every 10th row": {
+      "median": 9.15,
+      "min": 7.1,
+      "samples": 10
+    },
+    "swap rows": {
+      "median": 9.25,
+      "min": 2.9,
+      "samples": 10
+    },
+    "append 1k rows": {
+      "median": 24.35,
+      "min": 22.7,
+      "samples": 10
+    },
+    "clear 1k rows": {
+      "median": 3,
+      "min": 2.4,
+      "samples": 10
+    },
+    "create 10k rows": {
+      "median": 230.3,
+      "min": 212.2,
+      "samples": 5
+    }
+  }
+}
