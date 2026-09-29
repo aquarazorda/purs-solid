@@ -8,12 +8,14 @@ import Prelude
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Test.Control as Control
+import Test.Core.Action as Action
 import Test.Core.Async as Async
 import Test.Core.Component as Component
 import Test.Core.Context as Context
 import Test.Core.Lifecycle as Lifecycle
 import Test.Core.Reactivity as Reactivity
 import Test.Core.Signal as Signal
+import Test.Core.Store as Store
 import Test.Core.Utility as Utility
 import Test.EventAdapters as EventAdapters
 import Test.Spec (Spec, describe, it, pending)
@@ -35,6 +37,8 @@ spec = describe "client" do
     Context.spec
     Async.spec
     Utility.spec
+    Store.spec
+    Action.spec
     Component.spec
   describe "view (transitional until Phase 3)" do
     it "Control" (liftEffect Control.run)
@@ -43,5 +47,4 @@ spec = describe "client" do
     it "UI" (liftEffect UI.run)
     it "Web" (liftEffect Web.run)
   describe "pending migration" do
-    pending "Store (Phase 2: typed paths over draft setters)"
     pending "Meta (Phase 5: @solidjs/meta 1.0 has no MetaProvider)"

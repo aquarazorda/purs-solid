@@ -22,3 +22,5 @@ export const jsxValue = (jsx) => () => {
   while (typeof value === "function") value = value();
   return Array.isArray(value) ? value.join("") : String(value);
 };
+
+export const refEq = (a) => (b) => a === b;

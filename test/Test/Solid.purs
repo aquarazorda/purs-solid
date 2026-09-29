@@ -4,6 +4,7 @@ module Test.Solid
   , settle
   , expectDiagnostic
   , jsxValue
+  , refEq
   ) where
 
 import Prelude
@@ -58,3 +59,6 @@ settle = do
 -- | Resolves a JSX value to what it renders to, for DOM-free assertions
 -- | (text children render to their string).
 foreign import jsxValue :: forall jsx. jsx -> Effect String
+
+-- | Reference equality (`===`), for asserting identity is preserved.
+foreign import refEq :: forall a. a -> a -> Boolean

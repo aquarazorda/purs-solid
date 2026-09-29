@@ -155,8 +155,32 @@ Medians on this machine, headless Chromium, click to next frame. Operations unde
 - The browser smoke harness (`test/browser`) still targets 1.x and is rewritten in Phase 3.
 - Bench on the transitional view layer (`docs/benchmarks/phase1-transitional.json`): create 1k rows 25.7 ms (1.x: 20.4), 10k rows 258 ms (1.x: 230), gzip bundle 29.6 kB (1.x: 12.5 kB). Most of the bundle growth is Solid 2's runtime.
 
-### Phase 2 — Stores
-Typed paths, draft interpretation, reconcile, snapshot / deep, projections, function stores, optimistic stores and the atomic-leaf policy.
+### Phase 2 — Stores and actions ✅
+- [x] `Solid.Store`, rewritten for draft-only setters.
+  - **Reads:** `Store s` is a read-only cursor.
+    - `focus (key @"a" >>> key @"b")` narrows it; `Path` is total (record labels only) and is a `Category`.
+    - `value :: Store a -> Accessor a` tracks exactly the focused part and returns an immutable value (`deep` snapshot for structure).
+    - `items :: Store (Array a) -> Accessor (Array (Store a))` gives a stable cursor per element for keyed rows. It requires record or array elements (`StoreObject`).
+    - `snapshot` is the untracked read in `Effect`.
+  - **Writes:** `update :: StoreSetter s -> Update s -> Effect Unit`, with a pure, monoidal `Update` description applied to the draft in the FFI.
+    - Combinators: `at path`, `set`, `modify`, `push`, `filter`, `atIndex` (no-op out of range), `each`, `eachWhere`, `reconcile`, `reconcileBy`.
+    - Writes exist only in `Effect`.
+  - **Value policy:** `StoreValue`, a sealed instance chain.
+    - Records and arrays are structural (tracked per field / element).
+    - Primitives are free (no preparation walk).
+    - Every other type is atomic and frozen before it enters the store, so Solid never proxies it and pattern matching on ADTs read back from a store works on both backends (spike 2).
+    - `createStore` requires a record or array root, and gives a custom type error otherwise.
+  - **Derived:** `createProjection :: Accessor (Update s) -> s -> Setup (Store s)` (the compute is pure: it *returns* the update). `createSelector` replaces 1.x `createSelector` and notifies only the rows whose selection changed.
+  - **Removed:** the string-array path setters, `produce`, `createMutable` and `modifyMutable`.
+- [x] `Solid.Action` (deferred from Phase 1).
+  - `Action` is a free monad with `MonadEffect` / `MonadAff`. Every `liftAff` is a transaction-safe suspension point (the FFI drives Solid's generator protocol), so the JS "`await` without `yield`" mistake can't be written.
+  - `action :: (a -> Action r) -> a -> Aff r`.
+  - Optimistic values: `createOptimistic` (reverts to its initial value) and `createOptimisticFrom` (follows a source).
+  - Optimistic stores: `createOptimisticStore` and `createOptimisticProjection`.
+  - Optimistic writes (`setOptimistic`, `modifyOptimistic`, `updateOptimistic`) exist **only** as `Action` steps: outside an action there would be nothing to revert them.
+- [x] Tests: `Test.Core.Store` (11 specs) and `Test.Core.Action` (5 specs). They cover fine-grained notification, ADT round-trips, row identity through `mapArray` and `reconcileBy`, immutability, projections, the selector, and transactional isolation of real writes during an action. 61 client and 13 server specs pass on both backends.
+
+**Finding:** Solid 2 keeps an element's proxy (and so its row) across a `reconcile` only while something reads that element's fields. Rendered rows always do; a test has to observe the fields too.
 
 ### Phase 3 — View layer
 JSX thunks, static elements, typed props, components, control flow, context, portal, dynamic, refs and directives. Generate the HTML and SVG modules.
