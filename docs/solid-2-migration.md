@@ -49,7 +49,7 @@ Solid 2's principles, expressed so that the PureScript type checker enforces the
    - Owned code runs in `Setup`, a zero-cost newtype over `Effect` with no `MonadEffect` instance. `set` / `modify` / `refresh` / `get` exist only in `Effect`, so these mistakes don't compile.
    - `createMemo`, `createEffect`, `onCleanup` and `onSettled` exist only in `Setup`, so computations can't be created where nothing disposes them. `Effect` code enters `Setup` only via `createRoot` or `runWithOwner owner`.
    - `getOwner :: Setup Owner` is total. `sample :: Accessor a -> Setup a` is the explicit untracked read.
-   - The single escape hatch is `unsafeSetupEffect` (for example `Ref.new`). Solid's dev build still reports a write smuggled through it.
+   - The single escape hatch is `liftSetup` (for example `Ref.new`). Solid's dev build still reports a write smuggled through it.
    - `createSignal` / `createRoot` work in both monads (`MonadReactive`; the class is sealed, so its member is not exported).
 
 8. **Standards-aligned, typed DOM.** 2.0 sets attributes by default; `classList`, `use:`, `attr:`, `bool:` and `on:` are removed; `class` takes a string, object or array; refs are callbacks or directive factories.

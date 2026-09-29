@@ -10,7 +10,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Solid.Reactivity (withFlush)
 import Solid.Root (createRoot)
-import Solid.Setup (unsafeSetupEffect)
+import Solid.Setup (liftSetup)
 import Solid.Signal (createSignal, get, set)
 import Solid.Utility (mapArray, mapArrayBy, mapArrayUnkeyed, repeat)
 import Test.Solid (solidIt)
@@ -25,7 +25,7 @@ spec = describe "Solid.Utility" do
       parts <- createRoot \_ -> do
         items /\ setItems <- createSignal [ "a", "b" ]
         mapped <- mapArray items \item _ -> do
-          unsafeSetupEffect (Ref.modify_ (_ + 1) calls)
+          liftSetup (Ref.modify_ (_ + 1) calls)
           pure ("<" <> item <> ">")
         pure { mapped, setItems }
       _ <- get parts.mapped
@@ -40,7 +40,7 @@ spec = describe "Solid.Utility" do
       parts <- createRoot \_ -> do
         items /\ setItems <- createSignal [ 1, 2 ]
         mapped <- mapArrayUnkeyed items \_ index -> do
-          unsafeSetupEffect (Ref.modify_ (_ + 1) calls)
+          liftSetup (Ref.modify_ (_ + 1) calls)
           pure index
         pure { mapped, setItems }
       _ <- get parts.mapped
@@ -54,7 +54,7 @@ spec = describe "Solid.Utility" do
       parts <- createRoot \_ -> do
         items /\ setItems <- createSignal [ { id: 1, label: "one" } ]
         mapped <- mapArrayBy _.id items \item _ -> do
-          unsafeSetupEffect (Ref.modify_ (_ + 1) calls)
+          liftSetup (Ref.modify_ (_ + 1) calls)
           pure (_.label <$> item)
         pure { mapped, setItems }
       _ <- get parts.mapped

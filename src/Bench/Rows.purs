@@ -22,7 +22,7 @@ import Solid.DOM as DOM
 import Solid.DOM.Events as Events
 import Solid.DOM.HTML as HTML
 import Solid.JSX (JSX)
-import Solid.Setup (Setup, unsafeSetupEffect)
+import Solid.Setup (Setup, liftSetup)
 import Solid.Signal (Accessor, Setter, createSignal, get, modify, modify_, set)
 import Solid.Web (render, requireMountById)
 
@@ -80,8 +80,8 @@ swapAt i j rows = fromMaybe rows do
 
 app :: Component.Component {}
 app = Component.component \_ -> do
-  seed <- unsafeSetupEffect (Ref.new 42)
-  nextId <- unsafeSetupEffect (Ref.new 0)
+  seed <- liftSetup (Ref.new 42)
+  nextId <- liftSetup (Ref.new 0)
   rows /\ setRows <- createSignal ([] :: Array RowItem)
   probe /\ _ <- createSignal "reactive-ok"
 

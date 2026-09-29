@@ -28,7 +28,7 @@ import Solid.Lifecycle (onSettled)
 import Solid.Meta as Meta
 import Solid.Reactivity (createEffect_, createMemo)
 import Solid.Router.Navigation as RouterNavigation
-import Solid.Setup (unsafeSetupEffect)
+import Solid.Setup (liftSetup)
 import Solid.Signal (Accessor, Setter, createSignal, get, modify, set)
 
 notFoundContent :: Setter String -> String -> JSX
@@ -100,7 +100,7 @@ routeTitle = case _ of
 mkApp :: Effect String -> Component.Component {}
 mkApp resolveInitialRoute = Component.component \_ -> do
   -- Reads the browser location once; no reactive writes.
-  initialRoute <- unsafeSetupEffect resolveInitialRoute
+  initialRoute <- liftSetup resolveInitialRoute
   currentRoute /\ setCurrentRoute <- createSignal initialRoute
   hnPage /\ setHnPage <- createSignal 1
   hnStoriesState /\ setHnStoriesState <- createSignal initialHnStoriesState

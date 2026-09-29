@@ -13,7 +13,7 @@
 -- | `Effect` code enters `Setup` through `createRoot` or `runWithOwner`.
 module Solid.Setup
   ( module Exports
-  , unsafeSetupEffect
+  , liftSetup
   ) where
 
 import Effect (Effect)
@@ -22,7 +22,8 @@ import Solid.Internal.Setup (Setup, class MonadReactive) as Exports
 
 -- | Runs an arbitrary effect during setup, e.g. `Ref.new` or logging.
 -- |
--- | Unsafe because it can bypass the guarantee above: the effect must not
--- | write signals or stores (Solid's dev build still reports it if it does).
-unsafeSetupEffect :: forall a. Effect a -> Setup a
-unsafeSetupEffect = Setup
+-- | This is the one way around the guarantee above, so the effect must not
+-- | write signals or stores. Solid's dev build still reports it if it does
+-- | (`REACTIVE_WRITE_IN_OWNED_SCOPE`).
+liftSetup :: forall a. Effect a -> Setup a
+liftSetup = Setup

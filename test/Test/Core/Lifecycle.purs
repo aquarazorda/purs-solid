@@ -12,7 +12,7 @@ import Solid.Lifecycle (onCleanup, onSettled)
 import Solid.Owner (getOwner, runWithOwner)
 import Solid.Reactivity (createEffect_)
 import Solid.Root (createRoot)
-import Solid.Setup (unsafeSetupEffect)
+import Solid.Setup (liftSetup)
 import Solid.Signal (createSignal, set)
 import Test.Solid (expectDiagnostic, settle, solidIt)
 import Test.Spec (Spec, describe, it)
@@ -38,7 +38,7 @@ spec = describe "lifecycle and ownership" do
       onSettled do
         logTo log "settled"
         pure (logTo log "settled cleanup")
-      unsafeSetupEffect (logTo log "setup")
+      liftSetup (logTo log "setup")
       pure dispose
     settle
     liftEffect dispose
@@ -70,9 +70,9 @@ spec = describe "lifecycle and ownership" do
     liftEffect (Ref.read log) >>= shouldEqual [ "0", "1" ]
 
   -- The types rule this out; this documents that Solid's dev build still
-  -- guards the `unsafeSetupEffect` escape hatch.
+  -- guards the `liftSetup` escape hatch.
   it "a signal write smuggled into Setup is reported by Solid" do
     expectDiagnostic "REACTIVE_WRITE_IN_OWNED_SCOPE" do
       liftEffect do
         _ /\ setValue <- createSignal 0
-        createRoot \_ -> unsafeSetupEffect (set setValue 1)
+        createRoot \_ -> liftSetup (set setValue 1)

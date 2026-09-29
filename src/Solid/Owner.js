@@ -3,7 +3,7 @@ import { getOwner as solidGetOwner, runWithOwner as solidRunWithOwner } from "so
 export const getOwnerImpl = () => {
   const owner = solidGetOwner();
   if (owner == null) {
-    throw new Error("purs-solid: Setup code ran without an owner (only possible via unsafeSetupEffect or FFI)");
+    throw new Error("purs-solid: Setup code ran without an owner (only possible via liftSetup or FFI)");
   }
   return owner;
 };
