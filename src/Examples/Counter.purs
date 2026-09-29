@@ -14,7 +14,8 @@ import Solid.DOM.Events as Events
 import Solid.DOM.HTML as HTML
 import Solid.JSX (JSX)
 import Solid.Reactivity (createMemo)
-import Solid.Signal (createSignal, get, modify, set)
+import Solid.Setup (Setup)
+import Solid.Signal (createSignal, get, modify_, set)
 import Solid.Web (render, requireBody)
 
 counterApp :: Component.Component {}
@@ -23,56 +24,43 @@ counterApp = Component.component \_ -> do
   step /\ setStep <- createSignal 1
   events /\ setEvents <- createSignal ([ "Ready" ] :: Array String)
 
-  doubled <- createMemo do
-    n <- get count
-    pure (n * 2)
+  doubled <- createMemo ((_ * 2) <$> count)
 
-  trend <- createMemo do
-    n <- get count
-    pure if n == 0 then "balanced" else if n > 0 then "positive" else "negative"
+  trend <- createMemo $ count <#> \n ->
+    if n == 0 then "balanced" else if n > 0 then "positive" else "negative"
 
-  eventsEmpty <- createMemo do
-    xs <- get events
-    pure (Array.null xs)
+  eventsEmpty <- createMemo (Array.null <$> events)
 
   let
     appendEvent :: String -> Effect Unit
-    appendEvent message = do
-      _ <- modify setEvents (_ <> [ message ])
-      pure unit
+    appendEvent message = modify_ setEvents (_ <> [ message ])
 
     addStep :: Effect Unit
     addStep = do
       s <- get step
-      _ <- modify setCount (_ + s)
-      _ <- appendEvent ("Incremented by " <> show s)
-      pure unit
+      modify_ setCount (_ + s)
+      appendEvent ("Incremented by " <> show s)
 
     subtractStep :: Effect Unit
     subtractStep = do
       s <- get step
-      _ <- modify setCount (_ - s)
-      _ <- appendEvent ("Decremented by " <> show s)
-      pure unit
+      modify_ setCount (_ - s)
+      appendEvent ("Decremented by " <> show s)
 
     resetCount :: Effect Unit
     resetCount = do
-      _ <- set setCount 0
-      _ <- appendEvent "Reset to zero"
-      pure unit
+      set setCount 0
+      appendEvent "Reset to zero"
 
     setPresetStep :: Int -> Effect Unit
     setPresetStep next = do
-      _ <- set setStep next
-      _ <- appendEvent ("Step set to " <> show next)
-      pure unit
+      set setStep next
+      appendEvent ("Step set to " <> show next)
 
     clearEvents :: Effect Unit
-    clearEvents = do
-      _ <- set setEvents []
-      pure unit
+    clearEvents = set setEvents []
 
-    renderEvent :: String -> Effect JSX
+    renderEvent :: String -> Setup JSX
     renderEvent message = pure (HTML.li_ [ DOM.text message ])
 
   pure $ HTML.main { className: "counter-shell" }

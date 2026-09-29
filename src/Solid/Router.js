@@ -1,5 +1,14 @@
-import { A as solidA, Route as solidRoute, Router as solidRouter, useLocation as solidUseLocation, useNavigate as solidUseNavigate } from "@solidjs/router";
-import { createComponent } from "solid-js/web";
+// Transitional: @solidjs/router 2 replaces <Router>/<Route>/<A> with
+// createRouter / defineRoute / plain links; the Phase 5 rewrite targets it.
+// Namespace import keeps this module loadable.
+import * as SolidRouter from "@solidjs/router";
+import { createComponent } from "solid-js";
+
+const solidA = SolidRouter.A;
+const solidRoute = SolidRouter.Route;
+const solidRouter = SolidRouter.Router;
+const solidUseLocation = SolidRouter.useLocation;
+const solidUseNavigate = SolidRouter.useNavigate;
 
 export const router = (props) => (children) =>
   createComponent(solidRouter, {

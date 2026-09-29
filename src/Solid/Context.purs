@@ -1,33 +1,41 @@
+-- | Context: values provided to a subtree.
+-- |
+-- | Every context has a default, so `useContext` is total: it returns the
+-- | nearest provided value, or the default outside any provider. For a context
+-- | that must be provided, use `Context (Maybe a)` with default `Nothing`.
 module Solid.Context
   ( Context
   , createContext
-  , createContextWithDefault
   , useContext
-  , withContext
+  , provide
   ) where
 
-import Prelude
-
-import Data.Maybe (Maybe)
-import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, runEffectFn1)
+import Solid.Internal.Setup (Setup(..), runSetup)
+import Solid.JSX (JSX)
 
 foreign import data Context :: Type -> Type
 
-foreign import createContextImpl :: forall a. Effect (Context a)
+type role Context nominal
 
-createContext :: forall a. Effect (Context a)
-createContext = createContextImpl
+-- | Creates a context with a default value. Each call creates a distinct
+-- | context. For a module-level context, create it once (e.g. with
+-- | `unsafePerformEffect`) and share it.
+createContext :: forall a. a -> Effect (Context a)
+createContext defaultValue = runEffectFn1 createContextImpl defaultValue
 
-foreign import createContextWithDefaultImpl :: forall a. EffectFn1 a (Context a)
+foreign import createContextImpl :: forall a. EffectFn1 a (Context a)
 
-createContextWithDefault :: forall a. a -> Effect (Context a)
-createContextWithDefault = runEffectFn1 createContextWithDefaultImpl
+-- | The nearest provided value, or the context's default.
+useContext :: forall a. Context a -> Setup a
+useContext context = Setup (runEffectFn1 useContextImpl context)
 
-foreign import useContextImpl :: forall a. EffectFn1 (Context a) (Nullable a)
+foreign import useContextImpl :: forall a. EffectFn1 (Context a) a
 
-useContext :: forall a. Context a -> Effect (Maybe a)
-useContext context = toMaybe <$> runEffectFn1 useContextImpl context
+-- | Provides `value` to `children`. The children are `Setup` so they run
+-- | inside the provider, where `useContext` sees the value.
+provide :: forall a. Context a -> a -> Setup JSX -> JSX
+provide context value children = provideImpl context value (runSetup children)
 
-foreign import withContext :: forall a b. Context a -> a -> Effect b -> Effect b
+foreign import provideImpl :: forall a. Context a -> a -> Effect JSX -> JSX

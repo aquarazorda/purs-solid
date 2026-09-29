@@ -1,148 +1,69 @@
+-- | Reactive list mapping: the primitives behind list rendering.
+-- |
+-- | Each variant maps items to results once and reuses them as the list
+-- | changes. Mappers run in `Setup` (each item gets its own owner, disposed
+-- | when the item leaves the list).
 module Solid.Utility
-  ( Owner
-  , Observable
-  , OnOptions
-  , defaultOnOptions
-  , SplitResult
-  , batch
-  , catchError
-  , from
-  , fromWithInitial
-  , indexArray
-  , mapArray
-  , mergeProps2
-  , mergeProps3
-  , mergePropsMany
-  , observable
-  , splitProps
-  , startTransition
-  , useTransition
-  , untrack
-  , getOwner
-  , runWithOwner
-  , on
-  , onWith
+  ( mapArray
+  , mapArrayUnkeyed
+  , mapArrayBy
+  , repeat
   ) where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable, toMaybe)
-import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
+import Effect.Uncurried (EffectFn2, EffectFn3, mkEffectFn2, runEffectFn2, runEffectFn3)
+import Solid.Internal.Setup (Setup(..), runSetup)
 import Solid.Signal (Accessor)
 
-foreign import data Owner :: Type
-
-foreign import data Observable :: Type -> Type
-
-type SplitResult picked omitted =
-  { picked :: picked
-  , omitted :: omitted
-  }
-
-type OnOptions =
-  { defer :: Boolean
-  }
-
-defaultOnOptions :: OnOptions
-defaultOnOptions =
-  { defer: false
-  }
-
-foreign import batch :: forall a. Effect a -> Effect a
-
-foreign import catchErrorImpl
-  :: forall a
-   . (a -> Maybe a)
-  -> Maybe a
-  -> Effect a
-  -> (String -> Effect Unit)
-  -> Effect (Maybe a)
-
-catchError :: forall a. Effect a -> (String -> Effect Unit) -> Effect (Maybe a)
-catchError = catchErrorImpl Just Nothing
-
-foreign import fromImpl
-  :: forall a
-   . (a -> Maybe a)
-  -> Maybe a
-  -> ((a -> Effect Unit) -> Effect (Effect Unit))
-  -> Effect (Accessor (Maybe a))
-
-from
-  :: forall a
-   . ((a -> Effect Unit) -> Effect (Effect Unit))
-  -> Effect (Accessor (Maybe a))
-from = fromImpl Just Nothing
-
-foreign import fromWithInitial
-  :: forall a
-   . a
-  -> ((a -> Effect Unit) -> Effect (Effect Unit))
-  -> Effect (Accessor a)
-
-foreign import indexArray
+-- | Keyed by identity (`===`): an item keeps its result while it stays in the
+-- | list, and only its index changes.
+mapArray
   :: forall a b
    . Accessor (Array a)
-  -> (Accessor a -> Int -> Effect b)
-  -> Effect (Accessor (Array b))
+  -> (a -> Accessor Int -> Setup b)
+  -> Setup (Accessor (Array b))
+mapArray list mapItem =
+  Setup (runEffectFn2 mapArrayImpl list (mkEffectFn2 \item index -> runSetup (mapItem item index)))
 
-foreign import mapArray
+foreign import mapArrayImpl
+  :: forall a b
+   . EffectFn2 (Accessor (Array a)) (EffectFn2 a (Accessor Int) b) (Accessor (Array b))
+
+-- | Keyed by position: the result at index `i` stays, and its item accessor
+-- | updates when a different value lands there.
+mapArrayUnkeyed
   :: forall a b
    . Accessor (Array a)
-  -> (a -> Accessor Int -> Effect b)
-  -> Effect (Accessor (Array b))
+  -> (Accessor a -> Int -> Setup b)
+  -> Setup (Accessor (Array b))
+mapArrayUnkeyed list mapItem =
+  Setup (runEffectFn2 mapArrayUnkeyedImpl list (mkEffectFn2 \item index -> runSetup (mapItem item index)))
 
-foreign import mergeProps2 :: forall a b c. a -> b -> c
-
-foreign import mergeProps3 :: forall a b c d. a -> b -> c -> d
-
-foreign import mergePropsMany :: forall a. Array a -> a
-
-foreign import observable :: forall a. Accessor a -> Effect (Observable a)
-
-foreign import splitProps
-  :: forall props picked omitted
-   . props
-  -> Array String
-  -> SplitResult picked omitted
-
-foreign import startTransition :: Effect Unit -> Effect Unit
-
-type TransitionParts =
-  { pending :: Accessor Boolean
-  , start :: Effect Unit -> Effect Unit
-  }
-
-useTransition :: Effect (Accessor Boolean /\ (Effect Unit -> Effect Unit))
-useTransition = toPair <$> useTransitionImpl
-  where
-  toPair :: TransitionParts -> Accessor Boolean /\ (Effect Unit -> Effect Unit)
-  toPair parts = parts.pending /\ parts.start
-
-foreign import useTransitionImpl :: Effect TransitionParts
-
-foreign import untrack :: forall a. Effect a -> Effect a
-
-foreign import getOwnerImpl :: Effect (Nullable Owner)
-
-getOwner :: Effect (Maybe Owner)
-getOwner = toMaybe <$> getOwnerImpl
-
-foreign import runWithOwner :: forall a. Owner -> Effect a -> Effect a
-
-on :: forall a b. Accessor a -> (a -> Maybe a -> Effect b) -> Effect b
-on = onWith defaultOnOptions
-
-onWith :: forall a b. OnOptions -> Accessor a -> (a -> Maybe a -> Effect b) -> Effect b
-onWith options accessor run = onImpl Just Nothing accessor options.defer run
-
-foreign import onImpl
+foreign import mapArrayUnkeyedImpl
   :: forall a b
-   . (a -> Maybe a)
-  -> Maybe a
-  -> Accessor a
-  -> Boolean
-  -> (a -> Maybe a -> Effect b)
-  -> Effect b
+   . EffectFn2 (Accessor (Array a)) (EffectFn2 (Accessor a) Int b) (Accessor (Array b))
+
+-- | Keyed by a derived key: items with the same key share a result, whose item
+-- | accessor updates to the newest value (e.g. key records by `_.id` after a
+-- | refetch builds fresh records).
+mapArrayBy
+  :: forall a b k
+   . (a -> k)
+  -> Accessor (Array a)
+  -> (Accessor a -> Accessor Int -> Setup b)
+  -> Setup (Accessor (Array b))
+mapArrayBy key list mapItem =
+  Setup (runEffectFn3 mapArrayByImpl key list (mkEffectFn2 \item index -> runSetup (mapItem item index)))
+
+foreign import mapArrayByImpl
+  :: forall a b k
+   . EffectFn3 (a -> k) (Accessor (Array a)) (EffectFn2 (Accessor a) (Accessor Int) b) (Accessor (Array b))
+
+-- | Maps the indices `0 .. count - 1`; results are reused as `count` changes.
+repeat :: forall b. Accessor Int -> (Int -> Setup b) -> Setup (Accessor (Array b))
+repeat count mapIndex =
+  Setup (runEffectFn2 repeatImpl count (runSetup <<< mapIndex))
+
+foreign import repeatImpl :: forall b. EffectFn2 (Accessor Int) (Int -> Effect b) (Accessor (Array b))

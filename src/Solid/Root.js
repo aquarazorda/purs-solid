@@ -1,4 +1,4 @@
-import { createRoot as createSolidRoot } from "solid-js";
+import { createRoot as solidCreateRoot } from "solid-js";
 
-export const createRoot = (k) => () =>
-  createSolidRoot((dispose) => k(() => dispose())());
+export const createRootImpl = (body) =>
+  solidCreateRoot((dispose) => body(() => dispose()));

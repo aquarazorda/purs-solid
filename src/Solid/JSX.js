@@ -1,4 +1,4 @@
-import h from "solid-js/h";
+import h from "@solidjs/h";
 
 export const empty = null;
 

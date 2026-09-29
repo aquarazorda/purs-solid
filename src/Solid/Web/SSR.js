@@ -1,36 +1,38 @@
+// Server rendering. Solid 2 selects its server build through export conditions,
+// so this module must run under Node's default conditions (not `browser`).
 import {
-  getAssets as solidGetAssets,
   generateHydrationScript as solidGenerateHydrationScript,
   renderToStream as solidRenderToStream,
   renderToString as solidRenderToString,
-  renderToStringAsync as solidRenderToStringAsync,
-} from "solid-js/web/dist/server.js";
-
-const requireFunction = (candidate, name) => {
-  if (typeof candidate !== "function") {
-    throw new Error(`${name} is unavailable in current runtime`);
-  }
-
-  return candidate;
-};
+} from "@solidjs/web";
 
 export const renderToStringImpl = (view) =>
-  requireFunction(solidRenderToString, "renderToString")(() => view());
+  solidRenderToString(() => view());
 
-// Synchronous failures surface as a rejected promise so callers only handle one error path.
+// `onHead` delivers everything head-bound (useHead winners, asset links,
+// styles) when the output has no `</head>`, i.e. when the host owns the document.
+export const renderToStringWithHeadImpl = (view) => {
+  let head = "";
+  const html = solidRenderToString(() => view(), {
+    onHead: (value) => {
+      head = value;
+    },
+  });
+  return { html, head };
+};
+
+// Solid 2 removed `renderToStringAsync`; awaiting a stream yields the fully
+// settled HTML. Synchronous failures surface as a rejected promise.
 export const renderToStringAsyncImpl = (view) => {
   try {
-    return Promise.resolve(requireFunction(solidRenderToStringAsync, "renderToStringAsync")(() => view()));
+    return Promise.resolve(solidRenderToStream(() => view()));
   } catch (error) {
     return Promise.reject(error);
   }
 };
 
 export const renderToStreamImpl = (view) =>
-  requireFunction(solidRenderToStream, "renderToStream")(() => view());
+  solidRenderToStream(() => view());
 
 export const hydrationScriptImpl = () =>
-  requireFunction(solidGenerateHydrationScript, "generateHydrationScript")();
-
-export const getAssetsImpl = () =>
-  requireFunction(solidGetAssets, "getAssets")();
+  solidGenerateHydrationScript();

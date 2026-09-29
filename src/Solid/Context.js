@@ -1,36 +1,16 @@
-import {
-  createContext as solidCreateContext,
-  getOwner as solidGetOwner,
-  useContext as solidUseContext,
-} from "solid-js";
+import { createComponent, createContext, useContext } from "solid-js";
 
-export const createContextImpl = () =>
-  solidCreateContext();
+export const createContextImpl = (defaultValue) =>
+  createContext(defaultValue);
 
-export const createContextWithDefaultImpl = (defaultValue) =>
-  solidCreateContext(defaultValue);
-
-// Missing context is `undefined`; the PureScript side turns it into `Nothing`.
 export const useContextImpl = (context) =>
-  solidUseContext(context);
+  useContext(context);
 
-export const withContext = (context) => (value) => (action) => () => {
-  const owner = solidGetOwner();
-
-  if (owner == null) {
-    return action();
-  }
-
-  const previousContext = owner.context;
-
-  owner.context = {
-    ...(owner.context || {}),
-    [context.id]: value,
-  };
-
-  try {
-    return action();
-  } finally {
-    owner.context = previousContext;
-  }
-};
+// In Solid 2 the context object is the provider component.
+export const provideImpl = (context) => (value) => (children) =>
+  createComponent(context, {
+    value,
+    get children() {
+      return children();
+    },
+  });

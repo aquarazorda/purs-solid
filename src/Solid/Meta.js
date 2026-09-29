@@ -1,5 +1,16 @@
-import { Base as solidBase, Link as solidLink, Meta as solidMeta, MetaProvider as solidMetaProvider, Style as solidStyle, Stylesheet as solidStylesheet, Title as solidTitle, useHead as solidUseHead } from "@solidjs/meta";
-import { createComponent } from "solid-js/web";
+// Transitional: @solidjs/meta 1.0 has no MetaProvider / useHead; the Phase 5
+// rewrite targets its new API. Namespace import keeps this module loadable.
+import * as SolidMeta from "@solidjs/meta";
+import { createComponent } from "solid-js";
+
+const solidBase = SolidMeta.Base;
+const solidLink = SolidMeta.Link;
+const solidMeta = SolidMeta.Meta;
+const solidMetaProvider = SolidMeta.MetaProvider;
+const solidStyle = SolidMeta.Style;
+const solidStylesheet = SolidMeta.Stylesheet;
+const solidTitle = SolidMeta.Title;
+const solidUseHead = SolidMeta.useHead;
 
 const fallbackDataAttribute = "data-purs-solid-meta-id";
 

@@ -22,8 +22,8 @@ import Solid.DOM as DOM
 import Solid.DOM.Events as Events
 import Solid.DOM.HTML as HTML
 import Solid.JSX (JSX)
-import Solid.Signal (Accessor, Setter, createSignal, get, modify, set)
-import Solid.Utility (batch)
+import Solid.Setup (Setup, unsafeSetupEffect)
+import Solid.Signal (Accessor, Setter, createSignal, get, modify, modify_, set)
 import Solid.Web (render, requireMountById)
 
 type RowItem =
@@ -80,8 +80,8 @@ swapAt i j rows = fromMaybe rows do
 
 app :: Component.Component {}
 app = Component.component \_ -> do
-  seed <- Ref.new 42
-  nextId <- Ref.new 0
+  seed <- unsafeSetupEffect (Ref.new 42)
+  nextId <- unsafeSetupEffect (Ref.new 0)
   rows /\ setRows <- createSignal ([] :: Array RowItem)
   probe /\ _ <- createSignal "reactive-ok"
 
@@ -96,10 +96,10 @@ app = Component.component \_ -> do
 
     updateEveryTenth = do
       current <- get rows
-      batch do
-        for_ (Array.mapWithIndex (\i row -> { i, row }) current) \{ i, row } ->
-          when (i `mod` 10 == 0) do
-            void (modify row.setLabel (_ <> " !!!"))
+      -- Solid 2 batches writes until the microtask flush; no `batch` needed.
+      for_ (Array.mapWithIndex (\i row -> { i, row }) current) \{ i, row } ->
+        when (i `mod` 10 == 0) do
+          modify_ row.setLabel (_ <> " !!!")
 
     removeRow id =
       void (modify setRows (Array.filter (\row -> row.id /= id)))
@@ -107,7 +107,7 @@ app = Component.component \_ -> do
     button id label action =
       HTML.button { id, type: "button", onClick: Events.handler_ action } [ DOM.text label ]
 
-    renderRow :: RowItem -> Effect JSX
+    renderRow :: RowItem -> Setup JSX
     renderRow row = pure $ HTML.tr_
       [ HTML.td { className: "col-md-1" } [ DOM.text (show row.id) ]
       , HTML.td { className: "col-md-4" } [ Control.dynamicTag "a" { children: row.label } ]

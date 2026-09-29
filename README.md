@@ -136,41 +136,35 @@ npm run serve:examples
 
 ## Minimal example
 
-This example shows the core reactivity wrappers (signals, memo, effect, root):
+Derived values are pure `Accessor` computations, owned code runs in `Setup`,
+and writes happen in `Effect`:
 
 ```purescript
 module Example.Core where
 
 import Prelude
 
+import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Class.Console (log)
-import Solid.Reactivity (createEffect, createMemo)
+import Solid.Reactivity (createEffect_, createMemo)
 import Solid.Root (createRoot)
-import Solid.Signal (createSignal, get, modify)
+import Solid.Signal (createSignal, modify_)
 
 example :: Effect Unit
-example =
-  createRoot \dispose -> do
+example = do
+  setCount <- createRoot \_ -> do
     count /\ setCount <- createSignal 1
-
-    doubled <- createMemo do
-      n <- get count
-      pure (n * 2)
-
-    _ <- createEffect do
-      n <- get count
-      d <- get doubled
+    doubled <- createMemo ((_ * 2) <$> count)
+    -- compute (tracked, pure) / apply (untracked, effects allowed)
+    createEffect_ (Tuple <$> count <*> doubled) \(n /\ d) ->
       log ("count=" <> show n <> ", doubled=" <> show d)
+    pure setCount
 
-    _ <- modify setCount (_ + 1)
-    _ <- modify setCount (_ + 1)
-
-    dispose
+  -- Writes are Effects: not allowed inside the root body above.
+  modify_ setCount (_ + 1)
 ```
-
-`Solid.Web` uses `Either` for render/hydrate outcomes, so client-only/runtime failures are explicit in types.
 
 ## Getting started UI example
 

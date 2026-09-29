@@ -2,10 +2,10 @@ module Solid.Web.SSR
   ( RenderStream
   , SsrError(..)
   , renderToString
+  , renderToStringWithHead
   , renderToStringAsync
   , renderToStream
   , hydrationScript
-  , getAssets
   ) where
 
 import Prelude
@@ -46,9 +46,12 @@ hydrationScript :: Effect (Either SsrError String)
 hydrationScript =
   mapError <$> tryMessage hydrationScriptImpl
 
-getAssets :: Effect (Either SsrError String)
-getAssets =
-  mapError <$> tryMessage getAssetsImpl
+-- | Renders to HTML and also returns the head-bound markup (`useHead` tags,
+-- | asset links, styles) for a host that owns the `<head>` template.
+-- | Replaces Solid 1's `getAssets`.
+renderToStringWithHead :: forall a. Effect a -> Effect (Either SsrError { html :: String, head :: String })
+renderToStringWithHead view =
+  mapError <$> tryMessage (runEffectFn1 renderToStringWithHeadImpl view)
 
 foreign import renderToStringImpl :: forall a. EffectFn1 (Effect a) String
 
@@ -58,7 +61,7 @@ foreign import renderToStreamImpl :: forall a. EffectFn1 (Effect a) RenderStream
 
 foreign import hydrationScriptImpl :: Effect String
 
-foreign import getAssetsImpl :: Effect String
+foreign import renderToStringWithHeadImpl :: forall a. EffectFn1 (Effect a) { html :: String, head :: String }
 
 mapError :: forall a. Either String a -> Either SsrError a
 mapError = lmap RuntimeError

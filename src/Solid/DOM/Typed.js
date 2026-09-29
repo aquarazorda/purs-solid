@@ -1,5 +1,5 @@
 import { createComponent as solidCreateComponent } from "solid-js";
-import { Dynamic as solidDynamic } from "solid-js/web";
+import { Dynamic as solidDynamic } from "@solidjs/web";
 
 const toPropsObject = (props) => {
   const result = {};

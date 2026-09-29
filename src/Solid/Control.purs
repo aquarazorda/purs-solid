@@ -40,6 +40,7 @@ module Solid.Control
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toNullable)
 import Effect (Effect)
+import Solid.Internal.Setup (Setup)
 import Prelude hiding (when)
 
 import Solid.Component (Component)
@@ -63,7 +64,7 @@ foreign import whenElseKeyedImpl :: Accessor Boolean -> JSX -> JSX -> JSX
 whenElseKeyed :: Accessor Boolean -> JSX -> JSX -> JSX
 whenElseKeyed = whenElseKeyedImpl
 
-showMaybe :: forall a. Accessor (Maybe a) -> (Accessor a -> Effect JSX) -> JSX
+showMaybe :: forall a. Accessor (Maybe a) -> (Accessor a -> Setup JSX) -> JSX
 showMaybe condition render = showMaybeElse condition empty render
 
 foreign import showMaybeElseImpl
@@ -71,13 +72,13 @@ foreign import showMaybeElseImpl
    . (Maybe a -> Nullable a)
   -> Accessor (Maybe a)
   -> JSX
-  -> (Accessor a -> Effect JSX)
+  -> (Accessor a -> Setup JSX)
   -> JSX
 
-showMaybeElse :: forall a. Accessor (Maybe a) -> JSX -> (Accessor a -> Effect JSX) -> JSX
+showMaybeElse :: forall a. Accessor (Maybe a) -> JSX -> (Accessor a -> Setup JSX) -> JSX
 showMaybeElse = showMaybeElseImpl toNullable
 
-showMaybeKeyed :: forall a. Accessor (Maybe a) -> (a -> Effect JSX) -> JSX
+showMaybeKeyed :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> JSX
 showMaybeKeyed condition render = showMaybeKeyedElse condition empty render
 
 foreign import showMaybeKeyedElseImpl
@@ -85,24 +86,24 @@ foreign import showMaybeKeyedElseImpl
    . (Maybe a -> Nullable a)
   -> Accessor (Maybe a)
   -> JSX
-  -> (a -> Effect JSX)
+  -> (a -> Setup JSX)
   -> JSX
 
-showMaybeKeyedElse :: forall a. Accessor (Maybe a) -> JSX -> (a -> Effect JSX) -> JSX
+showMaybeKeyedElse :: forall a. Accessor (Maybe a) -> JSX -> (a -> Setup JSX) -> JSX
 showMaybeKeyedElse = showMaybeKeyedElseImpl toNullable
 
-forEach :: forall a. Accessor (Array a) -> (a -> Effect JSX) -> JSX
+forEach :: forall a. Accessor (Array a) -> (a -> Setup JSX) -> JSX
 forEach each render = forEachElse each empty render
 
-foreign import forEachElseImpl :: forall a. Accessor (Array a) -> JSX -> (a -> Effect JSX) -> JSX
+foreign import forEachElseImpl :: forall a. Accessor (Array a) -> JSX -> (a -> Setup JSX) -> JSX
 
-forEachElse :: forall a. Accessor (Array a) -> JSX -> (a -> Effect JSX) -> JSX
+forEachElse :: forall a. Accessor (Array a) -> JSX -> (a -> Setup JSX) -> JSX
 forEachElse = forEachElseImpl
 
 forEachWithIndex
   :: forall a
    . Accessor (Array a)
-  -> (a -> Accessor Int -> Effect JSX)
+  -> (a -> Accessor Int -> Setup JSX)
   -> JSX
 forEachWithIndex each render = forEachWithIndexElse each empty render
 
@@ -110,23 +111,23 @@ foreign import forEachWithIndexElseImpl
   :: forall a
    . Accessor (Array a)
   -> JSX
-  -> (a -> Accessor Int -> Effect JSX)
+  -> (a -> Accessor Int -> Setup JSX)
   -> JSX
 
 forEachWithIndexElse
   :: forall a
    . Accessor (Array a)
   -> JSX
-  -> (a -> Accessor Int -> Effect JSX)
+  -> (a -> Accessor Int -> Setup JSX)
   -> JSX
 forEachWithIndexElse = forEachWithIndexElseImpl
 
-indexEach :: forall a. Accessor (Array a) -> (Accessor a -> Effect JSX) -> JSX
+indexEach :: forall a. Accessor (Array a) -> (Accessor a -> Setup JSX) -> JSX
 indexEach each render = indexEachElse each empty render
 
-foreign import indexEachElseImpl :: forall a. Accessor (Array a) -> JSX -> (Accessor a -> Effect JSX) -> JSX
+foreign import indexEachElseImpl :: forall a. Accessor (Array a) -> JSX -> (Accessor a -> Setup JSX) -> JSX
 
-indexEachElse :: forall a. Accessor (Array a) -> JSX -> (Accessor a -> Effect JSX) -> JSX
+indexEachElse :: forall a. Accessor (Array a) -> JSX -> (Accessor a -> Setup JSX) -> JSX
 indexEachElse = indexEachElseImpl
 
 foreign import matchWhen :: Accessor Boolean -> JSX -> JSX
@@ -137,10 +138,10 @@ foreign import matchMaybeImpl
   :: forall a
    . (Maybe a -> Nullable a)
   -> Accessor (Maybe a)
-  -> (a -> Effect JSX)
+  -> (a -> Setup JSX)
   -> JSX
 
-matchMaybe :: forall a. Accessor (Maybe a) -> (a -> Effect JSX) -> JSX
+matchMaybe :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> JSX
 matchMaybe = matchMaybeImpl toNullable
 
 switchCases :: Array JSX -> JSX
@@ -168,9 +169,9 @@ foreign import errorBoundaryImpl :: JSX -> JSX -> JSX
 errorBoundary :: JSX -> JSX -> JSX
 errorBoundary = errorBoundaryImpl
 
-foreign import errorBoundaryWithImpl :: (String -> Effect Unit -> Effect JSX) -> JSX -> JSX
+foreign import errorBoundaryWithImpl :: (String -> Effect Unit -> Setup JSX) -> JSX -> JSX
 
-errorBoundaryWith :: (String -> Effect Unit -> Effect JSX) -> JSX -> JSX
+errorBoundaryWith :: (String -> Effect Unit -> Setup JSX) -> JSX -> JSX
 errorBoundaryWith = errorBoundaryWithImpl
 
 foreign import noHydrationImpl :: JSX -> JSX

@@ -1,11 +1,14 @@
-import {
-  createMutable as createSolidMutable,
-  createStore as createSolidStore,
-  modifyMutable as modifySolidMutable,
-  produce as solidProduce,
-  reconcile as solidReconcile,
-  unwrap as unwrapSolid,
-} from "solid-js/store";
+// Transitional: Solid 2 moved stores into `solid-js`, made setters draft-only and
+// removed produce / createMutable / modifyMutable / unwrap. Phase 2 rewrites this
+// module; the namespace import keeps it loadable meanwhile.
+import * as Solid from "solid-js";
+
+const createSolidMutable = Solid.createMutable;
+const createSolidStore = Solid.createStore;
+const modifySolidMutable = Solid.modifyMutable;
+const solidProduce = Solid.produce;
+const solidReconcile = Solid.reconcile;
+const unwrapSolid = Solid.snapshot;
 
 const setValueAtPath = (target, path, value) => {
   if (path.length === 0) {

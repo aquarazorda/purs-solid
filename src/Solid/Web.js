@@ -1,4 +1,4 @@
-import { hydrate as solidHydrate, render as solidRender } from "solid-js/web";
+import { hydrate as solidHydrate, render as solidRender } from "@solidjs/web";
 
 export const isServer = typeof window === "undefined" || typeof document === "undefined";
 

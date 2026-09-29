@@ -1,16 +1,11 @@
 import {
-  createComponent as solidCreateComponent,
   children as solidChildren,
+  createComponent as solidCreateComponent,
   createUniqueId as solidCreateUniqueId,
   lazy as solidLazy,
 } from "solid-js";
 
-export const component = (render) => {
-  const wrapped = (props) =>
-    render(props)();
-
-  return wrapped;
-};
+export const componentImpl = (render) => (props) => render(props)();
 
 export const element = (comp) => (props) =>
   solidCreateComponent(comp, props);
@@ -18,15 +13,11 @@ export const element = (comp) => (props) =>
 export const elementKeyed = (comp) => (props) =>
   solidCreateComponent(comp, props);
 
-export const children = (resolveChildren) => () =>
+export const childrenImpl = (resolveChildren) => () =>
   solidChildren(() => resolveChildren());
 
-export const createUniqueId = () =>
+export const createUniqueIdImpl = () =>
   solidCreateUniqueId();
 
-export const lazy = (loadComponent) =>
-  solidLazy(() =>
-    Promise.resolve({
-      default: loadComponent(),
-    })
-  );
+export const lazyImpl = (load) =>
+  solidLazy(() => load().then((component) => ({ default: component })));

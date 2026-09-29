@@ -236,13 +236,11 @@ commentComponent :: Component.Component CommentProps
 commentComponent = Component.component \props -> do
   isOpen /\ setIsOpen <- createSignal true
 
-  toggleLabel <- createMemo do
-    open <- get isOpen
-    pure (if open then "[-]" else "[+] comments collapsed")
+  toggleLabel <- createMemo $ isOpen <#> \open ->
+    if open then "[-]" else "[+] comments collapsed"
 
-  toggleClass <- createMemo do
-    open <- get isOpen
-    pure (if open then "toggle open" else "toggle")
+  toggleClass <- createMemo $ isOpen <#> \open ->
+    if open then "toggle open" else "toggle"
 
   pure $ renderCommentNode props.setCurrentRoute props.comment isOpen setIsOpen toggleLabel toggleClass
 

@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (all)
+import Data.Foldable (all, for_)
 import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
@@ -17,7 +17,8 @@ import Solid.DOM.Events as Events
 import Solid.DOM.HTML as HTML
 import Solid.JSX (JSX)
 import Solid.Reactivity (createMemo)
-import Solid.Signal (createSignal, get, modify, set)
+import Solid.Setup (Setup)
+import Solid.Signal (createSignal, get, modify_, set)
 import Solid.Web (render, requireBody)
 
 data Visibility
@@ -53,103 +54,58 @@ todoApp = Component.component \_ -> do
   draft /\ setDraft <- createSignal ""
   visibility /\ setVisibility <- createSignal ShowAll
 
-  activeCount <- createMemo do
-    current <- get todos
-    pure (countActive current)
+  activeCount <- createMemo (countActive <$> todos)
+  completedCount <- createMemo (countCompleted <$> todos)
+  hasTodos <- createMemo (not <<< Array.null <$> todos)
+  allCompleted <- createMemo $ todos <#> \current ->
+    not (Array.null current) && all _.completed current
 
-  completedCount <- createMemo do
-    current <- get todos
-    pure (countCompleted current)
+  let
+    hasCompleted = (_ > 0) <$> completedCount
+    itemsLeftLabel = activeCount <#> \active -> if active == 1 then "item left" else "items left"
+    filterClass which = visibility <#> \current ->
+      if current == which then "filter-btn selected" else "filter-btn"
 
-  allCompleted <- createMemo do
-    current <- get todos
-    pure (not (Array.null current) && all _.completed current)
-
-  hasTodos <- createMemo do
-    current <- get todos
-    pure (not (Array.null current))
-
-  hasCompleted <- createMemo do
-    completed <- get completedCount
-    pure (completed > 0)
-
-  filteredTodos <- createMemo do
-    currentVisibility <- get visibility
-    currentTodos <- get todos
-    pure (filterTodos currentVisibility currentTodos)
-
-  itemsLeftLabel <- createMemo do
-    active <- get activeCount
-    pure if active == 1 then "item left" else "items left"
-
-  allFilterClass <- createMemo do
-    currentVisibility <- get visibility
-    pure if currentVisibility == ShowAll then "filter-btn selected" else "filter-btn"
-
-  activeFilterClass <- createMemo do
-    currentVisibility <- get visibility
-    pure if currentVisibility == ShowActive then "filter-btn selected" else "filter-btn"
-
-  completedFilterClass <- createMemo do
-    currentVisibility <- get visibility
-    pure if currentVisibility == ShowCompleted then "filter-btn selected" else "filter-btn"
+  filteredTodos <- createMemo (filterTodos <$> visibility <*> todos)
 
   let
     addDraftTodo :: Effect Unit
     addDraftTodo = do
       title <- get draft
-      if title == "" then
-        pure unit
-      else do
+      when (title /= "") do
         id <- get nextId
-        _ <- modify setTodos (_ <> [ { id, title, completed: false } ])
-        _ <- set setNextId (id + 1)
-        _ <- set setDraft ""
-        pure unit
+        modify_ setTodos (_ <> [ { id, title, completed: false } ])
+        set setNextId (id + 1)
+        set setDraft ""
 
     removeTodoById :: Int -> Effect Unit
-    removeTodoById id = do
-      _ <- modify setTodos (Array.filter (\todo -> todo.id /= id))
-      pure unit
+    removeTodoById id =
+      modify_ setTodos (Array.filter (\todo -> todo.id /= id))
 
     setTodoCompletion :: Int -> Boolean -> Effect Unit
-    setTodoCompletion id checked = do
-      _ <- modify setTodos (map \todo -> if todo.id == id then todo { completed = checked } else todo)
-      pure unit
+    setTodoCompletion id checked =
+      modify_ setTodos (map \todo -> if todo.id == id then todo { completed = checked } else todo)
 
     onDraftInput = Events.handler \event -> do
       value <- EventAdapters.targetInputValue event
-      case value of
-        Just nextValue -> do
-          _ <- set setDraft nextValue
-          pure unit
-        Nothing ->
-          pure unit
+      for_ value (set setDraft)
 
     onDraftKeyDown = Events.handler \event ->
       case EventAdapters.keyboardKey event of
         Just "Enter" -> addDraftTodo
-        Just "Escape" -> do
-          _ <- set setDraft ""
-          pure unit
-        _ ->
-          pure unit
+        Just "Escape" -> set setDraft ""
+        _ -> pure unit
 
     onToggleAll = Events.handler \event -> do
       maybeChecked <- EventAdapters.targetInputChecked event
-      case maybeChecked of
-        Just checked -> do
-          _ <- modify setTodos (map (_ { completed = checked }))
-          pure unit
-        Nothing ->
-          pure unit
+      for_ maybeChecked \checked ->
+        modify_ setTodos (map (_ { completed = checked }))
 
     clearCompletedTodos :: Effect Unit
-    clearCompletedTodos = do
-      _ <- modify setTodos (Array.filter (not <<< _.completed))
-      pure unit
+    clearCompletedTodos =
+      modify_ setTodos (Array.filter (not <<< _.completed))
 
-    renderTodo :: Todo -> Effect JSX
+    renderTodo :: Todo -> Setup JSX
     renderTodo todo =
       pure $ HTML.li
         { className: if todo.completed then "todo completed" else "todo" }
@@ -211,24 +167,18 @@ todoApp = Component.component \_ -> do
                   ]
               , HTML.div { className: "filters" }
                   [ HTML.button
-                      { className: allFilterClass
-                      , onClick: Events.handler_ do
-                          _ <- set setVisibility ShowAll
-                          pure unit
+                      { className: filterClass ShowAll
+                      , onClick: Events.handler_ (set setVisibility ShowAll)
                       }
                       [ DOM.text "All" ]
                   , HTML.button
-                      { className: activeFilterClass
-                      , onClick: Events.handler_ do
-                          _ <- set setVisibility ShowActive
-                          pure unit
+                      { className: filterClass ShowActive
+                      , onClick: Events.handler_ (set setVisibility ShowActive)
                       }
                       [ DOM.text "Active" ]
                   , HTML.button
-                      { className: completedFilterClass
-                      , onClick: Events.handler_ do
-                          _ <- set setVisibility ShowCompleted
-                          pure unit
+                      { className: filterClass ShowCompleted
+                      , onClick: Events.handler_ (set setVisibility ShowCompleted)
                       }
                       [ DOM.text "Completed" ]
                   ]

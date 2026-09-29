@@ -45,7 +45,14 @@ Solid 2's principles, expressed so that the PureScript type checker enforces the
    - Updates use typed paths (`key @"items" >>> index i >>> key @"done"`) plus a pure update description, interpreted on the draft in the FFI.
    - `focus` returns sub-stores. `forEach` over `Store (Array a)` gives each row a `Store a`.
 
-7. **Standards-aligned, typed DOM.** 2.0 sets attributes by default; `classList`, `use:`, `attr:`, `bool:` and `on:` are removed; `class` takes a string, object or array; refs are callbacks or directive factories.
+7. **Owned code has its own monad.** Solid 2 rejects signal writes, `refresh` and actions in owned scopes (component bodies, memos, root bodies), and warns on untracked reads at the top of a component. All of these are runtime checks, in dev builds only.
+   - Owned code runs in `Setup`, a zero-cost newtype over `Effect` with no `MonadEffect` instance. `set` / `modify` / `refresh` / `get` exist only in `Effect`, so these mistakes don't compile.
+   - `createMemo`, `createEffect`, `onCleanup` and `onSettled` exist only in `Setup`, so computations can't be created where nothing disposes them. `Effect` code enters `Setup` only via `createRoot` or `runWithOwner owner`.
+   - `getOwner :: Setup Owner` is total. `sample :: Accessor a -> Setup a` is the explicit untracked read.
+   - The single escape hatch is `unsafeSetupEffect` (for example `Ref.new`). Solid's dev build still reports a write smuggled through it.
+   - `createSignal` / `createRoot` work in both monads (`MonadReactive`; the class is sealed, so its member is not exported).
+
+8. **Standards-aligned, typed DOM.** 2.0 sets attributes by default; `classList`, `use:`, `attr:`, `bool:` and `on:` are removed; `class` takes a string, object or array; refs are callbacks or directive factories.
    - Typed prop arrays indexed by the element's allowed attributes.
 
 ### FFI rules
@@ -113,9 +120,40 @@ Medians on this machine, headless Chromium, click to next frame. Operations unde
 | create 10k rows | 230.3 ms |
 | bundle (min / gzip / brotli) | 35.6 kB / 12.5 kB / 11.3 kB |
 
-### Phase 1 — Reactive core on 2.0
-Pin `solid-js` and `@solidjs/web` exactly. Port Signal, Accessor, Memo, Effect, Owner, Lifecycle, `flush` / `untrack` and `Solid.Async`.
-Exit: core tests pass under dev conditions with zero Solid diagnostics.
+### Phase 1 — Reactive core on 2.0 ✅
+- [x] Pinned `solid-js`, `@solidjs/web` and `@solidjs/h` `2.0.0-rc.11`, `@solidjs/router` `2.0.0-next.31` and `@solidjs/meta` `1.0.0-next.2` (router and meta are only there to satisfy peer dependencies until Phase 5).
+- [x] `Solid.Setup`: owned-scope monad (design rule 7).
+- [x] `Solid.Signal`
+  - `Accessor` is a `Monad`, plus `Semigroup`, `Monoid`, `HeytingAlgebra` and `BooleanAlgebra` instances.
+  - Function values (including `Effect`) are boxed transparently.
+  - `modify` returns the value it wrote; `modify_` discards it.
+  - New `eqEquality`, `sample`, and a pure `untrack`.
+- [x] `Solid.Reactivity`
+  - `createMemo(With)`, with no initial value and a `lazy` option.
+  - `createWritableMemo` (Solid 2's function form of `createSignal`).
+  - Split `createEffect` / `createEffect_` / `createEffectWith` (`defer`, `onError`), and `createRenderEffect(_)`.
+  - `createReaction` / `track`, `flush` / `withFlush`.
+  - Removed: `createComputed`, `createDeferred`, `createSelector` (→ projections, Phase 2).
+- [x] `Solid.Lifecycle`: `onCleanup`, `onSettled(_)` (the callback returns its cleanup; `onCleanup` can't be called inside it, by type).
+- [x] `Solid.Root` (a nested root is owned by its parent) and `Solid.Owner` (`getOwner`, `runWithOwner`).
+- [x] `Solid.Context`: required default, total `useContext`, `provide`. Removed the `withContext` owner-mutation hack.
+- [x] `Solid.Async`
+  - `createAsync :: Accessor (Aff a) -> Setup (Accessor a /\ Refresh a)`: superseded fibers are killed, and only `createAsync` yields a `Refresh`.
+  - `refresh`, `refreshAff`, `isPending`, `latest`, `resolve`.
+  - `Solid.Resource` is deleted.
+  - Deferred: `action`, `createOptimistic`, `createOptimisticStore` (they go with stores in Phase 2).
+- [x] `Solid.Utility`: `mapArray`, `mapArrayUnkeyed`, `mapArrayBy`, `repeat`. Removed `batch`, `catchError`, `from`, `observable`, `on`, transitions, `indexArray`, `mergeProps` and `splitProps`.
+- [x] `Solid.Component`: bodies are `Setup`; `lazy` takes an `Aff`.
+- [x] `Solid.Web.SSR` (pulled forward from Phase 4): imports `@solidjs/web` under Node's default conditions. `renderToStringAsync` now awaits `renderToStream`. `getAssets` is replaced by `renderToStringWithHead` (Solid 2's `onHead`).
+- [x] Tests
+  - Client specs run with `--conditions=development`. `Test.Solid.solidIt` fails a test on any Solid warning or error diagnostic (via `OBSERVE.diagnostics`).
+  - 45 client and 13 server specs pass on both backends, plus the Start server smoke test.
+
+**Transitional state until the later phases:**
+- `Solid.Control`, `Solid.DOM` and `Solid.JSX` load on 2.0 (Control maps onto `Loading`, `Errored`, `Reveal` and unkeyed `For`), but their API is unchanged until Phase 3.
+- `Solid.Store`, `Solid.Meta` and `Solid.Router` only load (namespace imports); their suites are pending.
+- The browser smoke harness (`test/browser`) still targets 1.x and is rewritten in Phase 3.
+- Bench on the transitional view layer (`docs/benchmarks/phase1-transitional.json`): create 1k rows 25.7 ms (1.x: 20.4), 10k rows 258 ms (1.x: 230), gzip bundle 29.6 kB (1.x: 12.5 kB). Most of the bundle growth is Solid 2's runtime.
 
 ### Phase 2 — Stores
 Typed paths, draft interpretation, reconcile, snapshot / deep, projections, function stores, optimistic stores and the atomic-leaf policy.

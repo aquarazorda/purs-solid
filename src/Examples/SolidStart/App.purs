@@ -7,6 +7,7 @@ import Prelude
 
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Aff (launchAff_)
@@ -23,10 +24,11 @@ import Solid.DOM as DOM
 import Solid.DOM.Events as Events
 import Solid.DOM.HTML as HTML
 import Solid.JSX (JSX)
-import Solid.Lifecycle (onCleanup, onMount)
+import Solid.Lifecycle (onSettled)
 import Solid.Meta as Meta
-import Solid.Reactivity (createEffect, createMemo)
+import Solid.Reactivity (createEffect_, createMemo)
 import Solid.Router.Navigation as RouterNavigation
+import Solid.Setup (unsafeSetupEffect)
 import Solid.Signal (Accessor, Setter, createSignal, get, modify, set)
 
 notFoundContent :: Setter String -> String -> JSX
@@ -97,7 +99,8 @@ routeTitle = case _ of
 
 mkApp :: Effect String -> Component.Component {}
 mkApp resolveInitialRoute = Component.component \_ -> do
-  initialRoute <- resolveInitialRoute
+  -- Reads the browser location once; no reactive writes.
+  initialRoute <- unsafeSetupEffect resolveInitialRoute
   currentRoute /\ setCurrentRoute <- createSignal initialRoute
   hnPage /\ setHnPage <- createSignal 1
   hnStoriesState /\ setHnStoriesState <- createSignal initialHnStoriesState
@@ -107,53 +110,34 @@ mkApp resolveInitialRoute = Component.component \_ -> do
   hnStoryToken /\ setHnStoryToken <- createSignal 0
   hnUserToken /\ setHnUserToken <- createSignal 0
 
-  resolvedRoute <- createMemo do
-    route <- get currentRoute
-    pure (resolveRouteView route)
+  resolvedRoute <- createMemo (resolveRouteView <$> currentRoute)
 
-  hnFeedRequest <- createMemo do
-    route <- get resolvedRoute
-    page <- get hnPage
-    pure case route of
-      HackerNewsView (HnFeedRoute feed) ->
-        Just { feed, page }
-      _ ->
-        Nothing
-
-  hnStoryRequest <- createMemo do
-    route <- get resolvedRoute
-    pure case route of
-      HackerNewsView (HnStoryRoute storyId) -> Just storyId
+  hnFeedRequest <- createMemo ado
+    route <- resolvedRoute
+    page <- hnPage
+    in case route of
+      HackerNewsView (HnFeedRoute feed) -> Just { feed, page }
       _ -> Nothing
 
-  hnUserRequest <- createMemo do
-    route <- get resolvedRoute
-    pure case route of
-      HackerNewsView (HnUserRoute userId) -> Just userId
-      _ -> Nothing
+  hnStoryRequest <- createMemo $ resolvedRoute <#> case _ of
+    HackerNewsView (HnStoryRoute storyId) -> Just storyId
+    _ -> Nothing
 
-  topLinkClass <- createMemo do
-    route <- get currentRoute
-    pure (linkClass route "/")
+  hnUserRequest <- createMemo $ resolvedRoute <#> case _ of
+    HackerNewsView (HnUserRoute userId) -> Just userId
+    _ -> Nothing
 
-  newLinkClass <- createMemo do
-    route <- get currentRoute
-    pure (linkClass route "/new")
+  let
+    linkClassFor path = (\route -> linkClass route path) <$> currentRoute
+    topLinkClass = linkClassFor "/"
+    newLinkClass = linkClassFor "/new"
+    showLinkClass = linkClassFor "/show"
+    askLinkClass = linkClassFor "/ask"
+    jobLinkClass = linkClassFor "/job"
 
-  showLinkClass <- createMemo do
-    route <- get currentRoute
-    pure (linkClass route "/show")
-
-  askLinkClass <- createMemo do
-    route <- get currentRoute
-    pure (linkClass route "/ask")
-
-  jobLinkClass <- createMemo do
-    route <- get currentRoute
-    pure (linkClass route "/job")
-
-  _ <- createEffect do
-    request <- get hnFeedRequest
+  -- Transitional port: Phase 6 replaces these effects and request tokens with
+  -- `Solid.Async.createAsync`.
+  createEffect_ hnFeedRequest \request ->
     case request of
       Nothing -> pure unit
       Just { feed, page } -> do
@@ -192,8 +176,7 @@ mkApp resolveInitialRoute = Component.component \_ -> do
             else
               pure unit
 
-  _ <- createEffect do
-    maybeStoryId <- get hnStoryRequest
+  createEffect_ hnStoryRequest \maybeStoryId ->
     case maybeStoryId of
       Nothing -> pure unit
       Just storyId -> do
@@ -229,8 +212,7 @@ mkApp resolveInitialRoute = Component.component \_ -> do
             else
               pure unit
 
-  _ <- createEffect do
-    maybeUserId <- get hnUserRequest
+  createEffect_ hnUserRequest \maybeUserId ->
     case maybeUserId of
       Nothing -> pure unit
       Just userId -> do
@@ -266,20 +248,12 @@ mkApp resolveInitialRoute = Component.component \_ -> do
             else
               pure unit
 
-  routeNode <- createMemo do
-    route <- get resolvedRoute
-    storiesState <- get hnStoriesState
-    storyState <- get hnStoryState
-    userState <- get hnUserState
-    pure (routeContent setCurrentRoute setHnPage storiesState storyState userState route)
+  routeNode <- createMemo
+    (routeContent setCurrentRoute setHnPage <$> hnStoriesState <*> hnStoryState <*> hnUserState <*> resolvedRoute)
 
-  pageTitle <- createMemo do
-    route <- get resolvedRoute
-    pure (routeTitle route)
+  pageTitle <- createMemo (routeTitle <$> resolvedRoute)
 
-  _ <- createEffect do
-    titleValue <- get pageTitle
-    routePath <- get currentRoute
+  createEffect_ (Tuple <$> pageTitle <*> currentRoute) \(titleValue /\ routePath) -> do
     _ <- Meta.useHead
       { tag: "title"
       , props:
@@ -314,12 +288,8 @@ mkApp resolveInitialRoute = Component.component \_ -> do
       }
     pure unit
 
-  _ <- onMount do
-    unsubscribe <- RouterNavigation.subscribeRouteChanges basePath \nextRoute -> do
-      _ <- set setCurrentRoute nextRoute
-      pure unit
-    _ <- onCleanup unsubscribe
-    pure unit
+  -- Solid 2 forbids `onCleanup` inside `onSettled`; the callback returns its cleanup.
+  onSettled $ RouterNavigation.subscribeRouteChanges basePath (set setCurrentRoute)
 
   pure $ HTML.div_
     [ HTML.header { className: "header" }

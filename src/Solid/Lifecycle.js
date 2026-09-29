@@ -1,13 +1,12 @@
-import { onCleanup as solidOnCleanup, onMount as solidOnMount } from "solid-js";
+import { onCleanup as solidOnCleanup, onSettled as solidOnSettled } from "solid-js";
 
-export const onCleanup = (action) => () => {
+export const onCleanupImpl = (cleanup) => {
   solidOnCleanup(() => {
-    action();
+    cleanup();
   });
 };
 
-export const onMount = (action) => () => {
-  solidOnMount(() => {
-    action();
-  });
+// The callback returns the cleanup `Effect`, the shape `onSettled` expects.
+export const onSettledImpl = (callback) => {
+  solidOnSettled(() => callback());
 };

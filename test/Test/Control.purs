@@ -9,7 +9,7 @@ import Effect (Effect)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.JSX as JSX
-import Solid.Signal (Accessor, get)
+import Solid.Signal (Accessor, sample)
 
 run :: Effect Unit
 run = do
@@ -28,10 +28,10 @@ _examples visible maybeItem items widget =
   , Control.whenElse visible JSX.empty (JSX.text "shown")
   , Control.whenElseKeyed visible JSX.empty (JSX.text "shown")
   , Control.showMaybe maybeItem \itemAccessor -> do
-      item <- get itemAccessor
+      item <- sample itemAccessor
       pure (JSX.text item)
   , Control.showMaybeElse maybeItem (JSX.text "missing") \itemAccessor -> do
-      item <- get itemAccessor
+      item <- sample itemAccessor
       pure (JSX.text item)
   , Control.showMaybeKeyed maybeItem \item ->
       pure (JSX.text item)
@@ -39,10 +39,10 @@ _examples visible maybeItem items widget =
       pure (JSX.text item)
   , Control.forEach items \item -> pure (JSX.text item)
   , Control.forEachWithIndex items \item indexAccessor -> do
-      index <- get indexAccessor
+      index <- sample indexAccessor
       pure (JSX.text (show index <> ":" <> item))
   , Control.indexEach items \itemAccessor -> do
-      item <- get itemAccessor
+      item <- sample itemAccessor
       pure (JSX.text item)
   , Control.matchWhen visible (JSX.text "matched")
   , Control.matchMaybe maybeItem \item ->
@@ -51,8 +51,8 @@ _examples visible maybeItem items widget =
   , Control.dynamicTag "section" { children: [ JSX.text "dynamic" ] }
   , Control.dynamicComponent widget {}
   , Control.errorBoundary (JSX.text "fallback") (JSX.text "content")
-  , Control.errorBoundaryWith (\message reset -> do
-      _ <- reset
+  , Control.errorBoundaryWith (\message _reset ->
+      -- `reset` is an Effect: call it from an event handler, not while rendering.
       pure (JSX.text message)
     ) (JSX.text "content")
   , Control.noHydration (JSX.text "static")

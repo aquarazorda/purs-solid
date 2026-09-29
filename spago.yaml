@@ -10,6 +10,8 @@ package:
     - either
     - nullable
     - prelude
+    - refs
+    - tailrec
     - tuples
     - web-dom
     - web-events
