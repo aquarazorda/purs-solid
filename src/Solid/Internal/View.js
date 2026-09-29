@@ -180,6 +180,9 @@ export const componentRep = (render) => (props) => realize(render(props)());
 
 export const componentElement = (component, props) => () => createComponent(component, props);
 
+export const propsComponentElement = (component, props, children) => () =>
+  createComponent(component, propsObject(0, "", props, children));
+
 // ---------------------------------------------------------------------------
 // Control flow. Content is passed through getters, so Solid creates it only
 // when (and each time) it's shown.

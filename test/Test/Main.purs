@@ -13,12 +13,13 @@ import Test.Core.Component as Component
 import Test.Core.Context as Context
 import Test.Core.Lifecycle as Lifecycle
 import Test.Core.Reactivity as Reactivity
+import Test.Core.Router as Router
 import Test.Core.Signal as Signal
 import Test.Core.Store as Store
 import Test.Core.Utility as Utility
 import Test.Core.View as View
 import Test.EventAdapters as EventAdapters
-import Test.Spec (Spec, describe, it, pending)
+import Test.Spec (Spec, describe, it)
 import Test.Spec.Reporter (consoleReporter)
 import Test.Spec.Runner.Node (runSpecAndExitProcess)
 
@@ -38,7 +39,6 @@ spec = describe "client" do
     Action.spec
     Component.spec
     View.spec
+    Router.spec
   describe "DOM adapters" do
     it "Event adapters" (liftEffect EventAdapters.run)
-  describe "pending migration" do
-    pending "Meta (Phase 5: @solidjs/meta 1.0 has no MetaProvider)"

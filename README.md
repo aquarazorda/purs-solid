@@ -26,18 +26,13 @@ Core reactivity and lifecycle:
 - `Solid.Context`
 - `Solid.Web`, `Solid.Web.SSR`
 
-Routing and navigation:
+Routing, head tags and start mode:
 
-- `Solid.Router` (`Router`/`Route`/`A` wrappers plus `useLocation` and `useNavigate`, client-side router context)
-- `Solid.Router.Navigation` (path normalization and browser route-change helpers)
-- `Solid.Router.Route.Pattern`
-- `Solid.Router.Route.Params`
-- `Solid.Router.Routing`
-- `Solid.Router.Routing.Manifest`
-
-Document head:
-
-- `Solid.Meta` (`MetaProvider`, `Title`, `Meta`, `Link`, `Style`, `Base`, `Stylesheet`, and `useHead`)
+- `Solid.Router` (`@solidjs/router` 2: `route @"/users/:id"` with params parsed from the path at compile time, `layout`, `createRouter`, `routerView`, `useLocation`, `useNavigate`, `navigateTo`, `useMatch`)
+- `Solid.Router.Path` (`href @"/users/:id/:tab?" { id, tab }`: URLs built from exactly the params a path declares)
+- `Solid.Meta` (`@solidjs/meta` 1.0: `title`, `meta`, `link`, `stylesheet`, `style`, `script`, `base`, `head`, `key`; typed like elements, no provider)
+- `Solid.Start.ServerFunction` (`call :: ServerFunction a b -> a -> Aff b` for `"use server"` functions, with `Serializable` arguments and results)
+- `Solid.Start.RequestEvent` (the current request, cookies, typed `locals`), `Solid.Start.Response` (`httpStatus`, `httpHeader`), `Solid.Start.Middleware`
 
 UI authoring:
 
@@ -51,28 +46,37 @@ UI authoring:
 
 ## Design stance
 
+- Bindings over Solid's public API (`solid-js`, `@solidjs/web`, `@solidjs/router`, `@solidjs/meta`, `@solidjs/vite-plugin` start mode), not a reimplementation of Solid. The value added is types that reject incorrect code.
 - Solid-native naming only. No React-style `use*` API layer.
 - Pre-1.0 project. API can change directly when a better design is found.
 - Public wrappers prefer typed errors over throw-based behavior.
 
-For rationale and policy details, see `DECISIONS.md`.
+For rationale, decisions and findings, see `docs/solid-2-migration.md`.
 
-## SolidStart effort
+## Start mode (full-stack apps)
 
-- `SolidStart/README.md` - implementation status and commands.
-- `SolidStart/IMPLEMENTATION_PLAN.md` - milestone roadmap for SolidStart functionality.
-- `SolidStart/ROUTING_CONVENTIONS.md` - file-based routing conventions for PureScript routes.
-- Source of truth for the SolidStart example now lives under `src/Examples/SolidStart/`.
-- `npm run gen:example:solid-start-app` generates `examples/solid-start/` (Vite + `@solidjs/start` alpha + Nitro).
-- Generated `examples/solid-start/src`, `examples/solid-start/public`, and app config files are gitignored on purpose.
-- `npm run test:start` runs route generation and Start smoke checks.
+Solid 2 retires SolidStart; its serving layer is start mode in `@solidjs/vite-plugin`. A PureScript app plugs in as the start-mode `app` module (a `Solid.Component.Component`), see `src/Examples/StartMode/Host` and `src/Examples/HackerNews/Host`:
+
+```js
+// vite.config.mjs
+solid({
+  start: { app: "./app.js", node: true },
+  ssr: true,
+  // Compiled FFI lives in output/<Module>/foreign.js, outside the plugin's
+  // default src/** filter. Without this, "use server" functions are not
+  // transformed and ship to the browser.
+  serverFunctions: { filter: { include: ["output/**/foreign.js"] } },
+})
+```
+
+Server functions are ordinary `"use server"` functions in FFI files, declared as `foreign import save :: ServerFunction NewTodo Todo` and called with `Solid.Start.ServerFunction.call`. Arguments and results must be `Serializable` (primitives, `Nullable`, arrays, records): PureScript ADTs don't survive serialization, and using one is a compile error. On the client, `call` refuses to run a function the plugin didn't transform.
 
 ## Quick start
 
 Prerequisites:
 
-- Node.js + npm
-- PureScript/Spago toolchain available (`spago` on PATH)
+- Node.js 22.12+ and npm
+- PureScript 0.15 and Spago (`spago` on PATH)
 
 Install dependencies:
 
@@ -83,55 +87,28 @@ npm install
 Run tests:
 
 ```bash
-# PureScript suite
-spago test
+npm test
+```
 
-# Browser smoke suite (build + Playwright smoke)
-npm run test:browser-smoke
-
-# Full local check
+```bash
 npm run test:all
 ```
 
 ## Example apps
 
-This repo now has an `examples/` workspace for runnable demo apps.
-
-- `examples/todomvc/` - TodoMVC clone with filtering, toggle-all, and completion controls.
-- `examples/counter/` - compact signal/memo example with step presets and event log.
-- `examples/solid-start/` - generated SolidStart alpha Hacker News app (generated from `src/Examples/SolidStart/`, not committed as source).
-- `src/Examples/SolidStartSSR/` - Vinxi-hosted PureScript SSR app example (runs at `/`).
-
-Build example bundles:
+- `src/Examples/Counter.purs`: signals, memos, typed elements and events.
+- `src/Examples/TodoMVC.purs`: TodoMVC on the fine-grained store (toggling a todo updates one row).
+- `src/Examples/Hydration`: an app rendered on the server and hydrated in the browser.
+- `src/Examples/StartMode`: the smallest start-mode app, with a server function.
+- `src/Examples/HackerNews`: typed routes, server functions and streamed SSR against the Hacker News API.
 
 ```bash
-npm run build:examples
+npm run build:example:hackernews
 ```
-
-Run the SolidStart HackerNews demo:
 
 ```bash
-npm run install:example:solid-start
-npm run dev:example:solid-start
+PORT=3000 npm run start:example:hackernews
 ```
-
-Note: the generated SolidStart alpha app currently requires Node.js `>=22`.
-
-Run the Vinxi-hosted SolidStart SSR example:
-
-```bash
-npm run install:example:solid-start-ssr
-npm run dev:example:solid-start-ssr
-```
-
-Serve the repository root and open the examples index:
-
-```bash
-npm run serve:examples
-# then visit http://localhost:4173/examples/
-```
-
-`serve:examples` runs a small Node server for static examples and SSR runtime demo paths.
 
 ## Minimal example
 
@@ -211,17 +188,21 @@ errors, and so is `P.type_ InputCheckbox` on a `<button>`.
 
 ## Testing strategy in this repo
 
-- Unit/integration coverage in `test/Test/*.purs`.
-- Browser smoke harness in `test/browser/run-smoke.mjs` + `test/browser/smoke-client.mjs`.
-- Smoke tests validate rendering, interactions, control-flow wrappers, and event behavior in a real Chromium runtime.
+- `npm test`: client specs (`Test.Main`, rendered against happy-dom, Solid's dev build) and server specs (`Test.Server.Main`, Solid's server dev build). Specs fail on any Solid dev diagnostic.
+- `npm run test:purescript:es`: the same suites compiled with `purs-backend-es`.
+- `npm run test:browser-smoke`: Counter and TodoMVC production bundles in Chromium.
+- `npm run test:hydration`: server render in Node, hydrate in Chromium, DOM reuse and interactivity.
+- `npm run test:start`: the start-mode example built with Vite, SSR, hydration and a server function call.
+- `npm run bench`: the rows benchmark (see `docs/benchmarks`).
+- `npm run test:all`: everything but the bench.
 
 ## Repo guide
 
-- `src/Solid/*` - PureScript modules and FFI wrappers.
-- `test/Test/*` - PureScript test suites.
-- `test/browser/*` - browser smoke harness.
-- `DECISIONS.md` - architecture and API decisions.
-- `IMPLEMENTATION_PLAN.md` - milestone tracking and remaining work.
+- `src/Solid/*`: PureScript modules and their FFI.
+- `src/Examples/*`: example apps.
+- `scripts/gen-dom.mjs`: generates `Solid.DOM.HTML` / `Solid.DOM.Props` / SVG from `dom-indexed`.
+- `test/`: specs, browser smoke, hydration, start mode and benchmark harnesses.
+- `docs/solid-2-migration.md`: the Solid 2 migration plan, decisions and findings.
 
 ## Project status
 

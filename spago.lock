@@ -27,6 +27,7 @@
             "web-clipboard",
             "web-dom",
             "web-events",
+            "web-fetch",
             "web-file",
             "web-html",
             "web-pointerevents",
@@ -1079,6 +1080,16 @@
         "unfoldable"
       ]
     },
+    "http-methods": {
+      "type": "registry",
+      "version": "6.0.0",
+      "integrity": "sha256-S0UjrJSgwJxEsFHM/pX77dM8V4HfvvDqdHPckQrtxMs=",
+      "dependencies": [
+        "either",
+        "prelude",
+        "strings"
+      ]
+    },
     "identity": {
       "type": "registry",
       "version": "6.0.0",
@@ -1768,6 +1779,31 @@
         "nullable",
         "prelude",
         "unsafe-coerce"
+      ]
+    },
+    "web-fetch": {
+      "type": "registry",
+      "version": "4.0.1",
+      "integrity": "sha256-04+Kgtwk6BYT9WJfmIkYtwgXbfe8TDKP0tTBMcu+jBw=",
+      "dependencies": [
+        "arraybuffer-types",
+        "arrays",
+        "effect",
+        "foldable-traversable",
+        "foreign-object",
+        "functions",
+        "http-methods",
+        "js-promise",
+        "maybe",
+        "newtype",
+        "nullable",
+        "prelude",
+        "record",
+        "tuples",
+        "typelevel-prelude",
+        "unfoldable",
+        "web-file",
+        "web-streams"
       ]
     },
     "web-file": {

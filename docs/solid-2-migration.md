@@ -266,8 +266,39 @@ The bundle is dominated by Solid 2's reactive core (`@solidjs/signals`: 57 kB mi
   - `npm run test:hydration` (`test/hydration/run-hydration.mjs`, `Examples.Hydration.*`) does server render in Node and hydration in Chromium with the production bundle. Its 14 checks: every server element is claimed (none recreated); the serialized async value is not refetched; handlers, reactive attributes and classes, keyed rows plus an appended row, the conditional branch and the SVG namespace all work after hydration; and there are no mismatch warnings.
   - Totals: 77 client and 21 server specs, 22 browser-smoke checks, 14 hydration checks.
 
-### Phase 5 — Ecosystem (last; still prerelease)
-Meta 1.0 → Router 2 → start mode (after the server-functions spike).
+### Phase 5 — Meta, Router, start mode ✅
+- [x] **`Solid.Meta`** on `@solidjs/meta` 1.0: `title` (may be reactive), `meta`, `link`, `stylesheet`, `style`, `script`, `base`, `head`, `key`.
+  - Props are typed with the same `dom-indexed` rows as elements, extended with `key`.
+  - There's no provider; tags are collected by the core head registry.
+  - `Solid.Internal.View.propsComponentElement` builds a JS component's props from typed `Prop`s.
+- [x] **`Solid.Router`** on `@solidjs/router` 2 (`2.0.0-next.31`).
+  - `route @"/users/:id/:tab?" \props -> …`: the path is parsed at compile time (`Solid.Router.Path`, `Prim.Symbol.Cons`) into the params row `(id :: String, tab :: Maybe String)`, with the same grammar as the router's own TS types (`:x`, `:x?`, `*x`).
+  - `props.params` is an `Accessor` of exactly those fields.
+  - `layout` (nested routes via `props.children`), `createRouter` (browser / hash / memory history), `routerView`, `routerViewAt` (server URL).
+  - `useLocation` (`pathname`, `search`, `hash`, `queryParam`), `useIsRouting`, `useMatch`, `useNavigate` / `navigate` / `navigateTo @path`, `go`.
+  - `href @path params` builds URLs from exactly the declared params. Verified compile errors: a missing param, a wrong type, an extra field, a non-`Maybe` optional.
+  - Links are plain anchors; the router intercepts them and marks the active one.
+- [x] **Removed reimplementations:** the custom PureScript router (`Routing`, `Manifest`, `Navigation`, `Route.*`, `gen-routes`); the whole custom `Solid.Start.*` server framework (Request/Response ADTs, server router, middleware, sessions, serialization, prerender, static assets, entries, runtime); their tests, scripts and the Vinxi / SolidStart-alpha example hosts.
+- [x] **Start-mode bindings** (thin, `@solidjs/web` public API):
+  - `Solid.Start.ServerFunction`: `call :: Serializable a => Serializable b => ServerFunction a b -> a -> Aff b`. On the client it rejects an untransformed function (via `isServerFunction`).
+  - `Solid.Start.RequestEvent`: `getRequestEvent :: Effect (Maybe RequestEvent)`, the web-fetch `Request`, cookies (`parseCookieHeader` / `serializeCookie`), typed `LocalKey` locals.
+  - `Solid.Start.Response`: `httpStatus` / `httpHeader`, in `Setup` because they're scope-tied declarations.
+  - `Solid.Start.Middleware`: `Request -> Aff Response -> Aff Response`, shaped for `start.middleware`.
+- [x] **`Serializable`** gained `Unit`, `Nullable a`, and a custom error that points to `Nullable` or a codec.
+- [x] **Examples:**
+  - `StartMode`: minimal, and covered by the end-to-end test.
+  - `HackerNews`: rewritten on Router 2, server functions against the HN Firebase API and streamed SSR, with comments sent flat and rebuilt into a tree on the client.
+  - Checked live: 30 rows server-rendered with no server calls on hydration, client navigation making one RPC, the story page, back navigation, a 404 via `httpStatus`, and no errors.
+- [x] **Tests**
+  - `Test.Core.Router` (5 specs), Meta DOM spec, `Test.Server.Meta` (2), `Test.Server.Start` (5).
+  - `npm run test:start` builds `Examples.StartMode` with Vite and checks SSR, hydration without refetch, the server function call from the browser, and that the function body isn't in the client bundle (7 checks).
+  - Totals: 83 client and 16 server specs, 22 browser, 14 hydration, 7 start-mode checks.
+
+**Findings**
+- **Security-relevant:** `@solidjs/vite-plugin`'s server-function transform only includes `src/**` by default, while compiled PureScript lives in `output/`. Without `serverFunctions.filter.include: ["output/**/foreign.js"]`, a `"use server"` function is not transformed: it's bundled into the client and runs in the browser. The docs, the example configs and `call`'s runtime check all cover this.
+- In "host owns the document" mode (`renderToStringWithHead`), Solid delivers the title as a script that sets `document.title`, not as a `<title>` tag.
+- The router adds `data-active` alongside `aria-current="page"` on active links.
+- Router data isn't cached between navigations yet (a back navigation refetches). Binding the router's `query` cache is a follow-up.
 
 ### Phase 6 — Examples and docs
 Port Counter, TodoMVC and Hacker News. Write a migration guide for purs-solid users and a benchmark report.

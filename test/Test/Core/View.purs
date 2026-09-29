@@ -21,6 +21,7 @@ import Solid.DOM.Props as P
 import Solid.DOM.SVG as S
 import Solid.DOM.SVG.Props as SP
 import Solid.JSX (text)
+import Solid.Meta as Meta
 import Solid.JSX as JSX
 import Solid.Setup (liftSetup)
 import Solid.Signal (Accessor, Setter, createSignal, set)
@@ -232,6 +233,16 @@ spec = describe "views" do
       html second >>= shouldEqual "later"
       liftEffect second.dispose
 
+  describe "head tags" do
+    solidIt "a reactive title updates document.title" do
+      unread <- signal 2
+      mounted <- mount (Meta.title (unread.get <#> \n -> "Inbox (" <> show n <> ")"))
+      settle
+      liftEffect documentTitle >>= shouldEqual "Inbox (2)"
+      write unread 3
+      liftEffect documentTitle >>= shouldEqual "Inbox (3)"
+      liftEffect mounted.dispose
+
   describe "components and context" do
     solidIt "components receive plain record props" do
       count <- signal 1
@@ -260,3 +271,4 @@ spec = describe "views" do
 foreign import inputValue :: Element -> Effect String
 foreign import targetValue :: Event -> Effect String
 foreign import tagName :: Element -> Effect String
+foreign import documentTitle :: Effect String

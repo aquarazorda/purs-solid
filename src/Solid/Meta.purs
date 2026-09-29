@@ -1,105 +1,78 @@
+-- | Document head tags (`@solidjs/meta` 1.0).
+-- |
+-- | Render these anywhere in the tree; they're collected into `<head>` (on the
+-- | server, into the head markup `Solid.Web.SSR` returns). The last registered
+-- | tag wins per identity. `key` sets that identity explicitly, e.g. to have
+-- | several `og:image` metas. No provider is needed.
+-- |
+-- | Attributes are typed by `Solid.DOM.Props` like any element, and may be
+-- | reactive: `Meta.title (("Inbox (" <> _) <<< (_ <> ")") <<< show <$> unread)`.
 module Solid.Meta
-  ( MetaError(..)
-  , TagSetting
-  , TagDescription
-  , metaProvider
-  , metaProvider_
-  , metaProviderWith
+  ( key
+  , head
   , title
   , titleWith
-  , titleFrom
-  , style
-  , styleWith
   , meta
   , link
-  , base
   , stylesheet
-  , useHead
+  , style
+  , script
+  , base
   ) where
 
-import Prelude
+import Data.Function.Uncurried (runFn3)
+import DOM.HTML.Indexed as I
+import Solid.Internal.View (class ToBinding, JSX, Prop, propsComponentElement, staticProp)
+import Solid.JSX (text)
 
-import Data.Bifunctor (lmap)
-import Data.Either (Either)
-import Data.Maybe (Maybe)
-import Data.Nullable (Nullable, toNullable)
-import Effect (Effect)
-import Effect.Uncurried (EffectFn1, runEffectFn1)
-import Solid.Internal.Error (tryMessage)
-import Solid.JSX (JSX)
-import Solid.Signal (Accessor)
+-- | The tag's identity for deduplication (the last registered tag with the
+-- | same identity wins).
+key :: forall r. String -> Prop (key :: String | r)
+key = staticProp "key"
 
-data MetaError
-  = MetaRuntimeError String
+-- | Groups tags into one replacement set: same-identity tags inside a group
+-- | coexist, and a later group replaces an earlier one's set while it's
+-- | rendered.
+head :: Array JSX -> JSX
+head children = runFn3 propsComponentElement headImpl ([] :: Array (Prop ())) children
 
-derive instance eqMetaError :: Eq MetaError
+-- | The document title; may be reactive.
+title :: forall v. ToBinding v String => v -> JSX
+title = titleWith []
 
-instance showMetaError :: Show MetaError where
-  show = case _ of
-    MetaRuntimeError message -> "MetaRuntimeError " <> show message
+titleWith :: forall v. ToBinding v String => Array (Prop (key :: String | I.HTMLtitle)) -> v -> JSX
+titleWith props value = runFn3 propsComponentElement titleImpl props [ text value ]
 
-type TagSetting =
-  { close :: Boolean
-  , escape :: Boolean
-  }
+meta :: Array (Prop (key :: String | I.HTMLmeta)) -> JSX
+meta props = runFn3 propsComponentElement metaImpl props []
 
-type TagDescription props =
-  { tag :: String
-  , props :: { | props }
-  , setting :: Maybe TagSetting
-  , id :: String
-  , name :: Maybe String
-  }
+link :: Array (Prop (key :: String | I.HTMLlink)) -> JSX
+link props = runFn3 propsComponentElement linkImpl props []
 
-foreign import metaProvider :: forall props. { | props } -> Array JSX -> JSX
+-- | `<link rel="stylesheet">`.
+stylesheet :: Array (Prop (key :: String | I.HTMLlink)) -> JSX
+stylesheet props = runFn3 propsComponentElement stylesheetImpl props []
 
-foreign import metaProviderWith :: forall props. { | props } -> Effect JSX -> JSX
+-- | An inline stylesheet.
+style :: Array (Prop (key :: String | I.HTMLstyle)) -> String -> JSX
+style props css = runFn3 propsComponentElement styleImpl props [ text css ]
 
-metaProvider_ :: Array JSX -> JSX
-metaProvider_ = metaProvider {}
+-- | A script tag (e.g. analytics or JSON-LD). The content isn't escaped.
+script :: Array (Prop (key :: String | I.HTMLscript)) -> String -> JSX
+script props source = runFn3 propsComponentElement scriptImpl props [ text source ]
 
-foreign import titleWithImpl :: forall props. { | props } -> String -> JSX
+-- | `<base>`. Rendered with the document shell on the server; ignored on the
+-- | client.
+base :: Array (Prop I.HTMLbase) -> JSX
+base props = runFn3 propsComponentElement baseImpl props []
 
-titleWith :: forall props. { | props } -> String -> JSX
-titleWith = titleWithImpl
+foreign import data MetaComponent :: Type
 
-title :: String -> JSX
-title = titleWith {}
-
-foreign import titleFrom :: Accessor String -> JSX
-
-foreign import styleWithImpl :: forall props. { | props } -> String -> JSX
-
-styleWith :: forall props. { | props } -> String -> JSX
-styleWith = styleWithImpl
-
-style :: String -> JSX
-style = styleWith {}
-
-foreign import meta :: forall props. { | props } -> JSX
-
-foreign import link :: forall props. { | props } -> JSX
-
-foreign import base :: forall props. { | props } -> JSX
-
-foreign import stylesheet :: forall props. { | props } -> JSX
-
-type NullableTagDescription props =
-  { tag :: String
-  , props :: { | props }
-  , setting :: Nullable TagSetting
-  , id :: String
-  , name :: Nullable String
-  }
-
-foreign import useHeadImpl :: forall props. EffectFn1 (NullableTagDescription props) Unit
-
-useHead :: forall props. TagDescription props -> Effect (Either MetaError Unit)
-useHead tagDescription =
-  lmap MetaRuntimeError <$> tryMessage (runEffectFn1 useHeadImpl nullableDescription)
-  where
-  nullableDescription =
-    tagDescription
-      { setting = toNullable tagDescription.setting
-      , name = toNullable tagDescription.name
-      }
+foreign import headImpl :: MetaComponent
+foreign import titleImpl :: MetaComponent
+foreign import metaImpl :: MetaComponent
+foreign import linkImpl :: MetaComponent
+foreign import stylesheetImpl :: MetaComponent
+foreign import styleImpl :: MetaComponent
+foreign import scriptImpl :: MetaComponent
+foreign import baseImpl :: MetaComponent

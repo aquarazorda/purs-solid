@@ -27,6 +27,7 @@ module Solid.Internal.View
   , ComponentRep
   , componentRep
   , componentElement
+  , propsComponentElement
   , WhenValue
   , whenValue
   , showImpl
@@ -147,6 +148,10 @@ foreign import componentRep :: forall props. (props -> Effect JSX) -> ComponentR
 
 -- | A lazy use of a component.
 foreign import componentElement :: forall props. Fn2 (ComponentRep props) props JSX
+
+-- | A lazy use of a JS component that takes element-style props (attributes,
+-- | events, `children`), built from typed `Prop`s the same way as elements.
+foreign import propsComponentElement :: forall component r. Fn3 component (Array (Prop r)) (Array JSX) JSX
 
 -- | The value `Show` / `Match` test, encoded so falsy PureScript values
 -- | (`Just false`, `Just 0`, `Just ""`) still count as present.

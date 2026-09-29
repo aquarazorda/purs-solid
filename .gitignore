@@ -17,3 +17,6 @@ examples/
 
 # spec-node run cache
 .spec-results
+
+# built start-mode example hosts
+src/Examples/*/Host/dist/

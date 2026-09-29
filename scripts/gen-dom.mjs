@@ -118,7 +118,7 @@ const propBody = propLabels
     }
     return [
       `${name} :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (${label} :: a | r)`,
-      `${name} value = bindingProp "${attributeName(label)}" toAttrValue (binding value)`,
+      `${name} v = bindingProp "${attributeName(label)}" toAttrValue (binding v)`,
     ].join("\n");
   })
   .join("\n\n");
@@ -235,7 +235,7 @@ ${svgPropLabels
   .map((label) =>
     [
       `${identifier(label)} :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (${label} :: a | r)`,
-      `${identifier(label)} value = bindingProp "${svgAttributes[label]}" toAttrValue (binding value)`,
+      `${identifier(label)} v = bindingProp "${svgAttributes[label]}" toAttrValue (binding v)`,
     ].join("\n")
   )
   .join("\n\n")}

@@ -25,6 +25,7 @@ package:
     - tuples
     - web-dom
     - web-events
+    - web-fetch
     - web-file
     - web-html
     - web-uievents
