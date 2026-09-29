@@ -33,6 +33,16 @@ run = do
     =<< Router.dispatch router (Request.mkRequest Request.POST "/api/health" [] [] Nothing)
   assertEqual "router method guard status" 405 (Response.status blocked)
 
+  normalizedTrailing <- expectRight
+    "router dispatch normalizes trailing slash"
+    =<< Router.dispatch router (Request.mkRequest Request.GET "/api/health/" [] [] Nothing)
+  assertEqual "router trailing slash normalization status" 200 (Response.status normalizedTrailing)
+
+  normalizedQuery <- expectRight
+    "router dispatch ignores query/hash suffix"
+    =<< Router.dispatch router (Request.mkRequest Request.GET "/api/health?from=test#part" [] [] Nothing)
+  assertEqual "router query/hash normalization status" 200 (Response.status normalizedQuery)
+
   missing <- Router.dispatch router (Request.mkRequest Request.GET "/api/missing" [] [] Nothing)
   assertEqual
     "router returns RouteNotFound for unknown path"

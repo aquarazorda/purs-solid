@@ -18,6 +18,13 @@ run = do
   safeValue <- Utility.catchError (pure 10) \_ -> pure unit
   assertEqual "catchError leaves successful computation untouched" (Just 10) safeValue
 
+  safeUnit <- Utility.catchError (pure unit) \_ -> pure unit
+  case safeUnit of
+    Just _ ->
+      assertEqual "catchError keeps successful unit result as Just" true true
+    Nothing ->
+      throw "catchError should not coerce successful unit results to Nothing"
+
   recoveredValue <- Utility.catchError (throw "boom") \message ->
     if message == "boom" then
       pure unit

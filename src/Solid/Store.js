@@ -5,7 +5,7 @@ import {
   produce as solidProduce,
   reconcile as solidReconcile,
   unwrap as unwrapSolid,
-} from "solid-js/store/dist/store.js";
+} from "solid-js/store";
 
 const setValueAtPath = (target, path, value) => {
   if (path.length === 0) {

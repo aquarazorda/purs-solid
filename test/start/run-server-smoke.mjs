@@ -185,13 +185,13 @@ const main = async () => {
     "Expected SolidStart prerender entries to be an array"
   );
   assert(
-    solidStartPrerenderEntries.some((entry) => entry.routePath === "/counter" && entry.outputPath === "counter/index.html"),
-    "Expected SolidStart prerender entries to include /counter output mapping"
+    solidStartPrerenderEntries.some((entry) => entry.routePath === "/new" && entry.outputPath === "new/index.html"),
+    "Expected SolidStart prerender entries to include /new output mapping"
   );
 
   const renderedPrerenderEntry = SolidStartServerMain.renderPrerenderEntry({
-    routePath: "/counter",
-    outputPath: "counter/index.html",
+    routePath: "/new",
+    outputPath: "new/index.html",
   })();
 
   assert(
