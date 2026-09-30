@@ -27,9 +27,9 @@ import Data.Tuple.Nested ((/\))
 import Solid.Internal.View (class ToBinding, JSX, Prop, bindingProp, elementWith, eventProp, htmlNamespace, propsProp, refProp)
 import Solid.Signal (Signal, set)
 import Solid.Internal.View (class ToBinding, JSX, Prop) as Exports
-import Web.DOM.Element (Element)
 import Web.Event.Event (Event)
 import Foreign.Object as Object
+import Unsafe.Coerce (unsafeCoerce)
 
 -- | Accepts any property (no attribute checking).
 element :: forall r. String -> Array (Prop r) -> Array JSX -> JSX
@@ -65,8 +65,10 @@ textContent = bindingProp "textContent" identity
 innerHTML :: forall r v. ToBinding v String => v -> Prop r
 innerHTML = bindingProp "innerHTML" identity
 
-ref :: forall r. (Element -> Effect Unit) -> Prop r
-ref = refProp
+-- | Gets the element once it's created, typed by the element it's on
+-- | (`HTMLInputElement` on `H.input`).
+ref :: forall r element. (element -> Effect Unit) -> Prop ("$element" :: element | r)
+ref callback = refProp (callback <<< unsafeCoerce)
 
 -- | Any event by DOM name. Solid lowercases the name and delegates it when
 -- | it's one of the events Solid delegates.

@@ -35,6 +35,7 @@ import Test.Solid (Mounted, click, html, inputText, mount, mountUsing, query, se
 import Unsafe.Reference (unsafeRefEq)
 import Web.DOM.Element (Element, getAttribute, namespaceURI)
 import Web.HTML.HTMLInputElement as HTMLInputElement
+import Web.HTML.HTMLElement as HTMLElement
 import Data.Traversable (traverse)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -166,7 +167,7 @@ spec = describe "views" do
 
     solidIt "refs receive the element" do
       seen <- liftEffect (Ref.new "")
-      mounted <- mount $ H.section [ P.id "target", ref \element -> tagName element >>= flip Ref.write seen ] []
+      mounted <- mount $ H.section [ P.id "target", ref \element -> tagName (HTMLElement.toElement element) >>= flip Ref.write seen ] []
       liftEffect (Ref.read seen) >>= shouldEqual "SECTION"
       liftEffect mounted.dispose
 

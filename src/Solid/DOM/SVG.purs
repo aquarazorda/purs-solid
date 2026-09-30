@@ -3,9 +3,11 @@ module Solid.DOM.SVG where
 
 import DOM.HTML.Indexed as I
 import Solid.Internal.View (JSX, Prop, elementWith, svgNamespace)
+import Web.DOM.Element (Element)
 
 type SVGAttributes = I.InteractiveEvents
-  ( class :: String
+  ( "$element" :: Element
+  , class :: String
   , height :: String
   , href :: String
   , id :: String
