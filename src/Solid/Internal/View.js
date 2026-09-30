@@ -355,14 +355,20 @@ export const childrenArrayImpl = (resolve) => {
 };
 
 // purs-solid/vite registers each lazily loaded module; unbundled, modules load
-// from next to this one.
+// from next to this one. The specifier is a variable so that bundlers don't
+// read it as a pattern matching every compiled module.
 const lazyModules = new Map();
 
 export const registerLazyModule = (name, load) => {
   lazyModules.set(name, load);
 };
 
-export const loadModule = (name) => () => (lazyModules.get(name) ?? (() => import(`../${name}/index.js`)))();
+const importCompiled = (name) => {
+  const specifier = `../${name}/index.js`;
+  return import(/* @vite-ignore */ specifier);
+};
+
+export const loadModule = (name) => () => (lazyModules.get(name) ?? importCompiled)(name);
 
 export const lazyImpl = (exportName, load) => solidLazy(() => load(), { export: exportName });
 

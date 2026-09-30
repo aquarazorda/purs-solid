@@ -142,15 +142,17 @@ export default function pursSolid(options = {}) {
       },
     },
   };
-  // Bundled, only registered modules load: the unbundled fallback would make
-  // every compiled module a chunk.
+  // Bundled, only registered modules load.
   const noFallback = {
     name: "purs-solid:lazy-fallback",
     enforce: "pre",
     transform: {
       filter: { id: /[\\/]Solid\.Internal\.View[\\/]foreign\.js$/ },
       handler(code) {
-        return { code: code.replace("import(`../${name}/index.js`)", "Promise.reject(new Error(`purs-solid: ${name} is loaded lazily, but no module names it`))"), map: null };
+        return {
+          code: code.replace("import(/* @vite-ignore */ specifier)", "Promise.reject(new Error(`purs-solid: ${name} is loaded lazily, but no module names it`))"),
+          map: null,
+        };
       },
     },
   };
