@@ -6,8 +6,8 @@ import Prelude
 
 import Control.Promise (Promise, toAffE)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), isNothing)
-import Data.Nullable (Nullable, notNull, null)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
+import Data.Nullable (Nullable, notNull, null, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -18,7 +18,7 @@ import Solid.Start.Middleware (MiddlewareFn, middleware)
 import Solid.Router.Query as Query
 import Solid.Start.RequestEvent as Request
 import Solid.Start.Response (Reply, httpHeader, httpStatus, redirectWith, reloadWith, reply, respondWith)
-import Solid.Start.ServerFunction (class Serializable, ServerFunction, call)
+import Solid.Start.ServerFunction (class Serializable, ServerFunction, call, serverFunction, serverFunctionWithEvent)
 import Solid.Web.SSR as SSR
 import Test.Solid (solidIt)
 import Test.Spec (Spec, describe)
@@ -26,7 +26,9 @@ import Test.Spec.Assertions (shouldEqual)
 import Web.Fetch.Request (Request)
 import Web.Fetch.Response (Response)
 
-foreign import echo :: ServerFunction { name :: String, tag :: Nullable String } { greeting :: String }
+echo :: ServerFunction { name :: String, tag :: Nullable String } { greeting :: String }
+echo = serverFunction \{ name, tag } ->
+  pure { greeting: "hello " <> name <> maybe "" (\t -> " (" <> t <> ")") (toMaybe tag) }
 
 newtype UserId = UserId String
 
@@ -34,7 +36,11 @@ derive newtype instance Serializable UserId
 derive newtype instance Eq UserId
 derive newtype instance Show UserId
 
-foreign import echoId :: ServerFunction UserId UserId
+echoId :: ServerFunction UserId UserId
+echoId = serverFunction pure
+
+session :: ServerFunction String (Nullable String)
+session = serverFunctionWithEvent \event name -> pure (toNullable (Request.cookie name event))
 
 foreign import newRequest :: String -> String -> Effect Request
 foreign import textResponse :: String -> Effect Response
@@ -61,7 +67,7 @@ spec = describe "Solid.Start" do
   solidIt "middleware wraps the rest of the chain" do
     request <- liftEffect (newRequest "https://app.test/" "")
     let
-      addHeader = middleware \forwarded next -> do
+      addHeader = middleware \_ forwarded next -> do
         response <- next forwarded
         liftEffect (setHeader "x-app" "purs-solid" response)
         pure response
@@ -71,11 +77,21 @@ spec = describe "Solid.Start" do
   solidIt "middleware can pass a rewritten request on" do
     request <- liftEffect (newRequest "https://app.test/old" "")
     let
-      rewrite = middleware \_ next -> do
+      rewrite = middleware \_ _ next -> do
         moved <- liftEffect (newRequest "https://app.test/new" "")
         next moved
     response <- toAffE (runMiddleware rewrite request)
     toAffE (responseText response) >>= shouldEqual "ok https://app.test/new"
+
+  solidIt "middleware and server functions get the request event" do
+    request <- liftEffect (newRequest "https://app.test/" "session=abc")
+    let
+      check = middleware \event forwarded next -> do
+        found <- call session "session"
+        let seen = fromMaybe "" (toMaybe found) <> "-" <> fromMaybe "" (Request.cookie "session" event)
+        next =<< liftEffect (newRequest ("https://app.test/" <> seen) "")
+    response <- toAffE (runMiddleware check request)
+    toAffE (responseText response) >>= shouldEqual "ok https://app.test/abc-abc"
 
   solidIt "server functions and middleware set the response status and headers" do
     request <- liftEffect (newRequest "https://app.test/" "")

@@ -1,17 +1,6 @@
 import { createRequestEvent } from "@solidjs/web";
 import { provideRequestEvent } from "@solidjs/web/storage";
 
-// On the server (no plugin transform) a server function is just the function.
-export async function echo({ name, tag }) {
-  "use server";
-  return { greeting: tag == null ? `hello ${name}` : `hello ${name} (${tag})` };
-}
-
-export async function echoId(id) {
-  "use server";
-  return id;
-}
-
 export const newRequest = (url) => (cookie) => () =>
   new Request(url, cookie === "" ? {} : { headers: { cookie } });
 
@@ -24,7 +13,9 @@ export const setHeader = (name) => (value) => (response) => () => {
 };
 
 export const runMiddleware = (middleware) => (request) => () =>
-  middleware(request, async (forwarded) => new Response(`ok ${(forwarded ?? request).url}`));
+  provideRequestEvent(createRequestEvent(request), () =>
+    middleware(request, async (forwarded) => new Response(`ok ${(forwarded ?? request).url}`))
+  );
 
 export const responseText = (response) => () => response.text();
 
