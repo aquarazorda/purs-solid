@@ -11,10 +11,8 @@ module Example where
 
 import Prelude
 
-import Data.Either (Either(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Effect.Class.Console (log)
 import Solid.Component as Component
 import Solid.DOM (classWhen)
 import Solid.DOM.HTML as H
@@ -22,7 +20,7 @@ import Solid.DOM.Props as P
 import Solid.JSX (text)
 import Solid.Reactivity (createMemo)
 import Solid.Signal (createSignal, modify_)
-import Solid.Web (render, requireBody)
+import Solid.Web (mount)
 
 counter :: Component.Component {}
 counter = Component.component \_ -> do
@@ -38,9 +36,7 @@ counter = Component.component \_ -> do
     ]
 
 main :: Effect Unit
-main = requireBody >>= case _ of
-  Left error -> log (show error)
-  Right body -> void (render (Component.element counter {}) body)
+main = mount (Component.element counter {})
 ```
 
 ## Modules
@@ -56,12 +52,13 @@ main = requireBody >>= case _ of
 - **Views:**
   - `Solid.JSX`, `Solid.Component`;
   - `Solid.Component.JS` (use JavaScript Solid components);
-  - `Solid.Control` (conditionals, lists, `loading`, `errored`, portals);
+  - `Solid.Control` (conditionals, `caseOn` for data types, lists, `loading`, `errored`, portals);
   - `Solid.DOM`, `Solid.DOM.HTML` / `Solid.DOM.Props`, `Solid.DOM.SVG` / `Solid.DOM.SVG.Props`. The HTML and SVG modules are generated from `dom-indexed` by `npm run gen:dom`.
-- **Rendering:** `Solid.Web` (render, hydrate), `Solid.Web.SSR` (string, async and streamed server rendering), `Solid.Errors` (client and server error hooks, safe errors).
+- **Rendering:** `Solid.Web` (`mount`, render, hydrate), `Solid.Web.SSR` (string, async and streamed server rendering), `Solid.Errors` (client and server error hooks, safe errors).
 - **Routing and head tags:**
   - `Solid.Router` (`route @"/users/:id"` gives the component `{ id :: String }`, `:id<int>` an `Int`);
   - `Solid.Router.Path` (`href`);
+  - `Solid.Router.Search` (query params typed by a schema row);
   - `Solid.Router.Query` (cached route data);
   - `Solid.Router.Action` (mutations the router tracks: forms, submissions, revalidation);
   - `Solid.Meta`.
