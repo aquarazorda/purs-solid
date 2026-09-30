@@ -21,7 +21,11 @@ import Solid.Signal as Signal
 import Solid.Store (createStore, focus, key, value)
 import Solid.Store as Store
 import Solid.Utility (mapArray)
-import Test.Solid (settle, solidIt)
+import Test.Solid (html, mount, settle, solidIt)
+import Solid.Component as Component
+import Solid.Control as Control
+import Solid.DOM.HTML as H
+import Solid.JSX (text)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 
@@ -250,6 +254,20 @@ spec = describe "Solid.Store" do
     resolve parts.label >>= shouldEqual "item 1"
     _ <- refreshAff parts.refreshStore
     liftEffect (Ref.read loads) >>= shouldEqual 2
+
+  solidIt "an async projection renders under loading, rows included" do
+    let
+      list = Component.component \_ -> do
+        store /\ _ <- Store.createProjectionAsync
+          (pure (delay (Milliseconds 5.0) $> Store.atKey @"people" (Store.set [ { name: "ada" }, { name: "lin" } ])))
+          { people: [] :: Array { name :: String } }
+        pure $ Control.loading (text "loading") $
+          H.ul_ [ Control.forEach (Store.items (Store.focusKey @"people" store)) \row _ -> pure (H.li_ [ text (value (Store.focusKey @"name" row)) ]) ]
+    mounted <- mount (Component.element list {})
+    html mounted >>= shouldEqual "loading"
+    delay (Milliseconds 20.0)
+    html mounted >>= shouldEqual "<ul><li>ada</li><li>lin</li></ul>"
+    liftEffect mounted.dispose
 
   solidIt "focusKey and atKey shorten one-key paths" do
     result <- liftEffect do

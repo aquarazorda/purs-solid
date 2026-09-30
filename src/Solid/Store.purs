@@ -11,6 +11,7 @@ module Solid.Store
   , createStore
   , Path
   , key
+  , class StoreCursor
   , focus
   , focusKey
   , atKey
@@ -55,10 +56,10 @@ import Prim.Row as Row
 import Prim.TypeError (class Fail, Text)
 import Solid.Internal.Optimistic (class MonadOptimistic, liftOptimistic)
 import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
-import Solid.Internal.Store (class StoreValue, Preparer, Store, preparer)
-import Solid.Internal.Store (Store, class StoreValue, class StoreFields) as Exports
+import Solid.Internal.Store (class StoreValue, AsyncStore, Preparer, Store, preparer)
+import Solid.Internal.Store (Store, AsyncStore, class StoreValue, class StoreFields) as Exports
 import Solid.Internal.Optimistic (class MonadOptimistic) as Exports
-import Solid.Internal.Tracked (class Tracked, Accessor, toAccessor)
+import Solid.Internal.Tracked (class Tracked, Accessor, Async, fromAccessor, toAccessor)
 import Type.Proxy (Proxy(..))
 
 foreign import data StoreSetter :: Type -> Type
@@ -100,13 +101,22 @@ instance Category Path where
 key :: forall @l r a tail. IsSymbol l => Row.Cons l a tail r => Path (Record r) a
 key = Path [ reflectSymbol (Proxy :: Proxy l) ]
 
-focus :: forall s a. Path s a -> Store s -> Store a
+-- | `Store` and `AsyncStore` cursors, and what reading them gives: an
+-- | `AsyncStore` may not have its first value yet, so its values are `Async`.
+class StoreCursor :: (Type -> Type) -> (Type -> Type) -> Constraint
+class Tracked f <= StoreCursor store f | store -> f
+
+instance StoreCursor Store Accessor
+instance StoreCursor AsyncStore Async
+
+focus :: forall store f s a. StoreCursor store f => Path s a -> store s -> store a
 focus (Path keys) store = focusImpl keys store
 
-foreign import focusImpl :: forall s a. Array String -> Store s -> Store a
+foreign import focusImpl :: forall store s a. Array String -> store s -> store a
 
 -- | `focusKey @"todos" store` is `focus (key @"todos") store`.
-focusKey :: forall @l r a tail. IsSymbol l => Row.Cons l a tail r => Store (Record r) -> Store a
+focusKey
+  :: forall @l store f r a tail. StoreCursor store f => IsSymbol l => Row.Cons l a tail r => store (Record r) -> store a
 focusKey = focus (key @l)
 
 -- | `atKey @"todos" change` is `at (key @"todos") change`.
@@ -114,16 +124,20 @@ atKey :: forall @l r a tail. IsSymbol l => Row.Cons l a tail r => Update a -> Up
 atKey = at (key @l)
 
 -- | Tracks the whole focused part; `focus` first to track less.
-foreign import value :: forall a. Store a -> Accessor a
+value :: forall store f a. StoreCursor store f => store a -> f a
+value = fromAccessor <<< valueImpl
+
+foreign import valueImpl :: forall store a. store a -> Accessor a
 
 -- | A cursor per element. Cursors keep their identity while an element stays in
 -- | the array, so keyed list rendering reuses rows.
-items :: forall a. StoreObject a => Store (Array a) -> Accessor (Array (Store a))
-items = itemsImpl
+items :: forall store f a. StoreCursor store f => StoreObject a => store (Array a) -> f (Array (store a))
+items = fromAccessor <<< itemsImpl
 
-foreign import itemsImpl :: forall a. Store (Array a) -> Accessor (Array (Store a))
+foreign import itemsImpl :: forall store a. store (Array a) -> Accessor (Array (store a))
 
--- | An untracked copy of the current value.
+-- | An untracked copy of the current value. Not for an `AsyncStore`, which may
+-- | not have one yet.
 foreign import snapshot :: forall a. Store a -> Effect a
 
 -- | A pure description of changes. Combine with `<>`; they apply in order, in
@@ -219,7 +233,7 @@ createProjectionAsync
   => StoreValue s
   => Accessor (Aff (Update s))
   -> s
-  -> Setup (Store s /\ Refresh s)
+  -> Setup (AsyncStore s /\ Refresh s)
 createProjectionAsync compute seed = Setup do
   parts <- runEffectFn4 createProjectionAsyncImpl startAff (preparer :: Preparer s) compute seed
   pure (parts.store /\ parts.refresh)
@@ -236,7 +250,7 @@ foreign import createProjectionAsyncImpl
        (Preparer s)
        (Accessor (Aff (Update s)))
        s
-       { store :: Store s, refresh :: Refresh s }
+       { store :: AsyncStore s, refresh :: Refresh s }
 
 -- | A store derived like `createProjection` that can also be updated locally;
 -- | a local update holds until `compute`'s dependencies change.
@@ -307,7 +321,7 @@ updateOptimistic setter change = liftOptimistic (runEffectFn2 updateOptimisticIm
 foreign import updateOptimisticImpl :: forall s. EffectFn2 (OptimisticStore s) (Update s) Unit
 
 -- | Marks the focused part of a store as pending until the action settles.
-affects :: forall m s. MonadOptimistic m => StoreObject s => Store s -> m Unit
+affects :: forall m store f s. MonadOptimistic m => StoreCursor store f => StoreObject s => store s -> m Unit
 affects store = liftOptimistic (runEffectFn1 affectsImpl store)
 
-foreign import affectsImpl :: forall s. EffectFn1 (Store s) Unit
+foreign import affectsImpl :: forall store s. EffectFn1 (store s) Unit

@@ -35,7 +35,7 @@ export const focusImpl = (keys) => (cursor) => {
   };
 };
 
-export const value = (cursor) => () => {
+export const valueImpl = (cursor) => () => {
   const node = cursor();
   return isProxy(node) ? solidDeep(node) : node;
 };

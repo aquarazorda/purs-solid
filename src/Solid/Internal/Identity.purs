@@ -4,7 +4,7 @@ module Solid.Internal.Identity
   ) where
 
 import Prim.TypeError (class Fail, Above, Quote, Text)
-import Solid.Internal.Store (Store)
+import Solid.Internal.Store (AsyncStore, Store)
 
 -- | Values that stay `===` when a list is recomputed, so a list keyed by its
 -- | items keeps each row: primitives and store cursors.
@@ -17,6 +17,7 @@ else instance StableIdentity String
 else instance StableIdentity Boolean
 else instance StableIdentity Char
 else instance StableIdentity (Store a)
+else instance StableIdentity (AsyncStore a)
 else instance
   Fail
     ( Above (Text "Rows keyed by identity (===) are rebuilt whenever a ")

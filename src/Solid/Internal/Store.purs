@@ -1,6 +1,7 @@
 -- | Internal: not part of the public API.
 module Solid.Internal.Store
   ( Store
+  , AsyncStore
   , Preparer
   , class StoreValue
   , preparer
@@ -16,6 +17,10 @@ import Type.Proxy (Proxy(..))
 
 -- | A read-only cursor into a store, focused on a value of type `a`.
 foreign import data Store :: Type -> Type
+
+-- | A cursor into a store that may not have its first value yet (an async
+-- | projection): reading it gives `Async` values.
+foreign import data AsyncStore :: Type -> Type
 
 -- | Freezes every atomic value inside an `a` so Solid stores it as-is. `null`
 -- | means nothing to do.
