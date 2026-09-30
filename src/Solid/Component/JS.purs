@@ -47,7 +47,7 @@ import Prim.RowList as RL
 import Prim.TypeError (class Fail, Text)
 import Record.Unsafe (unsafeGet)
 import Solid.Internal.View (JSX, JsPropEntry, fragment, jsPropsComponentElement, realize)
-import Solid.Signal (Accessor)
+import Solid.Internal.Tracked (Accessor, Async, toAccessor)
 import Type.Proxy (Proxy(..))
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -92,6 +92,8 @@ else instance ToJsProp (Accessor JSX) where
   toJsProp key content = getter key (realize <$> content)
 else instance ToJsValue a => ToJsProp (Accessor a) where
   toJsProp key read = getter key (toJsValue <$> read)
+else instance ToJsValue a => ToJsProp (Async a) where
+  toJsProp key read = getter key (toJsValue <$> toAccessor read)
 else instance ToJsValue a => ToJsProp a where
   toJsProp key value = unsafeCoerce { key, value: toJsValue value }
 

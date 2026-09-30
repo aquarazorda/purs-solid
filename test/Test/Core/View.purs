@@ -367,7 +367,7 @@ spec = describe "views" do
           $ broken.get <#> \isBroken ->
               if isBroken then unsafeCrashWith "later" else text "fine"
         initiallyBroken = Component.component \_ -> pure $
-          JSX.reactive (pure unit <#> \_ -> unsafeCrashWith "boom")
+          JSX.reactive ((pure unit :: Accessor Unit) <#> \_ -> unsafeCrashWith "boom")
         boundary content = Control.errored (\err _ -> pure (text (message <$> err))) content
       first <- mount (boundary (Component.element initiallyBroken {}))
       html first >>= shouldEqual "boom"

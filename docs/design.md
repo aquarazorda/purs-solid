@@ -16,7 +16,7 @@ Elements go through `dynamic(() => tag, { static: true })`, so Solid itself does
 
 1. **Derived values are pure; writes are effects.** `Accessor` is a lawful `Monad` with no `MonadEffect`. Effects split into a tracked compute (`Accessor a`) and an untracked apply (`a -> Effect …`).
 2. **Owned code runs in `Setup`**, a newtype over `Effect` with no `MonadEffect`. `set` / `modify` / `refresh` / `get` exist only in `Effect`; computations and lifecycle hooks exist only in `Setup`. The escape hatch is `liftSetup`. `createSignal` / `createRoot` work in both (`MonadReactive`, sealed).
-3. **Async is part of the graph.** `createAsync :: Accessor (Aff a) -> Setup (Accessor a /\ Refresh a)`; superseded fibers are killed. Mutations are `Action`s, and optimistic writes exist only inside them.
+3. **Async is part of the graph.** `createAsync :: Accessor (Aff a) -> Setup (Async a /\ Refresh a)`; superseded fibers are killed. An `Async` may not have loaded, so it has no `get` or `sample`: it is rendered, derived from (`Tracked f` accepts `Accessor` and `Async`), or awaited with `resolve`. A `loadingValue` makes the result an `Accessor`. Mutations are `Action`s, and optimistic writes exist only inside them.
 4. **Passing a prop isn't reading it.** Props are plain records; reactive fields are `Accessor a`.
 5. **JSX is a description.** `JSX` is lazy; parents and control flow realize it, so hidden branches are never built.
 6. **Stores are updated with typed paths and pure `Update` values**, applied to Solid's draft in the FFI. Non-structural values are frozen before entering a store (`StoreValue`), because Solid 2 proxies class instances and PureScript ADTs are class instances.

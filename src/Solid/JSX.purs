@@ -11,16 +11,18 @@ module Solid.JSX
 import Solid.Internal.View (JSX, class ToBinding, reactiveJsx, textBinding)
 import Solid.Internal.View (JSX) as Exports
 import Solid.Internal.View as View
-import Solid.Signal (Accessor)
+import Prelude
+
+import Solid.Internal.Tracked (class Tracked, toAccessor)
 
 -- | Text, fixed (`text "Hello"`) or reactive (`text (show <$> count)`).
 text :: forall v. ToBinding v String => v -> JSX
 text = textBinding
 
--- | Re-renders when the accessor changes. Prefer `Solid.Control` for
+-- | Re-renders when the value changes. Prefer `Solid.Control` for
 -- | conditionals and lists; it reuses DOM.
-reactive :: Accessor JSX -> JSX
-reactive = reactiveJsx
+reactive :: forall f. Tracked f => f JSX -> JSX
+reactive = reactiveJsx <<< toAccessor
 
 fragment :: Array JSX -> JSX
 fragment = View.fragment

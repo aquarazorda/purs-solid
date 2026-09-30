@@ -30,7 +30,8 @@ import Solid.Internal.Action (Action) as Exports
 import Solid.Internal.Optimistic (class MonadOptimistic, liftOptimistic)
 import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
 import Solid.Async (Refresh)
-import Solid.Signal (Accessor, SignalOptions)
+import Solid.Internal.Tracked (class Tracked, Accessor, fromAccessor, toAccessor)
+import Solid.Signal (SignalOptions)
 
 -- | Runs each call as one transaction. Call it from event handlers or other
 -- | `Aff` code; Solid rejects actions started in owned scopes.
@@ -81,19 +82,20 @@ foreign import createOptimisticImpl :: forall options a. EffectFn2 { | options }
 
 -- | An optimistic view of `source`: tentative writes during an action, then
 -- | back to following `source`.
-createOptimisticFrom :: forall a. Accessor a -> Setup (Accessor a /\ Optimistic a)
+createOptimisticFrom :: forall f a. Tracked f => f a -> Setup (f a /\ Optimistic a)
 createOptimisticFrom = createOptimisticFromWith {}
 
 -- | Takes any subset of `MemoOptions`.
 createOptimisticFromWith
-  :: forall a given missing
-   . Row.Union given missing (MemoOptions a)
+  :: forall f a given missing
+   . Tracked f
+  => Row.Union given missing (MemoOptions a)
   => { | given }
-  -> Accessor a
-  -> Setup (Accessor a /\ Optimistic a)
+  -> f a
+  -> Setup (f a /\ Optimistic a)
 createOptimisticFromWith options source = Setup do
-  parts <- runEffectFn2 createOptimisticFromImpl options source
-  pure (parts.get /\ parts.set)
+  parts <- runEffectFn2 createOptimisticFromImpl options (toAccessor source)
+  pure (fromAccessor parts.get /\ parts.set)
 
 foreign import createOptimisticFromImpl :: forall options a. EffectFn2 { | options } (Accessor a) { get :: Accessor a, set :: Optimistic a }
 

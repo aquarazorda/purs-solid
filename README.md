@@ -46,7 +46,7 @@ main = mount (Component.element counter {})
   - `Solid.Setup` (the monad for component bodies and roots);
   - `Solid.Root`, `Solid.Owner`, `Solid.Lifecycle`, `Solid.Context`, `Solid.Utility`.
 - **Async:**
-  - `Solid.Async` (`createAsync` over `Aff`);
+  - `Solid.Async` (`createAsync` over `Aff`; the result is `Async`, which can't be read before it loads);
   - `Solid.Action` (transactional mutations and optimistic values).
 - **Stores:** `Solid.Store` (typed paths, pure updates, projections, `createSelector`).
 - **Views:**

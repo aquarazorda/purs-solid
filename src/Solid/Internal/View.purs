@@ -67,7 +67,7 @@ import Data.Nullable (Nullable)
 import Effect (Effect)
 import Effect.Exception (Error)
 import Effect.Uncurried (EffectFn1)
-import Solid.Signal (Accessor)
+import Solid.Internal.Tracked (class Tracked, Accessor, Async, toAccessor)
 import Unsafe.Coerce (unsafeCoerce)
 import Data.String as String
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -87,6 +87,7 @@ class ToBinding :: Type -> Type -> Constraint
 class ToBinding v a | v -> a
 
 instance ToBinding (Accessor a) a
+else instance ToBinding (Async a) a
 else instance ToBinding a a
 
 foreign import textJsx :: String -> JSX

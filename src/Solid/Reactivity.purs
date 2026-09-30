@@ -29,7 +29,8 @@ import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, mkEffectFn1, runEffect
 import Prim.Row as Row
 import Solid.Internal.Equality (Equality)
 import Solid.Internal.Setup (Setup(..))
-import Solid.Signal (Accessor, Setter, Signal)
+import Solid.Internal.Tracked (class Tracked, Accessor, fromAccessor, toAccessor)
+import Solid.Signal (Setter, Signal)
 
 type MemoOptions a =
   ( name :: String
@@ -46,17 +47,18 @@ type MemoOptions a =
 
 -- | Caches a derived accessor: it recomputes only when its dependencies change,
 -- | and notifies only when the result changes.
-createMemo :: forall a. Accessor a -> Setup (Accessor a)
+createMemo :: forall f a. Tracked f => f a -> Setup (f a)
 createMemo = createMemoWith {}
 
 -- | Takes any subset of `MemoOptions`.
 createMemoWith
-  :: forall a given missing
-   . Row.Union given missing (MemoOptions a)
+  :: forall f a given missing
+   . Tracked f
+  => Row.Union given missing (MemoOptions a)
   => { | given }
-  -> Accessor a
-  -> Setup (Accessor a)
-createMemoWith options compute = Setup (runEffectFn2 createMemoImpl options compute)
+  -> f a
+  -> Setup (f a)
+createMemoWith options compute = Setup (fromAccessor <$> runEffectFn2 createMemoImpl options (toAccessor compute))
 
 foreign import createMemoImpl :: forall options a. EffectFn2 { | options } (Accessor a) (Accessor a)
 
@@ -93,22 +95,23 @@ type EffectOptions =
 
 -- | Runs `apply` with the value of `compute` now (after the current flush) and
 -- | whenever it changes. The `Effect Unit` that `apply` returns is its cleanup.
-createEffect :: forall a. Accessor a -> (a -> Effect (Effect Unit)) -> Setup Unit
+createEffect :: forall f a. Tracked f => f a -> (a -> Effect (Effect Unit)) -> Setup Unit
 createEffect = createEffectWith {}
 
-createEffect_ :: forall a. Accessor a -> (a -> Effect Unit) -> Setup Unit
+createEffect_ :: forall f a. Tracked f => f a -> (a -> Effect Unit) -> Setup Unit
 createEffect_ compute apply = createEffect compute \value -> apply value $> pure unit
 
 -- | Takes any subset of `EffectOptions`.
 createEffectWith
-  :: forall a given missing
-   . Row.Union given missing EffectOptions
+  :: forall f a given missing
+   . Tracked f
+  => Row.Union given missing EffectOptions
   => { | given }
-  -> Accessor a
+  -> f a
   -> (a -> Effect (Effect Unit))
   -> Setup Unit
 createEffectWith options compute apply =
-  Setup (runEffectFn3 createEffectImpl options compute (mkEffectFn1 apply))
+  Setup (runEffectFn3 createEffectImpl options (toAccessor compute) (mkEffectFn1 apply))
 
 foreign import createEffectImpl
   :: forall options a
@@ -116,11 +119,11 @@ foreign import createEffectImpl
 
 -- | Like `createEffect`, but the apply phase runs synchronously during
 -- | rendering, before the DOM is committed.
-createRenderEffect :: forall a. Accessor a -> (a -> Effect (Effect Unit)) -> Setup Unit
+createRenderEffect :: forall f a. Tracked f => f a -> (a -> Effect (Effect Unit)) -> Setup Unit
 createRenderEffect compute apply =
-  Setup (runEffectFn2 createRenderEffectImpl compute (mkEffectFn1 apply))
+  Setup (runEffectFn2 createRenderEffectImpl (toAccessor compute) (mkEffectFn1 apply))
 
-createRenderEffect_ :: forall a. Accessor a -> (a -> Effect Unit) -> Setup Unit
+createRenderEffect_ :: forall f a. Tracked f => f a -> (a -> Effect Unit) -> Setup Unit
 createRenderEffect_ compute apply = createRenderEffect compute \value -> apply value $> pure unit
 
 foreign import createRenderEffectImpl
@@ -137,8 +140,8 @@ createReaction onInvalidate = Setup (runEffectFn1 createReactionImpl onInvalidat
 foreign import createReactionImpl :: EffectFn1 (Effect Unit) Reaction
 
 -- | Reads `accessor` under the reaction, recording its dependencies.
-track :: forall a. Reaction -> Accessor a -> Effect Unit
-track reaction accessor = runEffectFn2 trackImpl reaction accessor
+track :: forall f a. Tracked f => Reaction -> f a -> Effect Unit
+track reaction value = runEffectFn2 trackImpl reaction (toAccessor value)
 
 foreign import trackImpl :: forall a. EffectFn2 Reaction (Accessor a) Unit
 

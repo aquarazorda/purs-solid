@@ -10,9 +10,9 @@ import Data.Tuple.Nested ((/\))
 import Effect.Aff (Aff, Milliseconds(..), delay, error, forkAff, joinFiber, killFiber, throwError, try)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Solid.Async (createAsync, createAsyncWith, isPending, refreshAff, resolve, until, untilWith)
+import Solid.Async (createAsync, createAsyncFrom, createAsyncWith, isPending, refreshAff, resolve, until, untilWith)
 import Solid.Root (createRoot, createRootWith)
-import Solid.Signal (createSignal, get, set)
+import Solid.Signal (Accessor, createSignal, get, set)
 import Test.Solid (settle, solidIt)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -46,6 +46,17 @@ spec = describe "Solid.Async" do
     resolve parts.user >>= shouldEqual "user-3"
     delay (Milliseconds 40.0)
     liftEffect (Ref.read finished) >>= shouldEqual [ 3 ]
+
+  solidIt "createAsyncFrom waits for the async values its work depends on" do
+    parts <- liftEffect $ createRoot \_ -> do
+      userId /\ setUserId <- createSignal 1
+      user /\ _ <- createAsync (userId <#> \id -> delay (Milliseconds 5.0) $> ("user-" <> show id))
+      posts /\ _ <- createAsyncFrom (user <#> \name -> delay (Milliseconds 5.0) $> [ name <> "/post" ])
+      pure { posts, setUserId }
+    resolve parts.posts >>= shouldEqual [ "user-1/post" ]
+    liftEffect (set parts.setUserId 2)
+    delay (Milliseconds 30.0)
+    resolve parts.posts >>= shouldEqual [ "user-2/post" ]
 
   solidIt "isPending is true while a change is in flight" do
     finished <- liftEffect (Ref.new [])
@@ -89,7 +100,7 @@ spec = describe "Solid.Async" do
     joinFiber waiting >>= shouldEqual 3
 
   solidIt "until fails after its timeout" do
-    result <- try (untilWith { timeout: Milliseconds 10.0 } (pure (Nothing :: Maybe Int)))
+    result <- try (untilWith { timeout: Milliseconds 10.0 } (pure Nothing :: Accessor (Maybe Int)))
     isLeft result `shouldEqual` true
 
   solidIt "killing an until fiber stops waiting" do

@@ -58,7 +58,7 @@ import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
 import Solid.Internal.Store (class StoreValue, Preparer, Store, preparer)
 import Solid.Internal.Store (Store, class StoreValue, class StoreFields) as Exports
 import Solid.Internal.Optimistic (class MonadOptimistic) as Exports
-import Solid.Signal (Accessor)
+import Solid.Internal.Tracked (class Tracked, Accessor, toAccessor)
 import Type.Proxy (Proxy(..))
 
 foreign import data StoreSetter :: Type -> Type
@@ -257,8 +257,8 @@ foreign import createDerivedStoreImpl
 
 -- | `isSelected x` is true when `source` equals `x` (compared by `toKey`). A
 -- | selection change notifies only the two affected readers.
-createSelector :: forall a. (a -> String) -> Accessor a -> Setup (a -> Accessor Boolean)
-createSelector toKey source = Setup (runEffectFn2 createSelectorImpl toKey source)
+createSelector :: forall f a. Tracked f => (a -> String) -> f a -> Setup (a -> Accessor Boolean)
+createSelector toKey source = Setup (runEffectFn2 createSelectorImpl toKey (toAccessor source))
 
 foreign import createSelectorImpl :: forall a. EffectFn2 (a -> String) (Accessor a) (a -> Accessor Boolean)
 

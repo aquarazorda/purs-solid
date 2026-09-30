@@ -67,9 +67,9 @@ export const refreshImpl = (target) => {
 
 export const refreshPromiseImpl = (target) => solidRefresh(target);
 
-export const isPending = (accessor) => () => solidIsPending(accessor);
+export const isPendingImpl = (accessor) => () => solidIsPending(accessor);
 
-export const latest = (accessor) => () => solidLatest(accessor);
+export const latestImpl = (accessor) => () => solidLatest(accessor);
 
 export const resolveImpl = (accessor) => solidResolve(accessor);
 

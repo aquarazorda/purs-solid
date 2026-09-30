@@ -34,12 +34,4 @@ export const modifyImpl = (setter, update) => {
 // `Accessor` is a zero-argument function, like `Effect`: reading is calling.
 export const get = (accessor) => accessor;
 
-export const untrack = (accessor) => () => solidUntrack(accessor);
-
-export const mapImpl = (f) => (accessor) => () => f(accessor());
-
-export const applyImpl = (accessorF) => (accessor) => () => accessorF()(accessor());
-
-export const pureImpl = (value) => () => value;
-
-export const bindImpl = (accessor) => (f) => () => f(accessor())();
+export const untrackImpl = (accessor) => () => solidUntrack(accessor);

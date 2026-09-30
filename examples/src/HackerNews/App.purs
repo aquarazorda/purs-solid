@@ -119,12 +119,13 @@ commentView = Component.component \{ comment, tree } -> do
     [ H.div [ P.class_ "by" ]
         [ H.a [ P.href (href @"/users/:id" { id: fromMaybe "" (toMaybe comment.by) }) ] [ text (fromMaybe "anonymous" (toMaybe comment.by)) ] ]
     , H.div [ P.class_ "text", innerHTML comment.html ] []
-    , Control.when (pure (Map.member comment.id tree)) $
+    , if Map.member comment.id tree then
         H.div_
           [ H.button [ P.type_ ButtonButton, P.class_ "toggle", P.onClick \_ -> modify_ setOpen not ]
               [ text (open <#> \o -> if o then "[-]" else "[+] comments collapsed") ]
           , Control.when open (commentTree tree comment.id)
           ]
+      else JSX.empty
     ]
 
 userPage :: Accessor { id :: String } -> Setup JSX

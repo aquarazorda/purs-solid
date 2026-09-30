@@ -62,77 +62,78 @@ import Solid.Internal.Setup (Setup, runSetup)
 import Prim.Row as Row
 import Solid.Internal.View (JSX, WhenValue, empty, erroredImpl, forImpl, hydrationImpl, keyedBy, keyedByIdentity, keyedByPosition, loadingImpl, matchImpl, matchMaybeImpl, noHydrationImpl, portalImpl, repeatImpl, revealImpl, showImpl, showMaybeImpl, switchImpl, whenValue)
 import Solid.Internal.View as View
-import Solid.Signal (Accessor, sample)
+import Solid.Internal.Tracked (class Tracked, Accessor, toAccessor)
+import Solid.Signal (sample)
 import Type.Proxy (Proxy(..))
 import Web.DOM.Element (Element)
 
-when :: Accessor Boolean -> JSX -> JSX
-when condition content = runFn3 showImpl condition empty content
+when :: forall f. Tracked f => f Boolean -> JSX -> JSX
+when condition content = runFn3 showImpl (toAccessor condition) empty content
 
-whenElse :: Accessor Boolean -> JSX -> JSX -> JSX
-whenElse condition content fallback = runFn3 showImpl condition fallback content
+whenElse :: forall f. Tracked f => f Boolean -> JSX -> JSX -> JSX
+whenElse condition content fallback = runFn3 showImpl (toAccessor condition) fallback content
 
-toWhen :: forall a. Accessor (Maybe a) -> Accessor (Nullable (WhenValue a))
-toWhen = map (maybe null (notNull <<< whenValue))
+toWhen :: forall f a. Tracked f => f (Maybe a) -> Accessor (Nullable (WhenValue a))
+toWhen = map (maybe null (notNull <<< whenValue)) <<< toAccessor
 
 -- | The branch is created once and reads the current value through the accessor.
-showMaybe :: forall a. Accessor (Maybe a) -> (Accessor a -> Setup JSX) -> JSX
+showMaybe :: forall f a. Tracked f => f (Maybe a) -> (Accessor a -> Setup JSX) -> JSX
 showMaybe value render = showMaybeElse value render empty
 
-showMaybeElse :: forall a. Accessor (Maybe a) -> (Accessor a -> Setup JSX) -> JSX -> JSX
+showMaybeElse :: forall f a. Tracked f => f (Maybe a) -> (Accessor a -> Setup JSX) -> JSX -> JSX
 showMaybeElse value render fallback = runFn4 showMaybeImpl false (toWhen value) fallback (runSetup <<< render)
 
 -- | Re-creates the branch whenever the value changes (by identity).
-showMaybeKeyed :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> JSX
+showMaybeKeyed :: forall f a. Tracked f => f (Maybe a) -> (a -> Setup JSX) -> JSX
 showMaybeKeyed value render = showMaybeKeyedElse value render empty
 
-showMaybeKeyedElse :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> JSX -> JSX
+showMaybeKeyedElse :: forall f a. Tracked f => f (Maybe a) -> (a -> Setup JSX) -> JSX -> JSX
 showMaybeKeyedElse value render fallback = runFn4 showMaybeImpl true (toWhen value) fallback (runSetup <<< render)
 
 -- | Keyed by the items themselves: an item's view is created once and moved
 -- | with the item. For primitives and store cursors (`Store.items`).
-forEach :: forall a. StableIdentity a => Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX
+forEach :: forall f a. Tracked f => StableIdentity a => f (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX
 forEach = forEachByReference
 
-forEachElse :: forall a. StableIdentity a => Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX -> JSX
+forEachElse :: forall f a. Tracked f => StableIdentity a => f (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX -> JSX
 forEachElse = forEachByReferenceElse
 
 -- | `forEach` for any values, keyed by reference (`===`). Rows survive only
 -- | while the list keeps the same values (moving or filtering them, not
 -- | rebuilding them).
-forEachByReference :: forall a. Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX
+forEachByReference :: forall f a. Tracked f => f (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX
 forEachByReference items render = forEachByReferenceElse items render empty
 
-forEachByReferenceElse :: forall a. Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX -> JSX
-forEachByReferenceElse items render fallback = runFn4 forImpl keyedByIdentity items fallback (\item index -> runSetup (render item index))
+forEachByReferenceElse :: forall f a. Tracked f => f (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX -> JSX
+forEachByReferenceElse items render fallback = runFn4 forImpl keyedByIdentity (toAccessor items) fallback (\item index -> runSetup (render item index))
 
 -- | Keyed by position: the view at each index stays and its item accessor updates.
-forEachUnkeyed :: forall a. Accessor (Array a) -> (Accessor a -> Int -> Setup JSX) -> JSX
+forEachUnkeyed :: forall f a. Tracked f => f (Array a) -> (Accessor a -> Int -> Setup JSX) -> JSX
 forEachUnkeyed items render = forEachUnkeyedElse items render empty
 
-forEachUnkeyedElse :: forall a. Accessor (Array a) -> (Accessor a -> Int -> Setup JSX) -> JSX -> JSX
-forEachUnkeyedElse items render fallback = runFn4 forImpl keyedByPosition items fallback (\item index -> runSetup (render item index))
+forEachUnkeyedElse :: forall f a. Tracked f => f (Array a) -> (Accessor a -> Int -> Setup JSX) -> JSX -> JSX
+forEachUnkeyedElse items render fallback = runFn4 forImpl keyedByPosition (toAccessor items) fallback (\item index -> runSetup (render item index))
 
 -- | Keyed by a derived key (e.g. `_.id`); the item accessor updates to the newest value.
-forEachBy :: forall a k. (a -> k) -> Accessor (Array a) -> (Accessor a -> Accessor Int -> Setup JSX) -> JSX
+forEachBy :: forall f a k. Tracked f => (a -> k) -> f (Array a) -> (Accessor a -> Accessor Int -> Setup JSX) -> JSX
 forEachBy key items render = forEachByElse key items render empty
 
-forEachByElse :: forall a k. (a -> k) -> Accessor (Array a) -> (Accessor a -> Accessor Int -> Setup JSX) -> JSX -> JSX
-forEachByElse key items render fallback = runFn4 forImpl (keyedBy key) items fallback (\item index -> runSetup (render item index))
+forEachByElse :: forall f a k. Tracked f => (a -> k) -> f (Array a) -> (Accessor a -> Accessor Int -> Setup JSX) -> JSX -> JSX
+forEachByElse key items render fallback = runFn4 forImpl (keyedBy key) (toAccessor items) fallback (\item index -> runSetup (render item index))
 
 -- | Renders the indices `0 .. count - 1`.
-repeat :: Accessor Int -> (Int -> Setup JSX) -> JSX
+repeat :: forall f. Tracked f => f Int -> (Int -> Setup JSX) -> JSX
 repeat count render = repeatElse count render empty
 
-repeatElse :: Accessor Int -> (Int -> Setup JSX) -> JSX -> JSX
-repeatElse count render fallback = runFn3 repeatImpl count fallback (runSetup <<< render)
+repeatElse :: forall f. Tracked f => f Int -> (Int -> Setup JSX) -> JSX -> JSX
+repeatElse count render fallback = runFn3 repeatImpl (toAccessor count) fallback (runSetup <<< render)
 
 newtype Case = Case JSX
 
-match :: Accessor Boolean -> JSX -> Case
-match condition content = Case (runFn2 matchImpl condition content)
+match :: forall f. Tracked f => f Boolean -> JSX -> Case
+match condition content = Case (runFn2 matchImpl (toAccessor condition) content)
 
-matchMaybe :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> Case
+matchMaybe :: forall f a. Tracked f => f (Maybe a) -> (a -> Setup JSX) -> Case
 matchMaybe value render = Case (runFn2 matchMaybeImpl (toWhen value) (runSetup <<< render))
 
 -- | The first case whose condition holds, else `fallback`.
@@ -153,12 +154,13 @@ switch_ cases = switch cases empty
 -- |   Home -> homeView
 -- |   Profile _ -> profileView latest
 -- | ```
-caseOn :: forall a k. Eq k => (a -> k) -> Accessor a -> (a -> Accessor a -> Setup JSX) -> JSX
+caseOn :: forall f a k. Tracked f => Eq k => (a -> k) -> f a -> (a -> Accessor a -> Setup JSX) -> JSX
 caseOn toKey value render = Component.element branches {}
   where
   branches = Component.component \_ -> do
     key <- createMemoWith { equals: eqEquality } (toKey <$> value)
-    pure $ showMaybeKeyed (Just <$> key) \_ -> sample value >>= \current -> render current value
+    let current = toAccessor value
+    pure $ showMaybeKeyed (Just <$> key) \_ -> sample current >>= \initial -> render initial current
 
 -- | The name of a value's constructor, e.g. to key `caseOn` by constructor.
 constructorName :: forall a rep. Generic a rep => ConstructorName rep => a -> String
@@ -181,8 +183,8 @@ loading fallback content = runFn3 loadingImpl null fallback content
 
 -- | Like `loading`, but shows `fallback` again whenever `key` changes, e.g.
 -- | the route's params, instead of keeping the previous content.
-loadingOn :: forall a. Accessor a -> JSX -> JSX -> JSX
-loadingOn key fallback content = runFn3 loadingImpl (notNull key) fallback content
+loadingOn :: forall f a. Tracked f => f a -> JSX -> JSX -> JSX
+loadingOn key fallback content = runFn3 loadingImpl (notNull (toAccessor key)) fallback content
 
 -- | The fallback receives the error and a `reset` effect (call it from an
 -- | event handler) that retries.
@@ -225,8 +227,8 @@ portal = runFn2 portalImpl null
 portalAt :: Element -> JSX -> JSX
 portalAt mount = runFn2 portalImpl (toNullable (Just mount))
 
-dynamic :: forall props. Accessor (Component { | props }) -> { | props } -> JSX
-dynamic source props = runFn2 View.dynamicImpl source props
+dynamic :: forall f props. Tracked f => f (Component { | props }) -> { | props } -> JSX
+dynamic source props = runFn2 View.dynamicImpl (toAccessor source) props
 
 -- | Server-rendered content that isn't hydrated.
 noHydration :: JSX -> JSX
