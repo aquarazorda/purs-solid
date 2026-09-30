@@ -10,15 +10,19 @@ import Effect (Effect)
 import Effect.Aff (Aff, throwError)
 import Effect.Class (liftEffect)
 import Effect.Exception (Error)
+import Effect.Ref as Ref
 import Examples.Hydration.App (app)
 import Solid.Web.SSR as SSR
 
--- | The client script isn't `async`: it must run after the serialized data scripts.
-renderPage :: Effect (Promise String)
+-- | The page and how often it fetched the greeting. The client script isn't
+-- | `async`: it must run after the serialized data scripts.
+renderPage :: Effect (Promise { html :: String, fetches :: Int })
 renderPage = fromAff do
-  body <- SSR.renderToStringAsync app >>= orFail
+  fetches <- liftEffect (Ref.new 0)
+  body <- SSR.renderToStringAsync (app { onFetch: Ref.modify_ (_ + 1) fetches }) >>= orFail
   script <- liftEffect SSR.hydrationScript >>= orFail
-  pure $ "<!doctype html><html><head><meta charset=\"utf-8\"><title>hydration</title>" <> script
+  count <- liftEffect (Ref.read fetches)
+  pure $ { fetches: count, html: _ } $ "<!doctype html><html><head><meta charset=\"utf-8\"><title>hydration</title>" <> script
     <> "</head><body><div id=\"app\">"
     <> body
     <> "</div>"

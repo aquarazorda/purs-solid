@@ -22,6 +22,7 @@ package:
     - purs-solid
     - refs
     - tuples
+    - web-dom
     - web-events
     - web-html
     - web-uievents

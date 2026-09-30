@@ -7,8 +7,8 @@ const clientBundle = join(rootDir, "dist", "hydration", "client.js");
 bundle("Examples.Hydration.Client", clientBundle);
 
 const { renderPage } = await import(pathToFileURL(join(rootDir, "output", "Examples.Hydration.Server", "index.js")).href);
-const html = await renderPage();
-expect("server fetched the async value once", globalThis.__pursSolidFetches ?? 0, 1);
+const { html, fetches } = await renderPage();
+expect("server fetched the async value once", fetches, 1);
 expect("server HTML has the resolved async value", html.includes("greeting from the server"), true);
 
 const { server, origin } = await serve({ "/": html, "/client.js": clientBundle });
@@ -17,14 +17,14 @@ try {
   const tab = await browser.newPage();
   const problems = watchProblems(tab);
   await tab.goto(origin);
-  await tab.waitForFunction(() => window.__pursSolidHydrated === true, null, { timeout: 5000 });
+  await tab.waitForSelector("#app[data-hydrated]", { timeout: 5000 });
 
   const reused = await tab.evaluate(() => {
     const all = Array.from(document.querySelectorAll("#app *"));
     return { total: all.length, fromServer: all.filter((el) => el.__ssr === true).length };
   });
   expect("every element was claimed, none recreated", reused.fromServer, reused.total);
-  expect("client did not refetch the serialized async value", await tab.evaluate(() => window.__pursSolidFetches ?? 0), 0);
+  expect("client did not refetch the serialized async value", await tab.$("#app[data-fetched]"), null);
   expect("async value shows after hydration", await tab.textContent("#greeting"), "greeting from the server");
 
   const button = await tab.$("#increment");

@@ -21,23 +21,22 @@ import Solid.DOM.SVG.Props as SP
 import Solid.JSX (JSX, text)
 import Solid.Signal (createSignal, modify_)
 
-foreign import countFetch :: Effect Unit
-
-fetchGreeting :: Aff String
-fetchGreeting = do
-  liftEffect countFetch
+fetchGreeting :: Effect Unit -> Aff String
+fetchGreeting onFetch = do
+  liftEffect onFetch
   delay (Milliseconds 5.0)
   pure "greeting from the server"
 
-app :: JSX
-app = Component.element root {}
+-- | `onFetch` runs whenever the async greeting is fetched.
+app :: { onFetch :: Effect Unit } -> JSX
+app = Component.element root
 
-root :: Component.Component {}
-root = Component.component \_ -> do
+root :: Component.Component { onFetch :: Effect Unit }
+root = Component.component \{ onFetch } -> do
   count /\ setCount <- createSignal 0
   items /\ setItems <- createSignal [ "alpha", "beta" ]
   detail /\ setDetail <- createSignal (Nothing :: Maybe String)
-  greeting /\ _ <- createAsyncWith { ssr: serialized } (pure fetchGreeting)
+  greeting /\ _ <- createAsyncWith { ssr: serialized } (pure (fetchGreeting onFetch))
 
   pure $ H.main [ P.id "hydration-app" ]
     [ H.h1_ [ text "Hydration" ]
