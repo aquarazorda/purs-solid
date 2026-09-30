@@ -281,9 +281,12 @@ spec = describe "views" do
 
     solidIt "loadingOn shows the fallback again when its key changes" do
       id <- signal 1
-      mounted <- mount $ Component.element (Component.component \_ -> do
-        item /\ _ <- createAsync (id.get <#> \n -> delay (Milliseconds 20.0) $> ("item " <> show n))
-        pure (Control.loadingOn id.get (text "loading") (text item))) {}
+      mounted <- mount $ Component.element
+        ( Component.component \_ -> do
+            item /\ _ <- createAsync (id.get <#> \n -> delay (Milliseconds 20.0) $> ("item " <> show n))
+            pure (Control.loadingOn id.get (text "loading") (text item))
+        )
+        {}
       delay (Milliseconds 40.0)
       html mounted >>= shouldEqual "item 1"
       write id 2
@@ -306,9 +309,10 @@ spec = describe "views" do
     solidIt "errored catches errors from a reactive region, initially and after updates" do
       broken <- signal false
       let
-        region = Component.component \_ -> pure $
-          JSX.reactive $ broken.get <#> \isBroken ->
-            if isBroken then unsafeCrashWith "later" else text "fine"
+        region = Component.component \_ -> pure
+          $ JSX.reactive
+          $ broken.get <#> \isBroken ->
+              if isBroken then unsafeCrashWith "later" else text "fine"
         initiallyBroken = Component.component \_ -> pure $
           JSX.reactive (pure unit <#> \_ -> unsafeCrashWith "boom")
         boundary content = Control.errored (\err _ -> pure (text (message <$> err))) content

@@ -31,8 +31,10 @@ spec = describe "Solid.Context" do
   solidIt "the nearest provider wins" do
     rendered <- liftEffect do
       context <- createContext 0
-      view <- createRoot \_ -> pure $
-        provide context 1 $ pure $
+      view <- createRoot \_ -> pure
+        $ provide context 1
+        $ pure
+        $
           provide context 2 (JSX.text <<< show <$> useContext context)
       jsxValue view
     rendered `shouldEqual` "2"

@@ -1,6 +1,6 @@
 # Plan: FFI-first bindings, Solid 2 coverage, developer experience
 
-Status: in progress on `main`, planned 2026-09-30. Source: a review of the code, the compiled output and a CPU profile, plus a comparison of every export in the Solid 2 reference (v2.solidjs.com) against the pinned packages (`solid-js` / `@solidjs/web` rc.11, router next.31, meta next.2, vite-plugin next.46).
+Status: done on `main` (planned and completed 2026-09-30). Source: a review of the code, the compiled output and a CPU profile, plus a comparison of every export in the Solid 2 reference (v2.solidjs.com) against the pinned packages (`solid-js` / `@solidjs/web` rc.11, router next.31, meta next.2, vite-plugin next.46).
 
 ## Decisions
 
@@ -120,10 +120,10 @@ Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6
 - [x] `Solid.Testing` in the library (open question 4), with no test-framework dependency: `mount`, `mountUsing`, `settle`, `html`, `query`, `click`, `inputText`, `collectDiagnostics`, `ignoreDiagnostic`. `Test.Solid` keeps only the spec wrappers.
 
 ### Phase 8 — Packaging and CI
-- [ ] CI workflow running `test:all` and `test:purescript:es`.
-- [ ] `purs-tidy` config.
-- [ ] spago `publish` config and LICENSE.
-- [ ] Re-check the npm pins (the RC and the router move fast).
+- [x] CI workflow (`.github/workflows/ci.yml`): format check, `test:all` and `test:purescript:es`.
+- [x] `purs-tidy` config and `format` / `format:check` scripts; PureScript, Spago and purs-tidy pinned as dev dependencies.
+- [x] spago `publish` config (version 0.1.0, ISC) and LICENSE.
+- [x] Re-checked the npm pins: `solid-js` / `@solidjs/web` rc.13, router next.32, vite-plugin next.47. Every suite passes on them.
 
 ## Intentionally not bound
 

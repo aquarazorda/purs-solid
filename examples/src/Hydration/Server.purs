@@ -19,7 +19,9 @@ renderPage = fromAff do
   body <- SSR.renderToStringAsync app >>= orFail
   script <- liftEffect SSR.hydrationScript >>= orFail
   pure $ "<!doctype html><html><head><meta charset=\"utf-8\"><title>hydration</title>" <> script
-    <> "</head><body><div id=\"app\">" <> body <> "</div>"
+    <> "</head><body><div id=\"app\">"
+    <> body
+    <> "</div>"
     <> "<script>for (const el of document.querySelectorAll('#app *')) el.__ssr = true;</script>"
     <> "<script src=\"/client.js\"></script></body></html>"
 

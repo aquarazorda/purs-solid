@@ -37,9 +37,11 @@ app = Component.component \_ -> do
         , Router.route @"/stories/:id<int>" \props -> storyPage props.params
         , Router.route @"/users/:id" \props -> userPage props.params
         , Router.route @"/:feed" \props -> pure $
-            JSX.reactive (props.params <#> \{ feed } -> case parseFeed feed of
-              Just parsed -> Component.element feedComponent { feed: parsed }
-              Nothing -> Component.element notFound {})
+            JSX.reactive
+              ( props.params <#> \{ feed } -> case parseFeed feed of
+                  Just parsed -> Component.element feedComponent { feed: parsed }
+                  Nothing -> Component.element notFound {}
+              )
         ]
     }
   pure $ Router.routerView router \content -> pure $
@@ -93,12 +95,13 @@ storyPage :: Accessor { id :: Int } -> Setup JSX
 storyPage params = do
   page /\ _ <- createAsyncWith serverData (Api.story <<< _.id <$> params)
   pure $ Control.showMaybeElse (toMaybe <$> page)
-    (\found -> pure $ H.div [ P.class_ "item-view" ]
+    ( \found -> pure $ H.div [ P.class_ "item-view" ]
         [ Meta.title (("Hacker News | " <> _) <<< _.story.title <$> found)
         , H.h1_ [ text (_.story.title <$> found) ]
         , H.p [ P.class_ "meta" ] [ text (found <#> \p -> show p.story.points <> " points | by " <> fromMaybe "anonymous" (toMaybe p.story.by)) ]
         , JSX.reactive (found <#> \p -> commentTree (childrenOf p.comments) p.story.id)
-        ])
+        ]
+    )
     (Component.element notFound {})
 
 childrenOf :: Array Comment -> Map.Map Int (Array Comment)
@@ -128,12 +131,13 @@ userPage :: Accessor { id :: String } -> Setup JSX
 userPage params = do
   found /\ _ <- createAsyncWith serverData (Api.user <<< _.id <$> params)
   pure $ Control.showMaybeElse (toMaybe <$> found)
-    (\u -> pure $ H.section [ P.class_ "user-view" ]
+    ( \u -> pure $ H.section [ P.class_ "user-view" ]
         [ Meta.title (("Hacker News | " <> _) <<< _.id <$> u)
         , H.h1_ [ text (("User: " <> _) <<< _.id <$> u) ]
         , H.p_ [ text (u <#> \x -> "Karma: " <> show x.karma) ]
         , H.div [ innerHTML (fromMaybe "" <<< toMaybe <<< _.about <$> u) ] []
-        ])
+        ]
+    )
     (Component.element notFound {})
 
 notFound :: Component.Component {}

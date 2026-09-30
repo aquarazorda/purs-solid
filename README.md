@@ -73,15 +73,15 @@ main = requireBody >>= case _ of
 Solid 2 is a release candidate, so pin exact versions:
 
 ```bash
-npm install --save-exact solid-js@2.0.0-rc.11 @solidjs/web@2.0.0-rc.11
+npm install --save-exact solid-js@2.0.0-rc.13 @solidjs/web@2.0.0-rc.13
 ```
 
 ```bash
-npm install --save-exact @solidjs/router@2.0.0-next.31 @solidjs/meta@1.0.0-next.2
+npm install --save-exact @solidjs/router@2.0.0-next.32 @solidjs/meta@1.0.0-next.2
 ```
 
 ```bash
-npm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0-next.46
+npm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0-next.47
 ```
 
 The router and meta packages are needed only for `Solid.Router` and `Solid.Meta`, and the Vite plugin only for start mode. Bundle development builds with the `development` export condition to get Solid's diagnostics.
@@ -122,7 +122,7 @@ PORT=3000 npm run start:example:hackernews
 
 ## Development
 
-Requires Node.js 22.12+, PureScript 0.15 and Spago.
+Requires Node.js 22.12+. PureScript, Spago and purs-tidy are pinned dev dependencies.
 
 ```bash
 npm install
@@ -139,4 +139,5 @@ npm run test:all
 | `npm run test:browser-smoke` | Counter and TodoMVC in Chromium |
 | `npm run test:hydration` | server render in Node, hydration in Chromium |
 | `npm run test:start` | the start-mode example built with Vite and driven in Chromium |
+| `npm run format`, `npm run format:check` | purs-tidy over the library, tests and examples |
 | `npm run bench`, `npm run bench:reference` | the rows benchmark, and the same app in plain Solid ([results](docs/benchmarks/README.md)) |

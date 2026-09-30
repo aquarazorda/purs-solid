@@ -1,5 +1,12 @@
 package:
   name: purs-solid
+  description: PureScript bindings for Solid 2.0
+  publish:
+    version: 0.1.0
+    license: ISC
+    location:
+      githubOwner: aquarazorda
+      githubRepo: purs-solid
   dependencies:
     - aff
     - aff-promise

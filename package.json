@@ -16,22 +16,27 @@
     "bench": "spago build && node test/bench/run-bench.mjs",
     "bench:reference": "node test/bench/run-bench.mjs --reference",
     "gen:dom": "node scripts/gen-dom.mjs",
+    "format": "purs-tidy format-in-place \"src/**/*.purs\" \"test/**/*.purs\" \"examples/src/**/*.purs\"",
+    "format:check": "purs-tidy check \"src/**/*.purs\" \"test/**/*.purs\" \"examples/src/**/*.purs\"",
     "build:example:hackernews": "spago build && vite build --config examples/src/HackerNews/Host/vite.config.mjs",
     "start:example:hackernews": "node examples/src/HackerNews/Host/dist/server/node.js"
   },
   "license": "ISC",
   "dependencies": {
     "@solidjs/meta": "1.0.0-next.2",
-    "@solidjs/router": "2.0.0-next.31",
-    "@solidjs/web": "2.0.0-rc.11",
-    "solid-js": "2.0.0-rc.11"
+    "@solidjs/router": "2.0.0-next.32",
+    "@solidjs/web": "2.0.0-rc.13",
+    "solid-js": "2.0.0-rc.13"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "20.14.5",
-    "@solidjs/vite-plugin": "3.0.0-next.46",
+    "@solidjs/vite-plugin": "3.0.0-next.47",
     "esbuild": "0.28.2",
     "playwright": "^1.56.1",
+    "purescript": "0.15.15",
     "purs-backend-es": "1.4.3",
+    "purs-tidy": "0.11.1",
+    "spago": "1.0.4",
     "vite": "8.3.1"
   }
 }

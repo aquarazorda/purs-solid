@@ -83,12 +83,15 @@ spec = describe "Solid.Web.SSR" do
     html `shouldSatisfy` has "_hk="
 
   solidIt "reactive props and text render their current value; events and refs are omitted" do
-    html <- render $ Component.element (Component.component \_ -> do
-      label /\ _ <- createSignal "now"
-      active /\ _ <- createSignal true
-      pure $ H.button
-        [ P.title label, P.class_ "btn", classWhen "active" active, P.onClick \_ -> pure unit, ref \_ -> pure unit ]
-        [ text label ]) {}
+    html <- render $ Component.element
+      ( Component.component \_ -> do
+          label /\ _ <- createSignal "now"
+          active /\ _ <- createSignal true
+          pure $ H.button
+            [ P.title label, P.class_ "btn", classWhen "active" active, P.onClick \_ -> pure unit, ref \_ -> pure unit ]
+            [ text label ]
+      )
+      {}
     html `shouldSatisfy` has """title="now""""
     html `shouldSatisfy` has "btn active"
     html `shouldSatisfy` has ">now<"
@@ -101,15 +104,21 @@ spec = describe "Solid.Web.SSR" do
 
   describe "async values" do
     let
-      page ssrOptions = Component.element (Component.component \_ -> do
-        greeting /\ _ <- createAsyncWith ssrOptions (pure (later "hello from the server"))
-        pure (H.p_ [ text greeting ])) {}
+      page ssrOptions = Component.element
+        ( Component.component \_ -> do
+            greeting /\ _ <- createAsyncWith ssrOptions (pure (later "hello from the server"))
+            pure (H.p_ [ text greeting ])
+        )
+        {}
       withLoading view = Control.loading (text "loading…") view
 
     solidIt "load on the client by default: the server renders the fallback" do
-      html <- renderAsync $ withLoading $ Component.element (Component.component \_ -> do
-        greeting /\ _ <- createAsync (pure (later "never on the server"))
-        pure (text greeting)) {}
+      html <- renderAsync $ withLoading $ Component.element
+        ( Component.component \_ -> do
+            greeting /\ _ <- createAsync (pure (later "never on the server"))
+            pure (text greeting)
+        )
+        {}
       html `shouldSatisfy` has "loading…"
       html `shouldSatisfy` (not <<< has "never on the server")
 
@@ -123,10 +132,13 @@ spec = describe "Solid.Web.SSR" do
       html `shouldSatisfy` has "loading…"
 
     solidIt "ADTs load on the server through a codec" do
-      html <- renderAsync $ withLoading $ Component.element (Component.component \_ -> do
-        status /\ _ <- createAsyncWith { ssr: withCodec encodeStatus decodeStatus }
-          (pure (later (Offline "maintenance")))
-        pure (text (renderStatus <$> status))) {}
+      html <- renderAsync $ withLoading $ Component.element
+        ( Component.component \_ -> do
+            status /\ _ <- createAsyncWith { ssr: withCodec encodeStatus decodeStatus }
+              (pure (later (Offline "maintenance")))
+            pure (text (renderStatus <$> status))
+        )
+        {}
       html `shouldSatisfy` has "offline: maintenance"
 
     solidIt "renderToReadableStream streams the settled HTML" do
@@ -144,8 +156,11 @@ spec = describe "Solid.Web.SSR" do
     seen <- liftEffect (Ref.new [])
     let broken = Component.component \_ -> unsafeCrashWith "boom"
     expectDiagnostic "SSR_RENDER_ERROR_CONTAINED" do
-      html <- liftEffect (SSR.renderToStringWith { onError: \e -> Ref.modify_ (_ <> [ message e ]) seen }
-        (Control.errored (\_ _ -> pure (text "fallback")) (Component.element broken {}))) >>= orFail
+      html <-
+        liftEffect
+          ( SSR.renderToStringWith { onError: \e -> Ref.modify_ (_ <> [ message e ]) seen }
+              (Control.errored (\_ _ -> pure (text "fallback")) (Component.element broken {}))
+          ) >>= orFail
       html `shouldSatisfy` has "fallback"
     liftEffect (Ref.read seen) >>= shouldEqual [ "boom" ]
 
@@ -155,9 +170,10 @@ spec = describe "Solid.Web.SSR" do
     html `shouldSatisfy` has "chart soon"
 
   solidIt "streamed renders can write after the shell and at the end" do
-    html <- SSR.renderToStringAsyncWith
-      { onCompleteShell: \write -> write "<!--shell-->", onCompleteAll: \write -> write "<!--all-->" }
-      (H.p_ [ text "body" ]) >>= orFail
+    html <-
+      SSR.renderToStringAsyncWith
+        { onCompleteShell: \write -> write "<!--shell-->", onCompleteAll: \write -> write "<!--all-->" }
+        (H.p_ [ text "body" ]) >>= orFail
     html `shouldSatisfy` has "<!--shell-->"
     html `shouldSatisfy` has "<!--all-->"
 
