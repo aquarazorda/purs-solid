@@ -61,9 +61,9 @@ export const routeImpl = (spec) => {
   return definition;
 };
 
-export const browserHistory = () => solidBrowserHistory();
-export const hashHistory = () => solidHashHistory();
-export const memoryHistory = (url) => () => solidMemoryHistory(url);
+export const browserHistoryImpl = () => solidBrowserHistory();
+export const hashHistoryImpl = () => solidHashHistory();
+export const memoryHistoryImpl = (url) => () => solidMemoryHistory(url);
 
 export const createRouterImpl = (options) => solidCreateRouter(options);
 

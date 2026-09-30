@@ -62,7 +62,7 @@ import Effect (Effect)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
 import Foreign.Object (Object)
 import Prim.Row as Row
-import Solid.Internal.Setup (Setup(..), runSetup)
+import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive, runSetup)
 import Solid.Internal.View (class LazyName, JSX, Realized, lazyName, loadModule, realize)
 import Solid.Router.Path (class PathParams, RoutePattern, href, routePattern)
 import Solid.Router.Path (href) as Exports
@@ -179,12 +179,19 @@ foreign import data Router :: Type
 
 foreign import data History :: Type
 
-foreign import browserHistory :: Effect History
+browserHistory :: forall m. MonadReactive m => m History
+browserHistory = liftReactive browserHistoryImpl
 
-foreign import hashHistory :: Effect History
+hashHistory :: forall m. MonadReactive m => m History
+hashHistory = liftReactive hashHistoryImpl
 
 -- | Starts at the given URL.
-foreign import memoryHistory :: String -> Effect History
+memoryHistory :: forall m. MonadReactive m => String -> m History
+memoryHistory url = liftReactive (memoryHistoryImpl url)
+
+foreign import browserHistoryImpl :: Effect History
+foreign import hashHistoryImpl :: Effect History
+foreign import memoryHistoryImpl :: String -> Effect History
 
 type RouterOptions =
   ( -- | A path prefix for all routes (e.g. `"/app"`).
@@ -205,12 +212,14 @@ type RouterOptions =
   )
 
 -- | The route tree is fixed. Takes `routes` and any subset of `RouterOptions`.
+-- | Works in `Effect` or `Setup`.
 createRouter
-  :: forall given missing
-   . Row.Union given missing RouterOptions
+  :: forall m given missing
+   . MonadReactive m
+  => Row.Union given missing RouterOptions
   => { routes :: Array Route | given }
-  -> Effect Router
-createRouter = runEffectFn1 createRouterImpl
+  -> m Router
+createRouter options = liftReactive (runEffectFn1 createRouterImpl options)
 
 foreign import createRouterImpl :: forall options. EffectFn1 { | options } Router
 

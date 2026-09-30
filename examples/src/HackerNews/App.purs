@@ -25,13 +25,13 @@ import Solid.JSX as JSX
 import Solid.Meta as Meta
 import Solid.Router (href)
 import Solid.Router as Router
-import Solid.Setup (Setup, liftSetup)
+import Solid.Setup (Setup)
 import Solid.Signal (Accessor, createSignal, modify_)
 import Solid.Start.Response (httpStatus)
 
 app :: Component.Component {}
 app = Component.component \_ -> do
-  router <- liftSetup $ Router.createRouter
+  router <- Router.createRouter
     { routes:
         [ Router.route @"/" \_ -> feedPage Top
         , Router.route @"/stories/:id<int>" \props -> storyPage props.params
