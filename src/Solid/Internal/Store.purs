@@ -1,6 +1,7 @@
 -- | Internal: not part of the public API.
 module Solid.Internal.Store
-  ( Preparer
+  ( Store
+  , Preparer
   , class StoreValue
   , preparer
   , class StoreFields
@@ -12,6 +13,9 @@ import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
+
+-- | A read-only cursor into a store, focused on a value of type `a`.
+foreign import data Store :: Type -> Type
 
 -- | Freezes every atomic value inside an `a` so Solid stores it as-is. `null`
 -- | means nothing to do.

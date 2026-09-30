@@ -5,8 +5,7 @@
 -- | Store.update setState $ Store.at (key @"todos") (Store.push todo)
 -- | ```
 module Solid.Store
-  ( Store
-  , StoreSetter
+  ( StoreSetter
   , module Exports
   , class StoreObject
   , createStore
@@ -56,14 +55,11 @@ import Prim.Row as Row
 import Prim.TypeError (class Fail, Text)
 import Solid.Internal.Optimistic (class MonadOptimistic, liftOptimistic)
 import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
-import Solid.Internal.Store (class StoreValue, Preparer, preparer)
-import Solid.Internal.Store (class StoreValue, class StoreFields) as Exports
+import Solid.Internal.Store (class StoreValue, Preparer, Store, preparer)
+import Solid.Internal.Store (Store, class StoreValue, class StoreFields) as Exports
 import Solid.Internal.Optimistic (class MonadOptimistic) as Exports
 import Solid.Signal (Accessor)
 import Type.Proxy (Proxy(..))
-
--- | A read-only cursor into a store, focused on a value of type `a`.
-foreign import data Store :: Type -> Type
 
 foreign import data StoreSetter :: Type -> Type
 

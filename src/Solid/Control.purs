@@ -9,6 +9,8 @@ module Solid.Control
   , showMaybeKeyedElse
   , forEach
   , forEachElse
+  , forEachByReference
+  , forEachByReferenceElse
   , forEachUnkeyed
   , forEachUnkeyedElse
   , forEachBy
@@ -32,6 +34,7 @@ module Solid.Control
   , portal
   , portalAt
   , dynamic
+  , module Exports
   , noHydration
   , hydration
   ) where
@@ -44,6 +47,8 @@ import Data.Nullable (Nullable, notNull, null, toNullable)
 import Effect (Effect)
 import Effect.Exception (Error)
 import Solid.Component (Component)
+import Solid.Internal.Identity (class StableIdentity)
+import Solid.Internal.Identity (class StableIdentity) as Exports
 import Solid.Internal.Setup (Setup, runSetup)
 import Prim.Row as Row
 import Solid.Internal.View (JSX, WhenValue, empty, erroredImpl, forImpl, hydrationImpl, keyedBy, keyedByIdentity, keyedByPosition, loadingImpl, matchImpl, matchMaybeImpl, noHydrationImpl, portalImpl, repeatImpl, revealImpl, showImpl, showMaybeImpl, switchImpl, whenValue)
@@ -74,13 +79,22 @@ showMaybeKeyed value render = showMaybeKeyedElse value render empty
 showMaybeKeyedElse :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> JSX -> JSX
 showMaybeKeyedElse value render fallback = runFn4 showMaybeImpl true (toWhen value) fallback (runSetup <<< render)
 
--- | Keyed by item identity (`===`): an item's view is created once and moved
--- | with the item. Use store `items` or stable values.
-forEach :: forall a. Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX
-forEach items render = forEachElse items render empty
+-- | Keyed by the items themselves: an item's view is created once and moved
+-- | with the item. For primitives and store cursors (`Store.items`).
+forEach :: forall a. StableIdentity a => Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX
+forEach = forEachByReference
 
-forEachElse :: forall a. Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX -> JSX
-forEachElse items render fallback = runFn4 forImpl keyedByIdentity items fallback (\item index -> runSetup (render item index))
+forEachElse :: forall a. StableIdentity a => Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX -> JSX
+forEachElse = forEachByReferenceElse
+
+-- | `forEach` for any values, keyed by reference (`===`). Rows survive only
+-- | while the list keeps the same values (moving or filtering them, not
+-- | rebuilding them).
+forEachByReference :: forall a. Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX
+forEachByReference items render = forEachByReferenceElse items render empty
+
+forEachByReferenceElse :: forall a. Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX -> JSX
+forEachByReferenceElse items render fallback = runFn4 forImpl keyedByIdentity items fallback (\item index -> runSetup (render item index))
 
 -- | Keyed by position: the view at each index stays and its item accessor updates.
 forEachUnkeyed :: forall a. Accessor (Array a) -> (Accessor a -> Int -> Setup JSX) -> JSX

@@ -2,27 +2,41 @@
 -- | gets its own owner, disposed when the item leaves the list.
 module Solid.Utility
   ( mapArray
+  , mapArrayByReference
   , mapArrayUnkeyed
   , mapArrayBy
   , repeat
   , repeatFrom
+  , module Exports
   ) where
 
 import Prelude
 
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, mkEffectFn1, mkEffectFn2, runEffectFn3)
+import Solid.Internal.Identity (class StableIdentity)
+import Solid.Internal.Identity (class StableIdentity) as Exports
 import Solid.Internal.Setup (Setup(..), runSetup)
 import Solid.Internal.View (Keyed, keyedBy, keyedByIdentity, keyedByPosition)
 import Solid.Signal (Accessor)
 
--- | Keyed by identity (`===`): an item keeps its result while it stays in the
--- | list, and only its index changes.
+-- | Keyed by the items themselves: an item keeps its result while it stays in
+-- | the list, and only its index changes. For primitives and store cursors.
 mapArray
+  :: forall a b
+   . StableIdentity a
+  => Accessor (Array a)
+  -> (a -> Accessor Int -> Setup b)
+  -> Setup (Accessor (Array b))
+mapArray = mapArrayByReference
+
+-- | `mapArray` for any values, keyed by reference (`===`). Results survive
+-- | only while the list keeps the same values.
+mapArrayByReference
   :: forall a b
    . Accessor (Array a)
   -> (a -> Accessor Int -> Setup b)
   -> Setup (Accessor (Array b))
-mapArray = mapArrayWith keyedByIdentity
+mapArrayByReference = mapArrayWith keyedByIdentity
 
 -- | Keyed by position: the result at index `i` stays, and its item accessor
 -- | updates when a different value lands there.

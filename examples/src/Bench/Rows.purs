@@ -154,7 +154,7 @@ app = Component.component \_ -> do
         , button "swaprows" "Swap Rows" (modify_ setRows (swapAt 1 998))
         ]
     , H.table [ P.class_ "table" ]
-        [ H.tbody [ P.id "tbody" ] [ Control.forEach rows renderRow ] ]
+        [ H.tbody [ P.id "tbody" ] [ Control.forEachByReference rows renderRow ] ]
     ]
 
 main :: Effect Unit
