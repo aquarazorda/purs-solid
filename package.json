@@ -1,43 +1,37 @@
 {
   "name": "purs-solid",
-  "version": "1.0.0",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
+  "version": "0.0.0",
+  "private": true,
+  "description": "PureScript bindings for Solid 2.0",
+  "type": "module",
   "scripts": {
-    "gen:routes": "node scripts/gen-routes.mjs --routes-root src/Examples/SolidStart/Routes --output src/Solid/Router/Internal/Manifest.purs",
-    "gen:example:solid-start-app": "node scripts/gen-solid-start-app.mjs",
-    "create:start-app": "node scripts/create-solid-start-app.mjs",
-    "install:example:solid-start": "npm run gen:example:solid-start-app && npm --prefix examples/solid-start install --no-package-lock",
-    "dev:example:solid-start": "npm run gen:example:solid-start-app && spago build && npm --prefix examples/solid-start run dev",
-    "install:example:solid-start-ssr": "npm --prefix src/Examples/SolidStartSSR install --no-package-lock",
-    "dev:example:solid-start-ssr": "npm --prefix src/Examples/SolidStartSSR run dev",
-    "build:example:solid-start-ssr-app": "npm --prefix src/Examples/SolidStartSSR run build",
-    "start:example:solid-start-ssr": "npm --prefix src/Examples/SolidStartSSR run start",
-    "test": "npm run test:purescript",
-    "test:purescript": "spago test",
-    "test:start-server-smoke": "spago build && node test/start/run-server-smoke.mjs",
-    "test:start-browser-smoke": "node test/start/run-browser-smoke.mjs",
-    "test:start-ssr-hydration-smoke": "node test/start/run-ssr-hydration-smoke.mjs",
-    "test:start": "npm run gen:routes && npm run install:example:solid-start && npm run build:example:solid-start && npm run build:example:solid-start-ssr && npm run build:example:start-ssr-smoke && npm run test:start-server-smoke && npm run test:start-browser-smoke && npm run test:start-ssr-hydration-smoke",
-    "test:browser-smoke": "spago test && node test/browser/run-smoke.mjs",
-    "test:all": "npm run test:purescript && npm run test:browser-smoke",
-    "build:example:solid-start": "npm run gen:example:solid-start-app && npm --prefix examples/solid-start install --no-package-lock && spago build && npm --prefix examples/solid-start run build",
-    "build:example:solid-start-ssr": "npm exec --yes --package=esbuild -- spago bundle --module Examples.SolidStartSSR.Entry.ClientMain --bundle-type app --platform browser --outfile dist/examples/solid-start-ssr-client.js && node scripts/copy-solid-start-ssr-client.mjs",
-    "build:example:start-ssr-smoke": "npm exec --yes --package=esbuild -- spago bundle --module Examples.StartSSRSmoke.ClientMain --bundle-type app --platform browser --outfile dist/examples/start-ssr-smoke-client.js",
-    "serve:examples": "node scripts/serve-examples.mjs"
+    "test": "npm run test:client && npm run test:server",
+    "test:client": "NODE_OPTIONS='--conditions=browser --conditions=development --import=./test/setup-dom.mjs' spago test -p purs-solid",
+    "test:server": "NODE_OPTIONS=--conditions=development spago test -p purs-solid --main Test.Server.Main",
+    "test:purescript:es": "purs-backend-es build && NODE_OPTIONS='--conditions=browser --conditions=development --import=./test/setup-dom.mjs' node --input-type=module -e \"import('./output-es/Test.Main/index.js').then((m) => m.main())\" && NODE_OPTIONS=--conditions=development node --input-type=module -e \"import('./output-es/Test.Server.Main/index.js').then((m) => m.main())\"",
+    "test:browser-smoke": "spago build && node test/browser/run-smoke.mjs",
+    "test:hydration": "spago build && node test/hydration/run-hydration.mjs",
+    "test:start": "spago build && node test/start/run-start-mode.mjs",
+    "test:all": "npm test && npm run test:browser-smoke && npm run test:hydration && npm run test:start",
+    "bench": "spago build && node test/bench/run-bench.mjs",
+    "bench:reference": "node test/bench/run-bench.mjs --reference",
+    "gen:dom": "node scripts/gen-dom.mjs",
+    "build:example:hackernews": "spago build && vite build --config examples/src/HackerNews/Host/vite.config.mjs",
+    "start:example:hackernews": "node examples/src/HackerNews/Host/dist/server/node.js"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@solidjs/meta": "^0.29.4",
-    "@solidjs/router": "^0.15.4",
-    "solid-js": "^1.9.11"
+    "@solidjs/meta": "1.0.0-next.2",
+    "@solidjs/router": "2.0.0-next.31",
+    "@solidjs/web": "2.0.0-rc.11",
+    "solid-js": "2.0.0-rc.11"
   },
   "devDependencies": {
-    "playwright": "^1.56.1"
+    "@happy-dom/global-registrator": "20.14.5",
+    "@solidjs/vite-plugin": "3.0.0-next.46",
+    "esbuild": "0.28.2",
+    "playwright": "^1.56.1",
+    "purs-backend-es": "1.4.3",
+    "vite": "8.3.1"
   }
 }

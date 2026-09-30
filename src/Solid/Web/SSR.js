@@ -2,65 +2,41 @@ import {
   generateHydrationScript as solidGenerateHydrationScript,
   renderToStream as solidRenderToStream,
   renderToString as solidRenderToString,
-  renderToStringAsync as solidRenderToStringAsync,
-} from "solid-js/web";
-import * as Data_Either from "../Data.Either/index.js";
+} from "@solidjs/web";
 
-const toErrorMessage = (error) => {
-  if (typeof error === "string") {
-    return error;
-  }
-
-  if (error instanceof Error && typeof error.message === "string") {
-    return error.message;
-  }
-
-  return String(error);
+const toOptions = (rep) => {
+  const options = {};
+  if (rep.nonce != null) options.nonce = rep.nonce;
+  if (rep.renderId != null) options.renderId = rep.renderId;
+  if (rep.noScripts) options.noScripts = true;
+  return options;
 };
 
-const requireFunction = (candidate, name) => {
-  if (typeof candidate !== "function") {
-    throw new Error(`${name} is unavailable in current runtime`);
-  }
+export const renderToStringImpl = (realize, rep, view) =>
+  solidRenderToString(() => realize(view), toOptions(rep));
 
-  return candidate;
+export const renderToStringWithHeadImpl = (realize, rep, view) => {
+  let head = "";
+  const html = solidRenderToString(() => realize(view), {
+    ...toOptions(rep),
+    onHead: (value) => {
+      head = value;
+    },
+  });
+  return { html, head };
 };
 
-export const renderToStringImpl = (view) => () => {
+// An awaited render stream resolves to the fully settled HTML.
+export const renderToStringAsyncImpl = (realize, rep, view) => {
   try {
-    const renderFn = requireFunction(solidRenderToString, "renderToString");
-    return Data_Either.Right.create(renderFn(() => view()));
+    return Promise.resolve(solidRenderToStream(() => realize(view), toOptions(rep)));
   } catch (error) {
-    return Data_Either.Left.create(toErrorMessage(error));
+    return Promise.reject(error);
   }
 };
 
-export const renderToStringAsyncImpl = (view) => () => {
-  try {
-    const renderFn = requireFunction(solidRenderToStringAsync, "renderToStringAsync");
+export const renderToReadableStreamImpl = (realize, rep, view) =>
+  solidRenderToStream(() => realize(view), toOptions(rep)).readable;
 
-    return Promise.resolve(renderFn(() => view()))
-      .then((html) => Data_Either.Right.create(html))
-      .catch((error) => Data_Either.Left.create(toErrorMessage(error)));
-  } catch (error) {
-    return Promise.resolve(Data_Either.Left.create(toErrorMessage(error)));
-  }
-};
-
-export const renderToStreamImpl = (view) => () => {
-  try {
-    const renderFn = requireFunction(solidRenderToStream, "renderToStream");
-    return Data_Either.Right.create(renderFn(() => view()));
-  } catch (error) {
-    return Data_Either.Left.create(toErrorMessage(error));
-  }
-};
-
-export const hydrationScriptImpl = () => {
-  try {
-    const scriptFn = requireFunction(solidGenerateHydrationScript, "generateHydrationScript");
-    return Data_Either.Right.create(scriptFn());
-  } catch (error) {
-    return Data_Either.Left.create(toErrorMessage(error));
-  }
-};
+export const hydrationScriptImpl = (nonce) =>
+  solidGenerateHydrationScript(nonce == null ? {} : { nonce });

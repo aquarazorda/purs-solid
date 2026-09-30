@@ -1,24 +1,34 @@
+-- | Context: values provided to a subtree. Every context has a default; for one
+-- | that must be provided, use `Context (Maybe a)` with default `Nothing`.
 module Solid.Context
   ( Context
   , createContext
-  , createContextWithDefault
   , useContext
-  , withContext
+  , provide
   ) where
 
-import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Effect.Uncurried (EffectFn1, runEffectFn1)
+import Solid.Internal.Setup (Setup(..), runSetup)
+import Data.Function.Uncurried (runFn3)
+import Solid.Internal.View (JSX, provideImpl)
 
 foreign import data Context :: Type -> Type
 
-createContext :: forall a. Effect (Context a)
-createContext = createContextImpl Nothing
+type role Context nominal
 
-createContextWithDefault :: forall a. a -> Effect (Context a)
-createContextWithDefault defaultValue = createContextImpl (Just defaultValue)
+-- | Each call creates a distinct context; for a module-level one, create it
+-- | once (e.g. with `unsafePerformEffect`) and share it.
+createContext :: forall a. a -> Effect (Context a)
+createContext defaultValue = runEffectFn1 createContextImpl defaultValue
 
-foreign import createContextImpl :: forall a. Maybe a -> Effect (Context a)
+foreign import createContextImpl :: forall a. EffectFn1 a (Context a)
 
-foreign import useContext :: forall a. Context a -> Effect (Maybe a)
+-- | The nearest provided value, or the context's default.
+useContext :: forall a. Context a -> Setup a
+useContext context = Setup (runEffectFn1 useContextImpl context)
 
-foreign import withContext :: forall a b. Context a -> a -> Effect b -> Effect b
+foreign import useContextImpl :: forall a. EffectFn1 (Context a) a
+
+provide :: forall a. Context a -> a -> Setup JSX -> JSX
+provide context value children = runFn3 provideImpl context value (runSetup children)

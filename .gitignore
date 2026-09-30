@@ -1,16 +1,9 @@
-
-bower_components/
 node_modules/
 dist/
-.pulp-cache/
 output/
 output-es/
 generated-docs/
-.psc-package/
-.psc*
-.purs*
-.psa*
-.spago
-
-# generated SolidStart alpha app output
-examples/
+.spago/
+.spec-results
+examples/src/*/Host/dist/
+.purs-repl

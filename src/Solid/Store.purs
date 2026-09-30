@@ -1,170 +1,244 @@
+-- | Stores: nested reactive state. Records and arrays are tracked per field and
+-- | element; every other type is atomic, stored as-is and replaced as a whole.
+-- |
+-- | ```purescript
+-- | Store.update setState $ Store.at (key @"todos") (Store.push todo)
+-- | ```
 module Solid.Store
   ( Store
   , StoreSetter
-  , Mutable
+  , module Exports
+  , class StoreObject
   , createStore
-  , get
-  , unwrapStore
+  , Path
+  , key
+  , focus
+  , value
+  , items
+  , snapshot
+  , Update
+  , update
+  , at
   , set
   , modify
-  , produce
+  , push
+  , filter
+  , atIndex
+  , each
+  , eachWhere
   , reconcile
-  , getField
-  , setField
-  , modifyField
-  , setPath
-  , modifyPath
-  , createMutable
-  , getMutable
-  , unwrapMutable
-  , modifyMutable
-  , getMutableField
-  , setMutableField
-  , modifyMutableField
-  , setMutablePath
-  , modifyMutablePath
+  , reconcileBy
+  , createProjection
+  , createSelector
+  , OptimisticStore
+  , createOptimisticStore
+  , createOptimisticProjection
+  , updateOptimistic
   ) where
 
 import Prelude
 
+import Data.Nullable (Nullable)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
+import Effect.Uncurried (EffectFn2, EffectFn3, runEffectFn2, runEffectFn3)
 import Prim.Row as Row
-import Type.Proxy (Proxy)
+import Prim.TypeError (class Fail, Text)
+import Solid.Internal.Optimistic (class MonadOptimistic, liftOptimistic)
+import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
+import Solid.Internal.Store (class StoreValue, Preparer, preparer)
+import Solid.Internal.Store (class StoreValue, class StoreFields) as Exports
+import Solid.Internal.Optimistic (class MonadOptimistic) as Exports
+import Solid.Signal (Accessor)
+import Type.Proxy (Proxy(..))
 
+-- | A read-only cursor into a store, focused on a value of type `a`.
 foreign import data Store :: Type -> Type
+
 foreign import data StoreSetter :: Type -> Type
-foreign import data Mutable :: Type -> Type
 
-type StoreParts a =
-  { store :: Store a
-  , set :: StoreSetter a
-  }
+class StoreObject :: Type -> Constraint
+class StoreObject a
 
-createStore :: forall a. a -> Effect (Store a /\ StoreSetter a)
-createStore initial =
-  toPair <$> createStoreImpl initial
-  where
-  toPair :: StoreParts a -> Store a /\ StoreSetter a
-  toPair parts = parts.store /\ parts.set
+instance StoreObject (Record r)
+else instance StoreObject (Array a)
+else instance Fail (Text "A store must hold a record or an array; wrap other values in a record") => StoreObject a
 
-foreign import createStoreImpl :: forall a. a -> Effect (StoreParts a)
+-- | Works in `Effect` or `Setup` (stores need no owner). The initial value is
+-- | never mutated.
+createStore
+  :: forall m s
+   . MonadReactive m
+  => StoreObject s
+  => StoreValue s
+  => s
+  -> m (Store s /\ StoreSetter s)
+createStore initial = liftReactive do
+  parts <- runEffectFn2 createStoreImpl (preparer (Proxy :: Proxy s)) initial
+  pure (parts.store /\ parts.setter)
 
-foreign import get :: forall a. Store a -> Effect a
+foreign import createStoreImpl
+  :: forall s
+   . EffectFn2 (Nullable Preparer) s { store :: Store s, setter :: StoreSetter s }
 
-foreign import unwrapStore :: forall a. Store a -> Effect a
+-- | A path to a field, built from record labels with `key` and composed with `>>>`.
+newtype Path :: Type -> Type -> Type
+newtype Path s a = Path (Array String)
 
-foreign import set :: forall a. StoreSetter a -> a -> Effect Unit
+instance Semigroupoid Path where
+  compose (Path inner) (Path outer) = Path (outer <> inner)
 
-foreign import modify :: forall a. StoreSetter a -> (a -> a) -> Effect Unit
+instance Category Path where
+  identity = Path []
 
-foreign import produce :: forall a. StoreSetter a -> (a -> Effect Unit) -> Effect Unit
+key :: forall @l r a tail. IsSymbol l => Row.Cons l a tail r => Path (Record r) a
+key = Path [ reflectSymbol (Proxy :: Proxy l) ]
 
-foreign import reconcile :: forall a. StoreSetter a -> a -> Effect Unit
+focus :: forall s a. Path s a -> Store s -> Store a
+focus (Path keys) store = focusImpl keys store
 
-getField
-  :: forall label value tail row
-   . IsSymbol label
-  => Row.Cons label value tail row
-  => Proxy label
-  -> Store { | row }
-  -> Effect value
-getField label store = getFieldImpl (reflectSymbol label) store
+foreign import focusImpl :: forall s a. Array String -> Store s -> Store a
 
-foreign import getFieldImpl :: forall a b. String -> Store a -> Effect b
+-- | Tracks the whole focused part; `focus` first to track less.
+foreign import value :: forall a. Store a -> Accessor a
 
-setField
-  :: forall label value tail row
-   . IsSymbol label
-  => Row.Cons label value tail row
-  => Proxy label
-  -> StoreSetter { | row }
-  -> value
-  -> Effect Unit
-setField label setter next = setFieldImpl (reflectSymbol label) setter next
+-- | A cursor per element. Cursors keep their identity while an element stays in
+-- | the array, so keyed list rendering reuses rows.
+items :: forall a. StoreObject a => Store (Array a) -> Accessor (Array (Store a))
+items = itemsImpl
 
-foreign import setFieldImpl
-  :: forall a b
-   . String
-  -> StoreSetter a
-  -> b
-  -> Effect Unit
+foreign import itemsImpl :: forall a. Store (Array a) -> Accessor (Array (Store a))
 
-modifyField
-  :: forall label value tail row
-   . IsSymbol label
-  => Row.Cons label value tail row
-  => Proxy label
-  -> StoreSetter { | row }
-  -> (value -> value)
-  -> Effect Unit
-modifyField label setter update = modifyFieldImpl (reflectSymbol label) setter update
+-- | An untracked copy of the current value.
+foreign import snapshot :: forall a. Store a -> Effect a
 
-foreign import modifyFieldImpl
-  :: forall a b
-   . String
-  -> StoreSetter a
-  -> (b -> b)
-  -> Effect Unit
+-- | A pure description of changes. Combine with `<>`; they apply in order, in
+-- | one batch.
+foreign import data Update :: Type -> Type
 
-foreign import setPath :: forall a b. StoreSetter a -> Array String -> b -> Effect Unit
+foreign import appendUpdate :: forall a. Update a -> Update a -> Update a
+foreign import emptyUpdate :: forall a. Update a
 
-foreign import modifyPath :: forall a b. StoreSetter a -> Array String -> (b -> b) -> Effect Unit
+instance Semigroup (Update a) where
+  append = appendUpdate
 
-foreign import createMutable :: forall a. a -> Effect (Mutable a)
+instance Monoid (Update a) where
+  mempty = emptyUpdate
 
-foreign import getMutable :: forall a. Mutable a -> Effect a
+-- | Applies an update. Readers see it after the next flush.
+update :: forall s. StoreSetter s -> Update s -> Effect Unit
+update setter change = runEffectFn2 updateImpl setter change
 
-foreign import unwrapMutable :: forall a. Mutable a -> Effect a
+foreign import updateImpl :: forall s. EffectFn2 (StoreSetter s) (Update s) Unit
 
-foreign import modifyMutable :: forall a. Mutable a -> (a -> Effect Unit) -> Effect Unit
+at :: forall s a. Path s a -> Update a -> Update s
+at (Path keys) change = atImpl keys change
 
-getMutableField
-  :: forall label value tail row
-   . IsSymbol label
-  => Row.Cons label value tail row
-  => Proxy label
-  -> Mutable { | row }
-  -> Effect value
-getMutableField label mutable = getMutableFieldImpl (reflectSymbol label) mutable
+foreign import atImpl :: forall s a. Array String -> Update a -> Update s
 
-foreign import getMutableFieldImpl :: forall a b. String -> Mutable a -> Effect b
+set :: forall a. StoreValue a => a -> Update a
+set next = setImpl (preparer (Proxy :: Proxy a)) next
 
-setMutableField
-  :: forall label value tail row
-   . IsSymbol label
-  => Row.Cons label value tail row
-  => Proxy label
-  -> Mutable { | row }
-  -> value
-  -> Effect Unit
-setMutableField label mutable next = setMutableFieldImpl (reflectSymbol label) mutable next
+foreign import setImpl :: forall a. Nullable Preparer -> a -> Update a
 
-foreign import setMutableFieldImpl
-  :: forall a b
-   . String
-  -> Mutable a
-  -> b
-  -> Effect Unit
+modify :: forall a. StoreValue a => (a -> a) -> Update a
+modify f = modifyImpl (preparer (Proxy :: Proxy a)) f
 
-modifyMutableField
-  :: forall label value tail row
-   . IsSymbol label
-  => Row.Cons label value tail row
-  => Proxy label
-  -> Mutable { | row }
-  -> (value -> value)
-  -> Effect Unit
-modifyMutableField label mutable update = modifyMutableFieldImpl (reflectSymbol label) mutable update
+foreign import modifyImpl :: forall a. Nullable Preparer -> (a -> a) -> Update a
 
-foreign import modifyMutableFieldImpl
-  :: forall a b
-   . String
-  -> Mutable a
-  -> (b -> b)
-  -> Effect Unit
+push :: forall a. StoreValue a => a -> Update (Array a)
+push element = pushImpl (preparer (Proxy :: Proxy a)) element
 
-foreign import setMutablePath :: forall a b. Mutable a -> Array String -> b -> Effect Unit
+foreign import pushImpl :: forall a. Nullable Preparer -> a -> Update (Array a)
 
-foreign import modifyMutablePath :: forall a b. Mutable a -> Array String -> (b -> b) -> Effect Unit
+-- | Removes failing elements in place; kept elements keep their identity and
+-- | readers.
+foreign import filter :: forall a. (a -> Boolean) -> Update (Array a)
+
+-- | Does nothing if the index is out of range.
+foreign import atIndex :: forall a. Int -> Update a -> Update (Array a)
+
+foreign import each :: forall a. Update a -> Update (Array a)
+
+foreign import eachWhere :: forall a. (a -> Boolean) -> Update a -> Update (Array a)
+
+-- | Replaces the value with `next`, keeping everything that didn't change
+-- | (and its readers). Array elements are matched by their `id` field.
+reconcile :: forall a. StoreValue a => a -> Update a
+reconcile next = reconcileImpl (preparer (Proxy :: Proxy a)) next
+
+-- | `reconcile` for an array, matching elements by a key function. Keys are
+-- | compared with `===`, so use primitives.
+reconcileBy :: forall a k. StoreValue a => (a -> k) -> Array a -> Update (Array a)
+reconcileBy toKey next = reconcileByImpl (preparer (Proxy :: Proxy (Array a))) toKey next
+
+foreign import reconcileImpl :: forall a. Nullable Preparer -> a -> Update a
+foreign import reconcileByImpl :: forall a k. Nullable Preparer -> (a -> k) -> Array a -> Update (Array a)
+
+-- | A read-only store derived from reactive sources: `compute` is tracked and
+-- | yields the update to apply whenever its dependencies change.
+createProjection
+  :: forall s
+   . StoreObject s
+  => StoreValue s
+  => Accessor (Update s)
+  -> s
+  -> Setup (Store s)
+createProjection compute seed =
+  Setup (runEffectFn3 createProjectionImpl (preparer (Proxy :: Proxy s)) compute seed)
+
+foreign import createProjectionImpl
+  :: forall s
+   . EffectFn3 (Nullable Preparer) (Accessor (Update s)) s (Store s)
+
+-- | `isSelected x` is true when `source` equals `x` (compared by `toKey`). A
+-- | selection change notifies only the two affected readers.
+createSelector :: forall a. (a -> String) -> Accessor a -> Setup (a -> Accessor Boolean)
+createSelector toKey source = Setup (runEffectFn2 createSelectorImpl toKey source)
+
+foreign import createSelectorImpl :: forall a. EffectFn2 (a -> String) (Accessor a) (a -> Accessor Boolean)
+
+-- | Updated only from a `Solid.Action.Action`; its updates show immediately
+-- | and revert when the action settles.
+foreign import data OptimisticStore :: Type -> Type
+
+-- | A store whose updates are tentative: made during an action, reverted
+-- | when it settles.
+createOptimisticStore
+  :: forall m s
+   . MonadReactive m
+  => StoreObject s
+  => StoreValue s
+  => s
+  -> m (Store s /\ OptimisticStore s)
+createOptimisticStore initial = liftReactive do
+  parts <- runEffectFn2 createOptimisticStoreImpl (preparer (Proxy :: Proxy s)) initial
+  pure (parts.store /\ parts.setter)
+
+foreign import createOptimisticStoreImpl
+  :: forall s
+   . EffectFn2 (Nullable Preparer) s { store :: Store s, setter :: OptimisticStore s }
+
+-- | Follows `compute` like `createProjection`, with tentative updates layered
+-- | on top during actions.
+createOptimisticProjection
+  :: forall s
+   . StoreObject s
+  => StoreValue s
+  => Accessor (Update s)
+  -> s
+  -> Setup (Store s /\ OptimisticStore s)
+createOptimisticProjection compute seed = Setup do
+  parts <- runEffectFn3 createOptimisticProjectionImpl (preparer (Proxy :: Proxy s)) compute seed
+  pure (parts.store /\ parts.setter)
+
+foreign import createOptimisticProjectionImpl
+  :: forall s
+   . EffectFn3 (Nullable Preparer) (Accessor (Update s)) s { store :: Store s, setter :: OptimisticStore s }
+
+-- | A tentative update, as a step of a `Solid.Action.Action`.
+updateOptimistic :: forall m s. MonadOptimistic m => OptimisticStore s -> Update s -> m Unit
+updateOptimistic setter change = liftOptimistic (runEffectFn2 updateOptimisticImpl setter change)
+
+foreign import updateOptimisticImpl :: forall s. EffectFn2 (OptimisticStore s) (Update s) Unit

@@ -1,0 +1,81 @@
+-- | Actions: async mutations as one transaction. Every `liftAff` is a
+-- | suspension point that re-enters the transaction; nothing is committed until
+-- | the action finishes. Optimistic values revert when it settles.
+module Solid.Action
+  ( action
+  , Optimistic
+  , createOptimistic
+  , createOptimisticFrom
+  , setOptimistic
+  , modifyOptimistic
+  , module Exports
+  ) where
+
+import Prelude
+
+import Control.Promise (Promise, fromAff, toAffE)
+import Data.Tuple.Nested ((/\), type (/\))
+import Effect (Effect)
+import Effect.Aff (Aff)
+import Effect.Aff.Class (liftAff) as Exports
+import Effect.Class (liftEffect) as Exports
+import Effect.Uncurried (EffectFn1, runEffectFn1)
+import Solid.Internal.Action (Action(..), liftActionEffect)
+import Solid.Internal.Action (Action) as Exports
+import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
+import Solid.Signal (Accessor)
+
+-- | Runs each call as one transaction. Call it from event handlers or other
+-- | `Aff` code; Solid rejects actions started in owned scopes.
+action :: forall a r. (a -> Action r) -> a -> Aff r
+action steps = \input -> toAffE (runEffectFn1 run input)
+  where
+  run = actionImpl eliminate fromAff steps
+
+eliminate
+  :: forall a r
+   . (a -> r)
+  -> (Effect (Action a) -> r)
+  -> (Aff (Action a) -> r)
+  -> Action a
+  -> r
+eliminate done write await = case _ of
+  Done value -> done value
+  Write effect -> write effect
+  Await aff -> await aff
+
+foreign import actionImpl
+  :: forall a r
+   . (forall x y. (x -> y) -> (Effect (Action x) -> y) -> (Aff (Action x) -> y) -> Action x -> y)
+  -> (forall x. Aff x -> Effect (Promise x))
+  -> (a -> Action r)
+  -> EffectFn1 a (Promise r)
+
+foreign import data Optimistic :: Type -> Type
+
+-- | A value that can be overridden tentatively during an action and reverts
+-- | to `initial` when the action settles.
+createOptimistic :: forall m a. MonadReactive m => a -> m (Accessor a /\ Optimistic a)
+createOptimistic initial = liftReactive do
+  parts <- runEffectFn1 createOptimisticImpl initial
+  pure (parts.get /\ parts.set)
+
+foreign import createOptimisticImpl :: forall a. EffectFn1 a { get :: Accessor a, set :: Optimistic a }
+
+-- | An optimistic view of `source`: tentative writes during an action, then
+-- | back to following `source`.
+createOptimisticFrom :: forall a. Accessor a -> Setup (Accessor a /\ Optimistic a)
+createOptimisticFrom source = Setup do
+  parts <- runEffectFn1 createOptimisticFromImpl source
+  pure (parts.get /\ parts.set)
+
+foreign import createOptimisticFromImpl :: forall a. EffectFn1 (Accessor a) { get :: Accessor a, set :: Optimistic a }
+
+setOptimistic :: forall a. Optimistic a -> a -> Action Unit
+setOptimistic setter value = liftActionEffect (setOptimisticImpl setter value)
+
+modifyOptimistic :: forall a. Optimistic a -> (a -> a) -> Action Unit
+modifyOptimistic setter f = liftActionEffect (modifyOptimisticImpl setter f)
+
+foreign import setOptimisticImpl :: forall a. Optimistic a -> a -> Effect Unit
+foreign import modifyOptimisticImpl :: forall a. Optimistic a -> (a -> a) -> Effect Unit

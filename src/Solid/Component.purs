@@ -1,41 +1,48 @@
+-- | A component's body runs once per use, in `Setup`. Props are a plain
+-- | record: pass `Accessor`s for values that change.
 module Solid.Component
   ( Component
   , component
   , element
-  , elementKeyed
   , children
   , createUniqueId
   , lazy
   ) where
 
+import Prelude
+
+import Control.Promise (Promise)
+import Data.Function.Uncurried (runFn2)
 import Effect (Effect)
-import Solid.JSX (JSX)
+import Effect.Uncurried (runEffectFn1)
+import Solid.Internal.Setup (Setup(..), runSetup)
+import Solid.Internal.View (ComponentRep, JSX, childrenImpl, componentElement, componentRep, lazyImpl)
 import Solid.Signal (Accessor)
 
-foreign import data Component :: Type -> Type
+type Component props = ComponentRep props
 
-foreign import component
-  :: forall props
-   . ({ | props } -> Effect JSX)
-  -> Component { | props }
+component :: forall props. ({ | props } -> Setup JSX) -> Component { | props }
+component render = componentRep (runSetup <<< render)
 
-foreign import element
-  :: forall props
-   . Component { | props }
-  -> { | props }
-  -> JSX
+element :: forall props. Component { | props } -> { | props } -> JSX
+element = runFn2 componentElement
 
-foreign import elementKeyed
-  :: forall props
-   . Component { | props }
-  -> { key :: String | props }
-  -> JSX
+-- | Resolves children once, so a component can inspect or place them without
+-- | re-creating them.
+children :: Setup JSX -> Setup (Accessor JSX)
+children resolve = Setup (runEffectFn1 childrenImpl (runSetup resolve))
 
-foreign import children :: Effect JSX -> Effect (Accessor JSX)
+-- | A unique id, stable between server render and hydration.
+createUniqueId :: Setup String
+createUniqueId = Setup createUniqueIdImpl
 
-foreign import createUniqueId :: Effect String
+foreign import createUniqueIdImpl :: Effect String
 
-foreign import lazy
-  :: forall props
-   . Effect (Component { | props })
-  -> Component { | props }
+-- | Loaded on first use, suspending the nearest `loading` boundary. Usually a
+-- | dynamic `import()` in an FFI file so the bundler splits it out:
+-- |
+-- | ```js
+-- | export const loadSettings = () => import("../Settings/index.js").then((m) => m.settings);
+-- | ```
+lazy :: forall props. Effect (Promise (Component { | props })) -> Component { | props }
+lazy = lazyImpl

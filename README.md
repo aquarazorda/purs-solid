@@ -1,183 +1,13 @@
 # purs-solid
 
-`purs-solid` is a PureScript-first wrapper around Solid's fine-grained reactivity and rendering runtime.
+PureScript bindings for [Solid 2.0](https://github.com/solidjs/solid): fine-grained reactivity, rendering, SSR and hydration, the router, head tags and start mode.
 
-This repository is a library project, not an app template. It provides typed PureScript modules backed by a small JavaScript FFI layer to expose Solid behavior in a Solid-native way.
+The bindings use Solid's public API only; what they add is types that reject incorrect code. For example, a signal can't be written during setup, a derived value can't perform effects, a prop only type-checks on elements that have it, and a route's params come from its path. See [docs/design.md](docs/design.md).
 
-## What this project is trying to do
-
-- Keep Solid's mental model (signals, memos, effects, roots, control-flow primitives).
-- Expose those primitives with explicit PureScript types.
-- Model recoverable failures with `Either`/`Maybe` at public boundaries.
-- Reuse existing PureScript web platform packages instead of re-implementing browser APIs.
-
-## Current module surface
-
-Core reactivity and lifecycle:
-
-- `Solid.Signal`
-- `Solid.Reactivity`
-- `Solid.Root`
-- `Solid.Utility` (`batch`, `catchError`, `from`, `mapArray`, `indexArray`, `mergeProps`, `splitProps`, `observable`, `startTransition`, `useTransition`, and related helpers)
-- `Solid.Lifecycle`
-- `Solid.Resource`
-- `Solid.Context`
-- `Solid.Store`
-- `Solid.Web`
-- `Solid.Web.SSR`
-
-Routing and navigation:
-
-- `Solid.Router` (`Router`/`Route`/`A` wrappers plus `useLocation` and `useNavigate`, client-side router context)
-- `Solid.Router.Navigation` (path normalization and browser route-change helpers)
-- `Solid.Router.Route.Pattern`
-- `Solid.Router.Route.Params`
-- `Solid.Router.Routing`
-- `Solid.Router.Routing.Manifest`
-
-Document head:
-
-- `Solid.Meta` (`MetaProvider`, `Title`, `Meta`, `Link`, `Style`, `Base`, `Stylesheet`, and `useHead`)
-
-UI authoring:
-
-- `Solid.JSX`
-- `Solid.Component` (`component`, `element`, `children`, `createUniqueId`, `lazy`)
-- `Solid.DOM` (generic + common HTML tags)
-- `Solid.DOM.HTML` (full HTML constructors)
-- `Solid.DOM.SVG` (full SVG constructors)
-- `Solid.DOM.Events` (thin handler helpers over `Web.Event.Event`)
-- `Solid.DOM.EventAdapters` (optional adapters built on `web-events`, `web-uievents`, `web-html`, `web-dom`, `web-file`)
-- `Solid.Control` (`Show`/`For`/`Index`/`Switch`/`Match` wrappers, `ErrorBoundary`, `Suspense`, `SuspenseList`, `NoHydration`, `Dynamic`, `Portal`, and related helpers)
-
-## Design stance
-
-- Solid-native naming only. No React-style `use*` API layer.
-- Pre-1.0 project. API can change directly when a better design is found.
-- Public wrappers prefer typed errors over throw-based behavior.
-
-For rationale and policy details, see `DECISIONS.md`.
-
-## SolidStart effort
-
-- `SolidStart/README.md` - implementation status and commands.
-- `SolidStart/IMPLEMENTATION_PLAN.md` - milestone roadmap for SolidStart functionality.
-- `SolidStart/ROUTING_CONVENTIONS.md` - file-based routing conventions for PureScript routes.
-- Source of truth for the SolidStart example now lives under `src/Examples/SolidStart/`.
-- `npm run gen:example:solid-start-app` generates `examples/solid-start/` (Vite + `@solidjs/start` alpha + Nitro).
-- Generated `examples/solid-start/src`, `examples/solid-start/public`, and app config files are gitignored on purpose.
-- `npm run test:start` runs route generation and Start smoke checks.
-
-## Quick start
-
-Prerequisites:
-
-- Node.js + npm
-- PureScript/Spago toolchain available (`spago` on PATH)
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run tests:
-
-```bash
-# PureScript suite
-spago test
-
-# Browser smoke suite (build + Playwright smoke)
-npm run test:browser-smoke
-
-# Full local check
-npm run test:all
-```
-
-## Example apps
-
-This repo now has an `examples/` workspace for runnable demo apps.
-
-- `examples/todomvc/` - TodoMVC clone with filtering, toggle-all, and completion controls.
-- `examples/counter/` - compact signal/memo example with step presets and event log.
-- `examples/solid-start/` - generated SolidStart alpha Hacker News app (generated from `src/Examples/SolidStart/`, not committed as source).
-- `src/Examples/SolidStartSSR/` - Vinxi-hosted PureScript SSR app example (runs at `/`).
-
-Build example bundles:
-
-```bash
-npm run build:examples
-```
-
-Run the SolidStart HackerNews demo:
-
-```bash
-npm run install:example:solid-start
-npm run dev:example:solid-start
-```
-
-Note: the generated SolidStart alpha app currently requires Node.js `>=22`.
-
-Run the Vinxi-hosted SolidStart SSR example:
-
-```bash
-npm run install:example:solid-start-ssr
-npm run dev:example:solid-start-ssr
-```
-
-Serve the repository root and open the examples index:
-
-```bash
-npm run serve:examples
-# then visit http://localhost:4173/examples/
-```
-
-`serve:examples` runs a small Node server for static examples and SSR runtime demo paths.
-
-## Minimal example
-
-This example shows the core reactivity wrappers (signals, memo, effect, root):
+## Example
 
 ```purescript
-module Example.Core where
-
-import Prelude
-
-import Data.Tuple.Nested ((/\))
-import Effect (Effect)
-import Effect.Class.Console (log)
-import Solid.Reactivity (createEffect, createMemo)
-import Solid.Root (createRoot)
-import Solid.Signal (createSignal, get, modify)
-
-example :: Effect Unit
-example =
-  createRoot \dispose -> do
-    count /\ setCount <- createSignal 1
-
-    doubled <- createMemo do
-      n <- get count
-      pure (n * 2)
-
-    _ <- createEffect do
-      n <- get count
-      d <- get doubled
-      log ("count=" <> show n <> ", doubled=" <> show d)
-
-    _ <- modify setCount (_ + 1)
-    _ <- modify setCount (_ + 1)
-
-    dispose
-```
-
-`Solid.Web` uses `Either` for render/hydrate outcomes, so client-only/runtime failures are explicit in types.
-
-## Getting started UI example
-
-This example mounts a small component into `document.body` using `Solid.Web.requireBody` and `Solid.Web.render`.
-
-```purescript
-module Example.UI where
+module Example where
 
 import Prelude
 
@@ -186,58 +16,125 @@ import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Class.Console (log)
 import Solid.Component as Component
-import Solid.DOM as DOM
-import Solid.DOM.Events as Events
-import Solid.Signal (createSignal, modify)
+import Solid.DOM (classWhen)
+import Solid.DOM.HTML as H
+import Solid.DOM.Props as P
+import Solid.JSX (text)
+import Solid.Reactivity (createMemo)
+import Solid.Signal (createSignal, modify_)
 import Solid.Web (render, requireBody)
 
+counter :: Component.Component {}
+counter = Component.component \_ -> do
+  count /\ setCount <- createSignal 0
+  doubled <- createMemo ((_ * 2) <$> count)
+  pure $ H.div [ P.class_ "counter" ]
+    [ H.button
+        [ P.onClick \_ -> modify_ setCount (_ + 1)
+        , classWhen "big" ((_ > 3) <$> count)
+        ]
+        [ text "+" ]
+    , H.span_ [ text (show <$> doubled) ]
+    ]
+
 main :: Effect Unit
-main = do
-  clicks /\ setClicks <- createSignal 0
-
-  app <- pure $ Component.component \_ ->
-    pure $ DOM.div { className: "app" }
-      [ DOM.span_ [ DOM.text "purs-solid mounted" ]
-      , DOM.button
-          { onClick: Events.handler_ do
-              _ <- modify setClicks (_ + 1)
-              pure unit
-          }
-          [ DOM.text "Click" ]
-      ]
-
-  mountResult <- requireBody
-  case mountResult of
-    Left webError ->
-      log ("Mount error: " <> show webError)
-
-    Right mountNode -> do
-      renderResult <- render (pure (Component.element app {})) mountNode
-      case renderResult of
-        Left webError ->
-          log ("Render error: " <> show webError)
-        Right _dispose ->
-          pure unit
+main = requireBody >>= case _ of
+  Left error -> log (show error)
+  Right body -> void (render (Component.element counter {}) body)
 ```
 
-Note: this snippet keeps the disposer in scope as `_dispose`. In a real app you may store and call it to unmount.
+## Modules
 
-## Testing strategy in this repo
+- **Reactivity:**
+  - `Solid.Signal`, `Solid.Reactivity`;
+  - `Solid.Setup` (the monad for component bodies and roots);
+  - `Solid.Root`, `Solid.Owner`, `Solid.Lifecycle`, `Solid.Context`, `Solid.Utility`.
+- **Async:**
+  - `Solid.Async` (`createAsync` over `Aff`);
+  - `Solid.Action` (transactional mutations and optimistic values).
+- **Stores:** `Solid.Store` (typed paths, pure updates, projections, `createSelector`).
+- **Views:**
+  - `Solid.JSX`, `Solid.Component`;
+  - `Solid.Component.JS` (use JavaScript Solid components);
+  - `Solid.Control` (conditionals, lists, `loading`, `errored`, portals);
+  - `Solid.DOM`, `Solid.DOM.HTML` / `Solid.DOM.Props`, `Solid.DOM.SVG` / `Solid.DOM.SVG.Props`. The HTML and SVG modules are generated from `dom-indexed` by `npm run gen:dom`.
+- **Rendering:** `Solid.Web` (render, hydrate), `Solid.Web.SSR` (string, async and streamed server rendering).
+- **Routing and head tags:**
+  - `Solid.Router` (`route @"/users/:id"` gives the component `{ id :: String }`);
+  - `Solid.Router.Path` (`href`);
+  - `Solid.Router.Query` (cached route data);
+  - `Solid.Meta`.
+- **Start mode:** `Solid.Start.ServerFunction`, `Solid.Start.RequestEvent`, `Solid.Start.Response`, `Solid.Start.Middleware`.
 
-- Unit/integration coverage in `test/Test/*.purs`.
-- Browser smoke harness in `test/browser/run-smoke.mjs` + `test/browser/smoke-client.mjs`.
-- Smoke tests validate rendering, interactions, control-flow wrappers, and event behavior in a real Chromium runtime.
+## Installing
 
-## Repo guide
+Solid 2 is a release candidate, so pin exact versions:
 
-- `src/Solid/*` - PureScript modules and FFI wrappers.
-- `test/Test/*` - PureScript test suites.
-- `test/browser/*` - browser smoke harness.
-- `DECISIONS.md` - architecture and API decisions.
-- `IMPLEMENTATION_PLAN.md` - milestone tracking and remaining work.
+```bash
+npm install --save-exact solid-js@2.0.0-rc.11 @solidjs/web@2.0.0-rc.11
+```
 
-## Project status
+```bash
+npm install --save-exact @solidjs/router@2.0.0-next.31 @solidjs/meta@1.0.0-next.2
+```
 
-Active development, pre-1.0.
+```bash
+npm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0-next.46
+```
 
-If you are evaluating the repo, treat this as a Solid-native PureScript runtime/UI foundation with strong typed boundaries, rather than a finalized stable framework.
+The router and meta packages are needed only for `Solid.Router` and `Solid.Meta`, and the Vite plugin only for start mode. Bundle development builds with the `development` export condition to get Solid's diagnostics.
+
+## Start mode
+
+A start-mode app is a `Component` exported from the plugin's `app` module. Server functions are `"use server"` functions in FFI files, declared as `foreign import save :: ServerFunction NewTodo Todo` and called with `call`. Their arguments and results must be `Serializable`.
+
+Compiled FFI lives in `output/`, outside the plugin's default `src/**` filter, so include it explicitly. Otherwise server functions ship to the browser:
+
+```js
+solid({
+  start: { app: "./app.js", node: true },
+  ssr: true,
+  serverFunctions: { filter: { include: ["output/**/foreign.js"] } },
+})
+```
+
+See `examples/src/StartMode/Host` and `examples/src/HackerNews/Host`.
+
+## Examples
+
+The `examples` workspace package holds:
+
+- `Counter`, `TodoMVC`: client-side apps;
+- `Hydration`: server rendering and hydration;
+- `StartMode`: the smallest full-stack app;
+- `HackerNews`: typed routes, cached server queries and streamed SSR;
+- `Bench`: the rows benchmark.
+
+```bash
+npm run build:example:hackernews
+```
+
+```bash
+PORT=3000 npm run start:example:hackernews
+```
+
+## Development
+
+Requires Node.js 22.12+, PureScript 0.15 and Spago.
+
+```bash
+npm install
+```
+
+```bash
+npm run test:all
+```
+
+| Script | What it runs |
+|---|---|
+| `npm test` | client specs (happy-dom) and server specs, both on Solid's dev build; they fail on any Solid diagnostic |
+| `npm run test:purescript:es` | the same specs compiled with `purs-backend-es` |
+| `npm run test:browser-smoke` | Counter and TodoMVC in Chromium |
+| `npm run test:hydration` | server render in Node, hydration in Chromium |
+| `npm run test:start` | the start-mode example built with Vite and driven in Chromium |
+| `npm run bench`, `npm run bench:reference` | the rows benchmark, and the same app in plain Solid ([results](docs/benchmarks/README.md)) |

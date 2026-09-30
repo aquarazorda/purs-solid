@@ -1,83 +1,50 @@
+-- | Mounting views in the browser.
 module Solid.Web
-  ( Mountable
-  , WebError(..)
-  , isServer
+  ( isServer
   , render
   , hydrate
-  , documentBody
-  , mountById
   , requireBody
-  , requireMountById
+  , requireElementById
   ) where
 
-import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
-import Effect (Effect)
 import Prelude
 
-foreign import data Mountable :: Type
-
-data WebError
-  = ClientOnlyApi String
-  | RuntimeError String
-  | MissingMount String
-
-derive instance eqWebError :: Eq WebError
-
-instance showWebError :: Show WebError where
-  show = case _ of
-    ClientOnlyApi message -> "ClientOnlyApi " <> show message
-    RuntimeError message -> "RuntimeError " <> show message
-    MissingMount message -> "MissingMount " <> show message
+import Data.Either (Either(..))
+import Data.Maybe (maybe)
+import Effect (Effect)
+import Effect.Exception (Error, error, throw, try)
+import Effect.Uncurried (EffectFn3, runEffectFn3)
+import Solid.Internal.View (JSX, Realized, realize)
+import Web.DOM.Element (Element)
+import Web.DOM.NonElementParentNode (getElementById)
+import Web.HTML (window)
+import Web.HTML.HTMLDocument as HTMLDocument
+import Web.HTML.HTMLElement as HTMLElement
+import Web.HTML.Window (document)
 
 foreign import isServer :: Boolean
 
-render :: forall a. Effect a -> Mountable -> Effect (Either WebError (Effect Unit))
-render view mount = do
-  result <- renderImpl view mount
-  pure case result of
-    Left message ->
-      if message == clientOnlyMessage then
-        Left (ClientOnlyApi message)
-      else
-        Left (RuntimeError message)
-    Right disposer ->
-      Right disposer
+-- | Replaces `mount`'s content. The result disposes the view.
+render :: JSX -> Element -> Effect (Either Error (Effect Unit))
+render view mount = clientOnly (runEffectFn3 renderImpl realize view mount)
 
-hydrate :: forall a. Effect a -> Mountable -> Effect (Either WebError (Effect Unit))
-hydrate view mount = do
-  result <- hydrateImpl view mount
-  pure case result of
-    Left message ->
-      if message == clientOnlyMessage then
-        Left (ClientOnlyApi message)
-      else
-        Left (RuntimeError message)
-    Right disposer ->
-      Right disposer
+hydrate :: JSX -> Element -> Effect (Either Error (Effect Unit))
+hydrate view mount = clientOnly (runEffectFn3 hydrateImpl realize view mount)
 
-foreign import renderImpl :: forall a. Effect a -> Mountable -> Effect (Either String (Effect Unit))
+requireBody :: Effect (Either Error Element)
+requireBody = clientOnly do
+  body <- HTMLDocument.body =<< document =<< window
+  maybe (throw "document.body is missing") (pure <<< HTMLElement.toElement) body
 
-foreign import hydrateImpl :: forall a. Effect a -> Mountable -> Effect (Either String (Effect Unit))
+requireElementById :: String -> Effect (Either Error Element)
+requireElementById id = clientOnly do
+  found <- getElementById id <<< HTMLDocument.toNonElementParentNode =<< document =<< window
+  maybe (throw ("no element with id " <> show id)) pure found
 
-foreign import documentBody :: Effect (Maybe Mountable)
+clientOnly :: forall a. Effect a -> Effect (Either Error a)
+clientOnly action
+  | isServer = pure (Left (error "Solid.Web: client-only API called on the server"))
+  | otherwise = try action
 
-foreign import mountById :: String -> Effect (Maybe Mountable)
-
-requireBody :: Effect (Either WebError Mountable)
-requireBody = do
-  maybeBody <- documentBody
-  pure case maybeBody of
-    Just body -> Right body
-    Nothing -> Left (MissingMount "document.body is unavailable in current runtime")
-
-requireMountById :: String -> Effect (Either WebError Mountable)
-requireMountById id = do
-  maybeMount <- mountById id
-  pure case maybeMount of
-    Just mount -> Right mount
-    Nothing -> Left (MissingMount ("No mount element found for id: " <> id))
-
-clientOnlyMessage :: String
-clientOnlyMessage =
-  "Client-only API called on the server side. Run client-only code in onMount, or conditionally run client-only component with <Show>."
+foreign import renderImpl :: EffectFn3 (JSX -> Realized) JSX Element (Effect Unit)
+foreign import hydrateImpl :: EffectFn3 (JSX -> Realized) JSX Element (Effect Unit)

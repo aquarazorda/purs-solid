@@ -1,17 +1,33 @@
+-- | A `JSX` value describes UI; building it does nothing. Each place it's
+-- | rendered creates its own DOM.
 module Solid.JSX
-  ( JSX
-  , empty
+  ( module Exports
   , text
+  , reactive
   , fragment
-  , keyed
+  , empty
   ) where
 
-foreign import data JSX :: Type
+import Prelude
 
-foreign import empty :: JSX
+import Solid.Internal.View (Binding(..), JSX, class ToBinding, binding, reactiveJsx, textJsx)
+import Solid.Internal.View (JSX) as Exports
+import Solid.Internal.View as View
+import Solid.Signal (Accessor)
 
-foreign import text :: String -> JSX
+-- | Text, fixed (`text "Hello"`) or reactive (`text (show <$> count)`).
+text :: forall v. ToBinding v String => v -> JSX
+text value = case binding value of
+  Static string -> textJsx string
+  Dynamic accessor -> reactiveJsx (textJsx <$> accessor)
 
-foreign import fragment :: Array JSX -> JSX
+-- | Re-renders when the accessor changes. Prefer `Solid.Control` for
+-- | conditionals and lists; it reuses DOM.
+reactive :: Accessor JSX -> JSX
+reactive = reactiveJsx
 
-foreign import keyed :: String -> JSX -> JSX
+fragment :: Array JSX -> JSX
+fragment = View.fragment
+
+empty :: JSX
+empty = View.empty

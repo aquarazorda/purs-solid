@@ -1,61 +1,149 @@
+-- | Memos, effects and scheduling. Effects have a tracked, pure compute phase
+-- | (an `Accessor`) and an untracked apply phase (`a -> Effect ...`) whose
+-- | cleanup runs before the next apply and on disposal.
 module Solid.Reactivity
   ( MemoOptions
   , defaultMemoOptions
   , createMemo
   , createMemoWith
+  , createWritableMemo
+  , EffectOptions
+  , defaultEffectOptions
   , createEffect
-  , createComputed
+  , createEffect_
+  , createEffectWith
   , createRenderEffect
+  , createRenderEffect_
+  , Reaction
   , createReaction
-  , createDeferred
-  , createSelector
+  , track
+  , flush
+  , withFlush
   ) where
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toNullable)
+import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Solid.Signal (Accessor, Equality(..))
+import Effect.Exception (Error)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn5, mkEffectFn1, runEffectFn1, runEffectFn2, runEffectFn5)
+import Solid.Internal.Equality (Equality(..), EqualityFn, toEqualityFn)
+import Solid.Internal.Setup (Setup(..))
+import Solid.Signal (Accessor, Setter, Signal)
 
 type MemoOptions a =
   { name :: String
   , equality :: Equality a
+  -- | Defer the first computation until read; dispose when nothing observes it.
+  , lazy :: Boolean
   }
 
 defaultMemoOptions :: forall a. MemoOptions a
 defaultMemoOptions =
   { name: ""
   , equality: DefaultEquals
+  , lazy: false
   }
 
-createMemo :: forall a. Effect a -> Effect (Accessor a)
+-- | Caches a derived accessor: it recomputes only when its dependencies change,
+-- | and notifies only when the result changes.
+createMemo :: forall a. Accessor a -> Setup (Accessor a)
 createMemo = createMemoWith defaultMemoOptions
 
-createMemoWith :: forall a. MemoOptions a -> Effect a -> Effect (Accessor a)
+createMemoWith :: forall a. MemoOptions a -> Accessor a -> Setup (Accessor a)
 createMemoWith options compute =
-  case options.equality of
-    DefaultEquals -> createMemoWithDefaultEqImpl options.name compute
-    AlwaysNotify -> createMemoWithAlwaysImpl options.name compute
-    CustomEquals equals -> createMemoWithCustomEqImpl options.name equals compute
+  Setup (runEffectFn5 createMemoImpl options.name mode equals options.lazy compute)
+  where
+  { mode, equals } = toEqualityFn options.equality
 
-foreign import createMemoWithDefaultEqImpl :: forall a. String -> Effect a -> Effect (Accessor a)
-
-foreign import createMemoWithAlwaysImpl :: forall a. String -> Effect a -> Effect (Accessor a)
-
-foreign import createMemoWithCustomEqImpl
+foreign import createMemoImpl
   :: forall a
-   . String
-  -> (a -> a -> Boolean)
-  -> Effect a
-  -> Effect (Accessor a)
+   . EffectFn5 String String (EqualityFn a) Boolean (Accessor a) (Accessor a)
 
-foreign import createEffect :: Effect Unit -> Effect Unit
+-- | A signal derived from `compute` that can also be written locally. A write
+-- | wins until a dependency of `compute` changes, which re-derives it.
+createWritableMemo :: forall a. Accessor a -> Setup (Signal a)
+createWritableMemo compute = Setup do
+  parts <- runEffectFn1 createWritableMemoImpl compute
+  pure (parts.get /\ parts.set)
 
-foreign import createComputed :: Effect Unit -> Effect Unit
+foreign import createWritableMemoImpl
+  :: forall a
+   . EffectFn1 (Accessor a) { get :: Accessor a, set :: Setter a }
 
-foreign import createRenderEffect :: Effect Unit -> Effect Unit
+type EffectOptions =
+  { name :: String
+  -- | Skip the apply phase for the initial value; run it on changes only.
+  , defer :: Boolean
+  -- | Handles compute-phase errors; without it Solid logs them and skips the run.
+  , onError :: Maybe (Error -> Effect Unit)
+  }
 
-foreign import createReaction :: Effect Unit -> Effect (Effect Unit -> Effect Unit)
+defaultEffectOptions :: EffectOptions
+defaultEffectOptions =
+  { name: ""
+  , defer: false
+  , onError: Nothing
+  }
 
-foreign import createDeferred :: forall a. Accessor a -> Effect (Accessor a)
+-- | Runs `apply` with the value of `compute` now (after the current flush) and
+-- | whenever it changes. The `Effect Unit` that `apply` returns is its cleanup.
+createEffect :: forall a. Accessor a -> (a -> Effect (Effect Unit)) -> Setup Unit
+createEffect = createEffectWith defaultEffectOptions
 
-foreign import createSelector :: forall a. Accessor a -> Effect (a -> Effect Boolean)
+createEffect_ :: forall a. Accessor a -> (a -> Effect Unit) -> Setup Unit
+createEffect_ compute apply = createEffect compute \value -> apply value $> pure unit
+
+createEffectWith :: forall a. EffectOptions -> Accessor a -> (a -> Effect (Effect Unit)) -> Setup Unit
+createEffectWith options compute apply =
+  Setup
+    ( runEffectFn5 createEffectImpl
+        options.name
+        options.defer
+        (toNullable (mkEffectFn1 <$> options.onError))
+        compute
+        (mkEffectFn1 apply)
+    )
+
+foreign import createEffectImpl
+  :: forall a
+   . EffectFn5 String Boolean (Nullable (EffectFn1 Error Unit)) (Accessor a) (EffectFn1 a (Effect Unit)) Unit
+
+-- | Like `createEffect`, but the apply phase runs synchronously during
+-- | rendering, before the DOM is committed.
+createRenderEffect :: forall a. Accessor a -> (a -> Effect (Effect Unit)) -> Setup Unit
+createRenderEffect compute apply =
+  Setup (runEffectFn2 createRenderEffectImpl compute (mkEffectFn1 apply))
+
+createRenderEffect_ :: forall a. Accessor a -> (a -> Effect Unit) -> Setup Unit
+createRenderEffect_ compute apply = createRenderEffect compute \value -> apply value $> pure unit
+
+foreign import createRenderEffectImpl
+  :: forall a
+   . EffectFn2 (Accessor a) (EffectFn1 a (Effect Unit)) Unit
+
+-- | A reaction runs its handler once, the next time anything read by the
+-- | last `track` changes.
+foreign import data Reaction :: Type
+
+createReaction :: Effect Unit -> Setup Reaction
+createReaction onInvalidate = Setup (runEffectFn1 createReactionImpl onInvalidate)
+
+foreign import createReactionImpl :: EffectFn1 (Effect Unit) Reaction
+
+-- | Reads `accessor` under the reaction, recording its dependencies.
+track :: forall a. Reaction -> Accessor a -> Effect Unit
+track reaction accessor = runEffectFn2 trackImpl reaction accessor
+
+foreign import trackImpl :: forall a. EffectFn2 Reaction (Accessor a) Unit
+
+-- | Applies pending writes now instead of at the next microtask.
+foreign import flush :: Effect Unit
+
+-- | Runs `action` and applies the writes it made before returning.
+withFlush :: forall a. Effect a -> Effect a
+withFlush action = runEffectFn1 withFlushImpl action
+
+foreign import withFlushImpl :: forall a. EffectFn1 (Effect a) a
