@@ -8,14 +8,17 @@ module Solid.Web
   , hydrateWith
   , requireBody
   , requireElementById
+  , mount
+  , mountAt
+  , hydrateAt
   ) where
 
 import Prelude
 
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Maybe (maybe)
 import Effect (Effect)
-import Effect.Exception (Error, error, throw, try)
+import Effect.Exception (Error, error, throw, throwException, try)
 import Effect.Uncurried (EffectFn4, runEffectFn4)
 import Prim.Row as Row
 import Solid.Owner (Owner)
@@ -82,3 +85,20 @@ clientOnly action
 
 foreign import renderImpl :: forall options. EffectFn4 (JSX -> Realized) { | options } JSX Element (Effect Unit)
 foreign import hydrateImpl :: forall options. EffectFn4 (JSX -> Realized) { | options } JSX Element (Effect Unit)
+
+-- | Renders `view` into `document.body`, for an app's `main`. Throws if that
+-- | fails; `render` returns the error and a way to unmount instead.
+mount :: JSX -> Effect Unit
+mount view = void (requireBody >>= rethrow >>= render view >>= rethrow)
+
+-- | `mount` into the element with the given id.
+mountAt :: String -> JSX -> Effect Unit
+mountAt id view = void (requireElementById id >>= rethrow >>= render view >>= rethrow)
+
+-- | Hydrates the server-rendered element with the given id. Throws if that
+-- | fails.
+hydrateAt :: String -> JSX -> Effect Unit
+hydrateAt id view = void (requireElementById id >>= rethrow >>= hydrate view >>= rethrow)
+
+rethrow :: forall a. Either Error a -> Effect a
+rethrow = either throwException pure

@@ -4,11 +4,9 @@ import Prelude
 
 import DOM.HTML.Indexed.InputType (InputType(..))
 import Data.Array as Array
-import Data.Either (Either(..))
 import Data.Foldable (all)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Effect.Class.Console (log)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM (classWhen, targetChecked, targetValue)
@@ -19,7 +17,7 @@ import Solid.Reactivity (createMemo)
 import Solid.Signal (createSignal, get, set)
 import Solid.Store (focusKey, value)
 import Solid.Store as Store
-import Solid.Web (render, requireBody)
+import Solid.Web (mount)
 import Web.UIEvent.KeyboardEvent as KeyboardEvent
 
 data Visibility
@@ -160,12 +158,4 @@ todoApp = Component.component \_ -> do
     ]
 
 main :: Effect Unit
-main = do
-  mountResult <- requireBody
-  case mountResult of
-    Left webError -> log ("Mount error: " <> show webError)
-    Right mountNode -> do
-      renderResult <- render (Component.element todoApp {}) mountNode
-      case renderResult of
-        Left webError -> log ("Render error: " <> show webError)
-        Right _dispose -> pure unit
+main = mount (Component.element todoApp {})

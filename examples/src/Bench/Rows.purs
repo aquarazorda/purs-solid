@@ -7,12 +7,10 @@ import Prelude
 
 import DOM.HTML.Indexed.ButtonType (ButtonType(..))
 import Data.Array as Array
-import Data.Either (Either(..))
 import Data.Maybe (fromMaybe)
 import Data.Traversable (for_, traverse)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Effect.Class.Console (log)
 import Effect.Ref as Ref
 import Solid.Component as Component
 import Solid.Control as Control
@@ -23,7 +21,7 @@ import Solid.JSX (JSX, text)
 import Solid.Setup (Setup, liftSetup)
 import Solid.Signal (Accessor, Setter, createSignal, get, modify_, set)
 import Solid.Store (createSelector)
-import Solid.Web (render, requireElementById)
+import Solid.Web (mountAt)
 
 type RowItem =
   { id :: Int
@@ -158,12 +156,4 @@ app = Component.component \_ -> do
     ]
 
 main :: Effect Unit
-main = do
-  mountResult <- requireElementById "main"
-  case mountResult of
-    Left webError -> log ("Mount error: " <> show webError)
-    Right mountNode -> do
-      renderResult <- render (Component.element app {}) mountNode
-      case renderResult of
-        Left webError -> log ("Render error: " <> show webError)
-        Right _ -> pure unit
+main = mountAt "main" (Component.element app {})

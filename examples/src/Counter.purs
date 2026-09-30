@@ -4,10 +4,8 @@ import Prelude
 
 import DOM.HTML.Indexed.ButtonType (ButtonType(..))
 import Data.Array as Array
-import Data.Either (Either(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Effect.Class.Console (log)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM.HTML as H
@@ -15,7 +13,7 @@ import Solid.DOM.Props as P
 import Solid.JSX (text)
 import Solid.Reactivity (createMemo)
 import Solid.Signal (createSignal, get, modify_, set)
-import Solid.Web (render, requireBody)
+import Solid.Web (mount)
 
 counterApp :: Component.Component {}
 counterApp = Component.component \_ -> do
@@ -94,12 +92,4 @@ counterApp = Component.component \_ -> do
     ]
 
 main :: Effect Unit
-main = do
-  mountResult <- requireBody
-  case mountResult of
-    Left webError -> log ("Mount error: " <> show webError)
-    Right mountNode -> do
-      renderResult <- render (Component.element counterApp {}) mountNode
-      case renderResult of
-        Left webError -> log ("Render error: " <> show webError)
-        Right _dispose -> pure unit
+main = mount (Component.element counterApp {})
