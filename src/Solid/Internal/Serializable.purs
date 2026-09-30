@@ -10,7 +10,7 @@ import Prelude (Unit, unit)
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Prim.TypeError (class Fail, Above, Beside, Quote, Text)
-import Solid.Start.Response (Reply)
+import Solid.Internal.Reply (Reply)
 import Type.Proxy (Proxy)
 
 -- | Types that survive Solid's serialization unchanged: primitives, `Unit`,

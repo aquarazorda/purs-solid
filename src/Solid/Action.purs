@@ -23,6 +23,7 @@ import Effect.Class (liftEffect) as Exports
 import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Solid.Internal.Action (Action(..), liftActionEffect)
 import Solid.Internal.Action (Action) as Exports
+import Solid.Internal.Optimistic (class MonadOptimistic, liftOptimistic)
 import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
 import Solid.Async (Refresh)
 import Solid.Signal (Accessor)
@@ -73,11 +74,12 @@ createOptimisticFrom source = Setup do
 
 foreign import createOptimisticFromImpl :: forall a. EffectFn1 (Accessor a) { get :: Accessor a, set :: Optimistic a }
 
-setOptimistic :: forall a. Optimistic a -> a -> Action Unit
-setOptimistic setter value = liftActionEffect (setOptimisticImpl setter value)
+-- | A tentative write: in an `Action`, or in a router action's `onSubmit`.
+setOptimistic :: forall m a. MonadOptimistic m => Optimistic a -> a -> m Unit
+setOptimistic setter value = liftOptimistic (setOptimisticImpl setter value)
 
-modifyOptimistic :: forall a. Optimistic a -> (a -> a) -> Action Unit
-modifyOptimistic setter f = liftActionEffect (modifyOptimisticImpl setter f)
+modifyOptimistic :: forall m a. MonadOptimistic m => Optimistic a -> (a -> a) -> m Unit
+modifyOptimistic setter f = liftOptimistic (modifyOptimisticImpl setter f)
 
 foreign import setOptimisticImpl :: forall a. Optimistic a -> a -> Effect Unit
 foreign import modifyOptimisticImpl :: forall a. Optimistic a -> (a -> a) -> Effect Unit

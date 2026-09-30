@@ -1,21 +1,22 @@
-const parsed = new Map();
+const patterns = new Map();
 
-const parse = (pattern) => {
-  let segments = parsed.get(pattern);
-  if (segments === undefined) {
-    segments = pattern
+// Segments of `/users/:id<int>/:tab?/*rest`, and the path Solid sees (filters removed).
+export const routePattern = (pattern) => {
+  let parsed = patterns.get(pattern);
+  if (parsed === undefined) {
+    const segments = pattern
       .split("/")
       .filter((segment) => segment !== "")
       .map((segment) => {
-        if (segment[0] === ":") {
-          return segment.endsWith("?") ? { optional: segment.slice(1, -1) } : { param: segment.slice(1) };
-        }
-        if (segment[0] === "*" && segment.length > 1) return { rest: segment.slice(1) };
-        return { text: segment };
+        const param = segment.match(/^([:*])([^<?]+)(?:<([a-z]+)>)?(\?)?$/);
+        if (param === null || (param[1] === "*" && param[2] === "")) return { text: segment };
+        return { name: param[2], rest: param[1] === "*", filter: param[3] ?? null, optional: param[4] === "?" };
       });
-    parsed.set(pattern, segments);
+    const path = pattern.replace(/<[a-z]+>/g, "");
+    parsed = { path, segments, params: segments.filter((segment) => segment.name !== undefined) };
+    patterns.set(pattern, parsed);
   }
-  return segments;
+  return parsed;
 };
 
 // Lone surrogates can't be encoded; keep them as they are.
@@ -29,13 +30,13 @@ const encode = (value) => {
 
 export const hrefImpl = (toNullable, pattern, params) => {
   const out = [];
-  for (const segment of parse(pattern)) {
+  for (const segment of pattern.segments) {
     if (segment.text !== undefined) out.push(segment.text);
-    else if (segment.param !== undefined) out.push(encode(params[segment.param]));
-    else if (segment.rest !== undefined) out.push(params[segment.rest].split("/").map(encode).join("/"));
     else {
-      const value = toNullable(params[segment.optional]);
-      if (value !== null) out.push(encode(value));
+      const value = segment.optional ? toNullable(params[segment.name]) : params[segment.name];
+      if (value === null) continue;
+      if (segment.rest) out.push(String(value).split("/").map(encode).join("/"));
+      else out.push(encode(String(value)));
     }
   }
   return "/" + out.join("/");

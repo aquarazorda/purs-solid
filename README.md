@@ -60,7 +60,7 @@ main = requireBody >>= case _ of
   - `Solid.DOM`, `Solid.DOM.HTML` / `Solid.DOM.Props`, `Solid.DOM.SVG` / `Solid.DOM.SVG.Props`. The HTML and SVG modules are generated from `dom-indexed` by `npm run gen:dom`.
 - **Rendering:** `Solid.Web` (render, hydrate), `Solid.Web.SSR` (string, async and streamed server rendering), `Solid.Errors` (client and server error hooks, safe errors).
 - **Routing and head tags:**
-  - `Solid.Router` (`route @"/users/:id"` gives the component `{ id :: String }`);
+  - `Solid.Router` (`route @"/users/:id"` gives the component `{ id :: String }`, `:id<int>` an `Int`);
   - `Solid.Router.Path` (`href`);
   - `Solid.Router.Query` (cached route data);
   - `Solid.Router.Action` (mutations the router tracks: forms, submissions, revalidation);

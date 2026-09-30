@@ -21,6 +21,7 @@ module Solid.Control
   , switch
   , switch_
   , loading
+  , loadingOn
   , errored
   , RevealOrder
   , sequential
@@ -122,7 +123,12 @@ switch_ cases = switch cases empty
 -- | Shows `fallback` only on the first load; later updates keep the current
 -- | content visible (use `Solid.Async.isPending` to show them).
 loading :: JSX -> JSX -> JSX
-loading fallback content = runFn2 loadingImpl fallback content
+loading fallback content = runFn3 loadingImpl null fallback content
+
+-- | Like `loading`, but shows `fallback` again whenever `key` changes, e.g.
+-- | the route's params, instead of keeping the previous content.
+loadingOn :: forall a. Accessor a -> JSX -> JSX -> JSX
+loadingOn key fallback content = runFn3 loadingImpl (notNull key) fallback content
 
 -- | The fallback receives the error and a `reset` effect (call it from an
 -- | event handler) that retries.

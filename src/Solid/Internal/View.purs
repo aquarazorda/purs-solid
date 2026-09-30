@@ -182,7 +182,7 @@ foreign import matchImpl :: Fn2 (Accessor Boolean) JSX JSX
 
 foreign import matchMaybeImpl :: forall a. Fn2 (Accessor (Nullable (WhenValue a))) (a -> Effect JSX) JSX
 
-foreign import loadingImpl :: Fn2 JSX JSX JSX
+foreign import loadingImpl :: forall a. Fn3 (Nullable (Accessor a)) JSX JSX JSX
 
 foreign import erroredImpl :: Fn2 (Accessor Error -> Effect Unit -> Effect JSX) JSX JSX
 

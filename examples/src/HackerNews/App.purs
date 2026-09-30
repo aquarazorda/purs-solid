@@ -8,8 +8,8 @@ import DOM.HTML.Indexed.ButtonType (ButtonType(..))
 import Data.Array as Array
 import Data.Int as Int
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Nullable (null, toMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Nullable (toMaybe)
 import Data.Tuple.Nested ((/\))
 import Effect.Exception (message)
 import Examples.HackerNews.Api (Comment, Feed(..), Story, feedLabel, feedPath, parseFeed)
@@ -34,7 +34,7 @@ app = Component.component \_ -> do
   router <- liftSetup $ Router.createRouter
     { routes:
         [ Router.route @"/" \_ -> feedPage Top
-        , Router.route @"/stories/:id" \props -> storyPage props.params
+        , Router.route @"/stories/:id<int>" \props -> storyPage props.params
         , Router.route @"/users/:id" \props -> userPage props.params
         , Router.route @"/:feed" \props -> pure $
             JSX.reactive (props.params <#> \{ feed } -> case parseFeed feed of
@@ -81,17 +81,17 @@ storyRow :: Accessor Story -> JSX
 storyRow row = H.li [ P.class_ "news-item" ]
   [ H.span [ P.class_ "score" ] [ text (show <<< _.points <$> row) ]
   , H.span [ P.class_ "title" ]
-      [ H.a [ P.href (row <#> \s -> fromMaybe (href @"/stories/:id" { id: show s.id }) (toMaybe s.url)) ] [ text (_.title <$> row) ] ]
+      [ H.a [ P.href (row <#> \s -> fromMaybe (href @"/stories/:id<int>" { id: s.id }) (toMaybe s.url)) ] [ text (_.title <$> row) ] ]
   , H.br_
   , H.span [ P.class_ "meta" ]
       [ text (row <#> \s -> "by " <> fromMaybe "anonymous" (toMaybe s.by) <> " | ")
-      , H.a [ P.href (row <#> \s -> href @"/stories/:id" { id: show s.id }) ] [ text (row <#> \s -> show s.comments <> " comments") ]
+      , H.a [ P.href (row <#> \s -> href @"/stories/:id<int>" { id: s.id }) ] [ text (row <#> \s -> show s.comments <> " comments") ]
       ]
   ]
 
-storyPage :: Accessor { id :: String } -> Setup JSX
+storyPage :: Accessor { id :: Int } -> Setup JSX
 storyPage params = do
-  page /\ _ <- createAsyncWith serverData (params <#> \{ id } -> maybe (pure null) Api.story (Int.fromString id))
+  page /\ _ <- createAsyncWith serverData (Api.story <<< _.id <$> params)
   pure $ Control.showMaybeElse (toMaybe <$> page)
     (\found -> pure $ H.div [ P.class_ "item-view" ]
         [ Meta.title (("Hacker News | " <> _) <<< _.story.title <$> found)

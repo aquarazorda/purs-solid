@@ -7,7 +7,7 @@ module Solid.Start.Response
   , httpStatusText
   , httpHeader
   , appendHttpHeader
-  , Reply
+  , module Exports
   , ReplyOptions
   , reply
   , redirect
@@ -22,7 +22,10 @@ import Prelude
 
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
 import Prim.Row as Row
+import Solid.Internal.Reply (Reply)
+import Solid.Internal.Reply (Reply) as Exports
 import Solid.Internal.Setup (Setup(..))
+import Solid.Router.Query (QueryKey)
 import Unsafe.Coerce (unsafeCoerce)
 
 httpStatus :: Int -> Setup Unit
@@ -43,15 +46,12 @@ foreign import httpStatusTextImpl :: EffectFn2 Int String Unit
 
 foreign import httpHeaderImpl :: EffectFn3 String String Boolean Unit
 
--- | A result of `b`, or a redirect or reload with no value.
-foreign import data Reply :: Type -> Type
-
 type ReplyOptions =
   ( status :: Int
   , statusText :: String
-  -- | The query keys the mutation invalidated; `[]` revalidates nothing.
-  -- | Left out, the router revalidates everything.
-  , revalidate :: Array String
+  -- | The queries the mutation invalidated; `[]` revalidates nothing. Left
+  -- | out, the router revalidates everything.
+  , revalidate :: Array QueryKey
   )
 
 -- | A plain result.

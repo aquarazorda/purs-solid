@@ -19,7 +19,14 @@ import Solid.DOM.Props as P
 import Solid.JSX (JSX, text)
 import Solid.Router (href)
 import Solid.Router as Router
-import Solid.Router.Action (routerAction, useAction, useSubmissions)
+import Control.Promise (Promise)
+import Data.Argonaut.Core (fromString, toString)
+import Effect (Effect)
+import Foreign.Object as Object
+import Solid.Action (createOptimistic, setOptimistic)
+import Solid.Component (LazyModule)
+import Solid.Router.Action (onSettled, onSubmit, routerAction, useAction, useSubmissions)
+import Solid.Signal (get)
 import Solid.Router.Query (Query, revalidate, runQuery)
 import Solid.Start.Response (redirect, reply)
 import Solid.Router.Query as Query
@@ -90,6 +97,7 @@ spec = describe "Solid.Router" do
       href @"/users/:id/:tab?" { id: "a b", tab: Just "posts" } `shouldEqual` "/users/a%20b/posts"
       href @"/files/*rest" { rest: "docs/read me.md" } `shouldEqual` "/files/docs/read%20me.md"
       href @"/" {} `shouldEqual` "/"
+      href @"/items/:id<int>/:page<int>?" { id: 42, page: Just 2 } `shouldEqual` "/items/42/2"
 
   solidIt "renders the matched route with its typed params" do
     r <- withRouter "/users/7"
@@ -204,3 +212,103 @@ spec = describe "Solid.Router" do
       waitLoad
       liftEffect (Ref.read results) >>= shouldEqual [ Just "renamed ada", Nothing ]
       html r.mounted >>= shouldEqual "<main>done</main>"
+
+  describe "route data and navigation" do
+    solidIt "int params match integers only and arrive as Int" do
+      r <- withRouter "/items/41"
+        [ Router.route @"/items/:id<int>" \props -> pure (text (show <<< (_ + 1) <<< _.id <$> props.params))
+        , Router.route @"/items/:slug" \props -> pure (text (("slug " <> _) <<< _.slug <$> props.params))
+        ]
+      html r.mounted >>= shouldEqual "<main>42</main>"
+      go r.navigate "/items/abc"
+      html r.mounted >>= shouldEqual "<main>slug abc</main>"
+      liftEffect r.mounted.dispose
+
+    solidIt "preload runs with the typed params before the route renders" do
+      seen <- liftEffect (Ref.new [])
+      r <- withRouter "/"
+        [ Router.route @"/" \_ -> pure (text "home")
+        , Router.routeWith @"/items/:id<int>" { preload: \{ params } -> Ref.modify_ (_ <> [ params.id ]) seen }
+            \_ -> pure (text "item")
+        ]
+      go r.navigate "/items/3"
+      html r.mounted >>= shouldEqual "<main>item</main>"
+      liftEffect (Ref.read seen) >>= shouldEqual [ 3 ]
+      liftEffect r.mounted.dispose
+
+    solidIt "lazy layouts load their child routes on first match" do
+      r <- withRouter "/"
+        [ Router.route @"/" \_ -> pure (text "home")
+        , Router.layoutLazy @"/admin" (\props -> pure (H.section_ [ props.children ]))
+            (loadRoutes [ Router.route @"/users" \_ -> pure (text "admin users") ])
+        ]
+      go r.navigate "/admin/users"
+      waitLoad
+      html r.mounted >>= shouldEqual "<main><section>admin users</section></main>"
+      liftEffect r.mounted.dispose
+
+    solidIt "navigation state, search params and link state" do
+      r <- withRouter "/list?tag=a&tag=b"
+        [ Router.route @"/list" \_ -> do
+            location <- Router.useLocation
+            params <- Router.useSearchParams
+            link <- Router.useLinkState (pure "/list")
+            pure $ H.div_
+              [ text (show <$> Router.queryParams "tag" location)
+              , text (show <<< map toString <$> Router.locationState location)
+              , text (link.current <#> \c -> if c then " current" else "")
+              , H.button [ P.id "page", P.onClick \_ -> Router.setSearchParams (Object.singleton "page" (Just "2")) params ] [ text "" ]
+              , text (show <$> Router.queryParam "page" location)
+              ]
+        ]
+      html r.mounted >>= shouldEqual """<main><div>["a","b"]Nothing current<button id="page"></button>Nothing</div></main>"""
+      query "#page" r.mounted >>= traverse_ (liftEffect <<< click)
+      waitLoad
+      html r.mounted >>= shouldEqual """<main><div>["a","b"]Nothing current<button id="page"></button>(Just "2")</div></main>"""
+      nav <- liftEffect (Ref.read r.navigate)
+      liftEffect (traverse_ (\n -> Router.navigateWith { state: fromString "hi" } n "/list") nav)
+      waitLoad
+      html r.mounted >>= shouldEqual """<main><div>[](Just (Just "hi")) current<button id="page"></button>Nothing</div></main>"""
+      liftEffect r.mounted.dispose
+
+    solidIt "useBeforeLeave can block a navigation and retry it" do
+      pending <- liftEffect (Ref.new Nothing)
+      r <- withRouter "/edit"
+        [ Router.route @"/edit" \_ -> do
+            Router.useBeforeLeave \leave -> do
+              held <- Ref.read pending
+              case held of
+                Nothing -> leave.preventDefault *> Ref.write (Just leave.forceRetry) pending
+                Just _ -> pure unit
+            pure (text "editing")
+        , Router.route @"/done" \_ -> pure (text "done")
+        ]
+      go r.navigate "/done"
+      html r.mounted >>= shouldEqual "<main>editing</main>"
+      liftEffect (Ref.read pending) >>= traverse_ liftEffect
+      waitLoad
+      html r.mounted >>= shouldEqual "<main>done</main>"
+      liftEffect r.mounted.dispose
+
+  solidIt "onSubmit makes optimistic writes; onSettled sees every run" do
+    settled <- liftEffect (Ref.new [])
+    saving /\ setSaving <- liftEffect (createOptimistic false)
+    let
+      save = routerAction "save" (\n -> delay (Milliseconds 10.0) $> reply (n * 2))
+        # onSubmit (\_ -> setOptimistic setSaving true)
+        # onSettled (\s -> Ref.modify_ (_ <> [ s.result ]) settled)
+      page = Component.component \_ -> do
+        run <- useAction save
+        pure (H.button [ P.id "save", P.onClick \_ -> launchAff_ (void (run 21)) ] [ text (show <$> saving) ])
+    r <- withRouter "/" [ Router.route @"/" \_ -> pure (Component.element page {}) ]
+    query "#save" r.mounted >>= traverse_ (liftEffect <<< click)
+    settle
+    during <- liftEffect (get saving)
+    delay (Milliseconds 30.0)
+    waitLoad
+    after <- liftEffect (get saving)
+    { during, after } `shouldEqual` { during: true, after: false }
+    liftEffect (Ref.read settled) >>= shouldEqual [ Just 42 ]
+    liftEffect r.mounted.dispose
+
+foreign import loadRoutes :: Array Router.Route -> Effect (Promise LazyModule)

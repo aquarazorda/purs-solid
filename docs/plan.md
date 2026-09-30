@@ -95,13 +95,13 @@ Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6
 - [x] `RequestEvent`: `setResponseStatus`, `setResponseHeader`, `appendResponseHeader`, `deleteCookie`, cookie `partitioned`. `httpStatusText`.
 
 ### Phase 5 — Router data and navigation
-- [ ] Route `preload`, and `Loading`'s `on` for route-change skeletons.
-- [ ] `matchFilters` with the router's `int`, giving typed `Int` params (open question 3).
-- [ ] `useSearchParams` with a setter; `Location` query, `state` and `key`; `NavigateOptions.state`.
-- [ ] `useBeforeLeave`, `useLinkState`, `usePreloadRoute`, `useResolvedPath`.
-- [ ] Remaining `RouterConfig` options: `preload`, `singleFlight`, `actionBase`, `explicitLinks`, `preloadLinks`, `scrollRestoration`, `transformUrl`.
-- [ ] Lazy route children; `revalidate` with `force` and several keys.
-- [ ] Router action `onSubmit` / `onSettled` hooks (optimistic UI for form posts).
+- [x] `routeWith` / `layoutWith { preload }` (params typed), `Query.prefetch`, and `Control.loadingOn` (Loading's `on`).
+- [x] Typed params (open question 3: syntax in the path). `:id<int>` is an `Int`, matched by the router's `int` filter. The pattern is parsed in JS; the PureScript `ParamFields` class is gone.
+- [x] `useSearchParams` / `setSearchParams(With)`, `queryParams`, `locationState`, `locationKey`, `NavigateOptions.state`.
+- [x] `useBeforeLeave`, `useLinkState`, `usePreloadRoute`, `useResolvedPath`.
+- [x] `RouterOptions`: `preload`, `singleFlight`, `actionBase`, `explicitLinks`, `preloadLinks`, `scrollRestoration`, `transformUrl`.
+- [x] `layoutLazy` (a module exporting `routes`); `QueryKey`, `queryKey(For)`, `revalidateKeys`, and `Reply` revalidation takes `QueryKey`s. `force` is already the router's default.
+- [x] Router action `onSubmit` (optimistic writes in `Submitting`) and `onSettled`. `setOptimistic` / `modifyOptimistic` work in any `MonadOptimistic`.
 
 ### Phase 6 — Async, store and option completeness
 - [ ] Computation options, which become row fields after Phase 1:

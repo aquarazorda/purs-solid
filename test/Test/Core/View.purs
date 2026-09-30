@@ -255,6 +255,19 @@ spec = describe "views" do
       marked <- liftEffect (markSafeError (error "safe") >>= isSafeError)
       { plain, marked } `shouldEqual` { plain: false, marked: true }
 
+    solidIt "loadingOn shows the fallback again when its key changes" do
+      id <- signal 1
+      mounted <- mount $ Component.element (Component.component \_ -> do
+        item /\ _ <- createAsync (id.get <#> \n -> delay (Milliseconds 20.0) $> ("item " <> show n))
+        pure (Control.loadingOn id.get (text "loading") (text item))) {}
+      delay (Milliseconds 40.0)
+      html mounted >>= shouldEqual "item 1"
+      write id 2
+      html mounted >>= shouldEqual "loading"
+      delay (Milliseconds 40.0)
+      html mounted >>= shouldEqual "item 2"
+      liftEffect mounted.dispose
+
     solidIt "loading shows the fallback until async content is ready" do
       let
         slow = Component.component \_ -> do

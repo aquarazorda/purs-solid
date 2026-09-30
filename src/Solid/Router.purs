@@ -5,8 +5,13 @@
 module Solid.Router
   ( Route
   , RouteProps
+  , RouteOptions
+  , PreloadArgs
   , route
+  , routeWith
   , layout
+  , layoutWith
+  , layoutLazy
   , Router
   , History
   , RouterOptions
@@ -22,8 +27,21 @@ module Solid.Router
   , search
   , hash
   , queryParam
+  , queryParams
+  , locationState
+  , locationKey
+  , SearchParams
+  , useSearchParams
+  , setSearchParams
+  , setSearchParamsWith
   , useIsRouting
   , useMatch
+  , LinkState
+  , useLinkState
+  , useResolvedPath
+  , usePreloadRoute
+  , BeforeLeave
+  , useBeforeLeave
   , Navigate
   , NavigateOptions
   , useNavigate
@@ -36,19 +54,22 @@ module Solid.Router
 
 import Prelude
 
+import Control.Promise (Promise)
+import Data.Argonaut.Core (Json)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
+import Foreign.Object (Object)
 import Prim.Row as Row
-import Prim.RowList (class RowToList)
 import Solid.Internal.Setup (Setup(..), runSetup)
-import Solid.Internal.View (JSX, Realized, realize)
-import Solid.Router.Path (class ParamFields, class PathParams, ParamField, href, paramFields)
+import Solid.Internal.View (JSX, LazyModule, Realized, realize)
+import Solid.Router.Path (class PathParams, RoutePattern, href, routePattern)
 import Solid.Router.Path (href) as Exports
 import Solid.Signal (Accessor)
 import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data Route :: Type
 
@@ -58,32 +79,80 @@ type RouteProps params =
   , children :: JSX
   }
 
--- | `route @"/users/:id/:tab?" \props -> ...` (optional params are `Maybe`).
+type RouteOptions params =
+  ( -- | Runs before the route renders and when a link to it is hovered: start
+    -- | loading its data here (`Solid.Router.Query.prefetch`).
+    preload :: PreloadArgs params -> Effect Unit
+  )
+
+-- | `intent` is `"initial"`, `"navigate"`, `"native"` or `"preload"`.
+type PreloadArgs params = { params :: { | params }, intent :: String }
+
+-- | `route @"/users/:id<int>/:tab?" \props -> ...` (optional params are `Maybe`).
 route
-  :: forall @path params rl
+  :: forall @path params
    . IsSymbol path
   => PathParams path params
-  => RowToList params rl
-  => ParamFields rl
   => (RouteProps params -> Setup JSX)
   -> Route
-route render = layout @path render []
+route = routeWith @path {}
+
+-- | Takes any subset of `RouteOptions`.
+routeWith
+  :: forall @path params given missing
+   . IsSymbol path
+  => PathParams path params
+  => Row.Union given missing (RouteOptions params)
+  => { | given }
+  -> (RouteProps params -> Setup JSX)
+  -> Route
+routeWith options render = layoutWith @path options render []
 
 -- | Render the matched child with `props.children`. Child paths are relative
 -- | to this one.
 layout
-  :: forall @path params rl
+  :: forall @path params
    . IsSymbol path
   => PathParams path params
-  => RowToList params rl
-  => ParamFields rl
   => (RouteProps params -> Setup JSX)
   -> Array Route
   -> Route
-layout render children =
+layout = layoutWith @path {}
+
+layoutWith
+  :: forall @path params given missing
+   . IsSymbol path
+  => PathParams path params
+  => Row.Union given missing (RouteOptions params)
+  => { | given }
+  -> (RouteProps params -> Setup JSX)
+  -> Array Route
+  -> Route
+layoutWith options render children = defineRoute @path options render (unsafeCoerce children)
+
+-- | A layout whose child routes load on first match. `load` is a dynamic
+-- | `import()` of a module that exports `routes :: Array Route`.
+layoutLazy
+  :: forall @path params
+   . IsSymbol path
+  => PathParams path params
+  => (RouteProps params -> Setup JSX)
+  -> Effect (Promise LazyModule)
+  -> Route
+layoutLazy render load = defineRoute @path {} render (unsafeCoerce load)
+
+defineRoute
+  :: forall @path params options
+   . IsSymbol path
+  => PathParams path params
+  => { | options }
+  -> (RouteProps params -> Setup JSX)
+  -> RouteChildren
+  -> Route
+defineRoute options render children =
   routeImpl
-    { path: reflectSymbol (Proxy :: Proxy path)
-    , fields: paramFields (Proxy :: Proxy rl)
+    { pattern: routePattern (reflectSymbol (Proxy :: Proxy path))
+    , options
     , render: \props -> runSetup (render props)
     , children
     , just: Just
@@ -91,14 +160,17 @@ layout render children =
     , realize
     }
 
+-- | `Array Route`, or an `Effect (Promise LazyModule)` for lazy children.
+foreign import data RouteChildren :: Type
+
 foreign import routeImpl
-  :: forall params
-   . { path :: String
-     , fields :: Array ParamField
+  :: forall params options
+   . { pattern :: RoutePattern
+     , options :: { | options }
      , render :: RouteProps params -> Effect JSX
-     , children :: Array Route
-     , just :: String -> Maybe String
-     , nothing :: Maybe String
+     , children :: RouteChildren
+     , just :: forall a. a -> Maybe a
+     , nothing :: forall a. Maybe a
      , realize :: JSX -> Realized
      }
   -> Route
@@ -119,6 +191,17 @@ type RouterOptions =
     base :: String
   -- | Browser history when left out.
   , history :: History
+  -- | Warms app-wide data once per mount or request.
+  , preload :: Effect Unit
+  , singleFlight :: Boolean
+  -- | The path prefix of server action URLs.
+  , actionBase :: String
+  -- | Only intercept links marked with `link` (instead of every same-origin link).
+  , explicitLinks :: Boolean
+  -- | Preload route code and data on link hover and focus.
+  , preloadLinks :: Boolean
+  , scrollRestoration :: Boolean
+  , transformUrl :: String -> String
   )
 
 -- | The route tree is fixed. Takes `routes` and any subset of `RouterOptions`.
@@ -161,6 +244,41 @@ queryParam name location = toMaybe <$> queryParamImpl name location
 
 foreign import queryParamImpl :: String -> Location -> Accessor (Nullable String)
 
+-- | Every value of a repeated param.
+foreign import queryParams :: String -> Location -> Accessor (Array String)
+
+-- | The `state` the navigation passed, if any.
+locationState :: Location -> Accessor (Maybe Json)
+locationState location = toMaybe <$> locationStateImpl location
+
+foreign import locationStateImpl :: Location -> Accessor (Nullable Json)
+
+-- | Identifies the history entry.
+foreign import locationKey :: Location -> Accessor String
+
+-- | Updates query params in place; read them with `queryParam`.
+foreign import data SearchParams :: Type
+
+useSearchParams :: Setup SearchParams
+useSearchParams = Setup useSearchParamsImpl
+
+foreign import useSearchParamsImpl :: Effect SearchParams
+
+-- | `Nothing` removes a param; params not named stay.
+setSearchParams :: Object (Maybe String) -> SearchParams -> Effect Unit
+setSearchParams = setSearchParamsWith {}
+
+setSearchParamsWith
+  :: forall given missing
+   . Row.Union given missing NavigateOptions
+  => { | given }
+  -> Object (Maybe String)
+  -> SearchParams
+  -> Effect Unit
+setSearchParamsWith options params setter = runEffectFn3 setSearchParamsImpl setter (toNullable <$> params) options
+
+foreign import setSearchParamsImpl :: forall options. EffectFn3 SearchParams (Object (Nullable String)) { | options } Unit
+
 -- | `true` while a navigation (and the next route's data) is in progress.
 useIsRouting :: Setup (Accessor Boolean)
 useIsRouting = Setup useIsRoutingImpl
@@ -172,6 +290,46 @@ useMatch pattern = Setup (runEffectFn1 useMatchImpl pattern)
 
 foreign import useMatchImpl :: EffectFn1 String (Accessor Boolean)
 
+-- | A link's state: `active` when the location is at or under it, `current`
+-- | when it's exactly there, `pending` while navigating to it.
+type LinkState =
+  { active :: Accessor Boolean
+  , current :: Accessor Boolean
+  , pending :: Accessor Boolean
+  }
+
+useLinkState :: Accessor String -> Setup LinkState
+useLinkState to = Setup (runEffectFn1 useLinkStateImpl to)
+
+foreign import useLinkStateImpl :: EffectFn1 (Accessor String) LinkState
+
+-- | Resolves a path against the current route, as an `href` would be.
+useResolvedPath :: Accessor String -> Setup (Accessor (Maybe String))
+useResolvedPath path = Setup (map toMaybe <$> runEffectFn1 useResolvedPathImpl path)
+
+foreign import useResolvedPathImpl :: EffectFn1 (Accessor String) (Accessor (Nullable String))
+
+-- | Loads a URL's route code and data ahead of navigating there.
+usePreloadRoute :: Setup (String -> Effect Unit)
+usePreloadRoute = Setup usePreloadRouteImpl
+
+foreign import usePreloadRouteImpl :: Effect (String -> Effect Unit)
+
+-- | A navigation away from the current route. `preventDefault` blocks it;
+-- | `retry` tries it again, and `forceRetry` without asking the handlers.
+type BeforeLeave =
+  { to :: String
+  , defaultPrevented :: Boolean
+  , preventDefault :: Effect Unit
+  , retry :: Effect Unit
+  , forceRetry :: Effect Unit
+  }
+
+useBeforeLeave :: (BeforeLeave -> Effect Unit) -> Setup Unit
+useBeforeLeave listener = Setup (runEffectFn1 useBeforeLeaveImpl listener)
+
+foreign import useBeforeLeaveImpl :: EffectFn1 (BeforeLeave -> Effect Unit) Unit
+
 foreign import data Navigate :: Type
 
 type NavigateOptions =
@@ -179,6 +337,8 @@ type NavigateOptions =
   , scroll :: Boolean
   -- | Resolve relative to the current route (like an `href`).
   , resolve :: Boolean
+  -- | Read back with `locationState`.
+  , state :: Json
   )
 
 useNavigate :: Setup Navigate
@@ -200,7 +360,7 @@ navigateWith
   -> Effect Unit
 navigateWith options nav to = runEffectFn3 navigateImpl nav to options
 
--- | `navigateTo @"/users/:id" nav { id: "42" }`.
+-- | `navigateTo @"/users/:id<int>" nav { id: 42 }`.
 navigateTo
   :: forall @path params
    . IsSymbol path

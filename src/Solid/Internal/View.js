@@ -263,15 +263,18 @@ export const matchMaybeImpl = (condition, render) => () =>
     children: (value) => realize(render(fromWhen(value))()),
   });
 
-export const loadingImpl = (fallback, content) => () =>
-  createComponent(Loading, {
+export const loadingImpl = (key, fallback, content) => () => {
+  const props = {
     get fallback() {
       return realize(fallback);
     },
     get children() {
       return realize(content);
     },
-  });
+  };
+  if (key !== null) Object.defineProperty(props, "on", { get: () => key(), enumerable: true });
+  return createComponent(Loading, props);
+};
 
 const toError = (error) => (error instanceof Error ? error : new Error(String(error)));
 

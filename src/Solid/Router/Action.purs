@@ -12,6 +12,9 @@ module Solid.Router.Action
   , useAction
   , Submission
   , useSubmissions
+  , Submitting
+  , onSubmit
+  , onSettled
   ) where
 
 import Prelude
@@ -23,6 +26,7 @@ import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Exception (Error)
+import Solid.Internal.Optimistic (class MonadOptimistic)
 import Solid.Internal.Serializable (class Serializable)
 import Solid.Internal.ServerFunction (ServerFunction, checked)
 import Solid.Internal.Setup (Setup(..))
@@ -63,14 +67,35 @@ type Submission a b =
 
 useSubmissions :: forall a b. RouterAction a b -> Setup (Accessor (Array (Submission a b)))
 useSubmissions act = Setup (map (map toSubmission) <$> useSubmissionsImpl act)
-  where
-  toSubmission rep =
-    { input: rep.input
-    , result: toMaybe rep.result
-    , error: toMaybe rep.error
-    , clear: rep.clear
-    , retry: toMaybe <$> toAffE rep.retry
-    }
+
+toSubmission :: forall a b. SubmissionRep a b -> Submission a b
+toSubmission rep =
+  { input: rep.input
+  , result: toMaybe rep.result
+  , error: toMaybe rep.error
+  , clear: rep.clear
+  , retry: toMaybe <$> toAffE rep.retry
+  }
+
+-- | Runs as a submission starts, inside its transaction: make optimistic writes
+-- | here (`Solid.Action.setOptimistic`, `Solid.Store.updateOptimistic`).
+newtype Submitting a = Submitting (Effect a)
+
+derive newtype instance Functor Submitting
+derive newtype instance Apply Submitting
+derive newtype instance Applicative Submitting
+derive newtype instance Bind Submitting
+derive newtype instance Monad Submitting
+
+instance MonadOptimistic Submitting where
+  liftOptimistic = Submitting
+
+onSubmit :: forall a b. (a -> Submitting Unit) -> RouterAction a b -> RouterAction a b
+onSubmit hook act = runFn2 onSubmitImpl act \input -> case hook input of Submitting effect -> effect
+
+-- | Runs after every submission, including redirects and ones with no result.
+onSettled :: forall a b. (Submission a b -> Effect Unit) -> RouterAction a b -> RouterAction a b
+onSettled hook act = runFn2 onSettledImpl act (hook <<< toSubmission)
 
 type SubmissionRep a b =
   { input :: a
@@ -85,5 +110,9 @@ foreign import routerActionImpl :: forall a b. Fn2 String (a -> Effect (Promise 
 foreign import serverActionImpl :: forall a b. Fn2 String (ServerFunction a (Reply b)) (RouterAction a b)
 
 foreign import useActionImpl :: forall a b. RouterAction a b -> Effect (a -> Effect (Promise (Nullable b)))
+
+foreign import onSubmitImpl :: forall a b. Fn2 (RouterAction a b) (a -> Effect Unit) (RouterAction a b)
+
+foreign import onSettledImpl :: forall a b. Fn2 (RouterAction a b) (SubmissionRep a b -> Effect Unit) (RouterAction a b)
 
 foreign import useSubmissionsImpl :: forall a b. RouterAction a b -> Effect (Accessor (Array (SubmissionRep a b)))

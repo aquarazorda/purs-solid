@@ -13,14 +13,19 @@ export const useActionImpl = (act) => () => {
 
 const toError = (error) => (error instanceof Error ? error : new Error(String(error)));
 
+const toRep = (submission) => ({
+  input: submission.input[0],
+  result: submission.result ?? null,
+  error: submission.error == null ? null : toError(submission.error),
+  clear: () => submission.clear(),
+  retry: () => submission.retry().then((value) => value ?? null),
+});
+
 export const useSubmissionsImpl = (act) => () => {
   const submissions = useSubmissions(act);
-  return () =>
-    Array.from(submissions, (submission) => ({
-      input: submission.input[0],
-      result: submission.result ?? null,
-      error: submission.error == null ? null : toError(submission.error),
-      clear: () => submission.clear(),
-      retry: () => submission.retry().then((value) => value ?? null),
-    }));
+  return () => Array.from(submissions, toRep);
 };
+
+export const onSubmitImpl = (act, hook) => act.onSubmit((input) => hook(input)());
+
+export const onSettledImpl = (act, hook) => act.onSettled((submission) => hook(toRep(submission))());

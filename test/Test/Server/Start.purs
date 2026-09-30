@@ -15,6 +15,7 @@ import Effect.Exception (throw)
 import Solid.Component as Component
 import Solid.JSX (text)
 import Solid.Start.Middleware (MiddlewareFn, middleware)
+import Solid.Router.Query as Query
 import Solid.Start.RequestEvent as Request
 import Solid.Start.Response (Reply, httpHeader, httpStatus, redirectWith, reloadWith, reply, respondWith)
 import Solid.Start.ServerFunction (ServerFunction, call)
@@ -81,7 +82,8 @@ spec = describe "Solid.Start" do
 
   solidIt "replies carry redirects, reloads and values" do
     replyInfo (redirectWith { status: 303 } "/done" :: Reply Int) `shouldEqual` { status: 303, location: "/done", revalidate: "", value: null }
-    replyInfo (reloadWith { revalidate: [ "todos" ] } :: Reply Int) `shouldEqual` { status: 200, location: "", revalidate: "todos", value: null }
+    let todos = Query.query "todos" (\(_ :: Unit) -> pure [ "a" ])
+    replyInfo (reloadWith { revalidate: [ Query.queryKey todos ] } :: Reply Int) `shouldEqual` { status: 200, location: "", revalidate: "todos[", value: null }
     replyInfo (respondWith { revalidate: [] } 7) `shouldEqual` { status: 0, location: "", revalidate: "", value: notNull 7 }
     replyInfo (reply 7) `shouldEqual` { status: 0, location: "", revalidate: "", value: notNull 7 }
 
