@@ -51,25 +51,25 @@ const htmlBody = allElements
     if (voidElements.has(el)) {
       return [
         `${name} :: Array (Prop ${row}) -> JSX`,
-        `${name} props = elementWith HtmlNamespace "${el}" props []`,
+        `${name} props = elementWith htmlNamespace "${el}" props []`,
         ``,
         `${el}_ :: JSX`,
-        `${el}_ = elementWith HtmlNamespace "${el}" [] []`,
+        `${el}_ = elementWith htmlNamespace "${el}" [] []`,
       ].join("\n");
     }
     return [
       `${name} :: Array (Prop ${row}) -> Array JSX -> JSX`,
-      `${name} = elementWith HtmlNamespace "${el}"`,
+      `${name} = elementWith htmlNamespace "${el}"`,
       ``,
       `${el}_ :: Array JSX -> JSX`,
-      `${el}_ = elementWith HtmlNamespace "${el}" []`,
+      `${el}_ = elementWith htmlNamespace "${el}" []`,
     ].join("\n");
   })
   .join("\n\n");
 
 const html = `${header("Solid.DOM.HTML", "HTML elements, typed by the attributes and events each one supports.")}
 import DOM.HTML.Indexed as I
-import Solid.Internal.View (JSX, Namespace(..), Prop, elementWith)
+import Solid.Internal.View (JSX, Prop, elementWith, htmlNamespace)
 
 ${htmlBody}
 `;
@@ -95,7 +95,7 @@ const propBody = propLabels
     }
     return [
       `${name} :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (${label} :: a | r)`,
-      `${name} v = bindingProp "${attributeName(label)}" toAttrValue (binding v)`,
+      `${name} = bindingProp "${attributeName(label)}" toAttrValue`,
     ].join("\n");
   })
   .join("\n\n");
@@ -121,7 +121,7 @@ import Prelude
 
 ${[...eventTypes].sort().map((type) => eventImports[type]).join("\n")}
 import Solid.DOM.AttrValue (class AttrValue, toAttrValue)
-import Solid.Internal.View (class ToBinding, Prop, binding, bindingProp, eventProp)
+import Solid.Internal.View (class ToBinding, Prop, bindingProp, eventProp)
 import Effect (Effect)
 
 ${propBody}
@@ -170,7 +170,7 @@ const svgNames = svgElements.map((el) => ({ el, name: identifier(el) }));
 
 const svg = `${header("Solid.DOM.SVG", "SVG elements.")}
 import DOM.HTML.Indexed as I
-import Solid.Internal.View (JSX, Namespace(..), Prop, elementWith)
+import Solid.Internal.View (JSX, Prop, elementWith, svgNamespace)
 
 type SVGAttributes = I.InteractiveEvents
   ( ${svgRow.join("\n  , ")}
@@ -180,10 +180,10 @@ ${svgNames
   .map(({ el, name }) =>
     [
       `${name} :: Array (Prop SVGAttributes) -> Array JSX -> JSX`,
-      `${name} = elementWith SvgNamespace "${el}"`,
+      `${name} = elementWith svgNamespace "${el}"`,
       ``,
       `${el}_ :: Array JSX -> JSX`,
-      `${el}_ = elementWith SvgNamespace "${el}" []`,
+      `${el}_ = elementWith svgNamespace "${el}" []`,
     ].join("\n")
   )
   .join("\n\n")}
@@ -192,13 +192,13 @@ ${svgNames
 const svgPropLabels = Object.keys(svgAttributes).sort();
 const svgProps = `${header("Solid.DOM.SVG.Props", "SVG presentation attributes.")}
 import Solid.DOM.AttrValue (class AttrValue, toAttrValue)
-import Solid.Internal.View (class ToBinding, Prop, binding, bindingProp)
+import Solid.Internal.View (class ToBinding, Prop, bindingProp)
 
 ${svgPropLabels
   .map((label) =>
     [
       `${identifier(label)} :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (${label} :: a | r)`,
-      `${identifier(label)} v = bindingProp "${svgAttributes[label]}" toAttrValue (binding v)`,
+      `${identifier(label)} = bindingProp "${svgAttributes[label]}" toAttrValue`,
     ].join("\n")
   )
   .join("\n\n")}

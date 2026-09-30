@@ -181,6 +181,41 @@ spec = describe "views" do
       html mounted >>= shouldEqual "<div>78|012</div>"
       liftEffect mounted.dispose
 
+    solidIt "forEachBy updates a view in place when its key stays" do
+      items <- signal [ { id: 1, label: "a" }, { id: 2, label: "b" } ]
+      mounted <- mount $ H.ul_
+        [ Control.forEachByElse _.id items.get (\item _ -> pure (H.li [ P.id (show <<< _.id <$> item) ] [ text (_.label <$> item) ])) (text "empty") ]
+      first <- expectElement "[id='1']" mounted
+      write items [ { id: 2, label: "b" }, { id: 1, label: "A" } ]
+      html mounted >>= shouldEqual """<ul><li id="2">b</li><li id="1">A</li></ul>"""
+      later <- expectElement "[id='1']" mounted
+      unsafeRefEq first later `shouldEqual` true
+      write items []
+      html mounted >>= shouldEqual "<ul>empty</ul>"
+      liftEffect mounted.dispose
+
+    solidIt "list fallbacks show while there is nothing to render" do
+      items <- signal ([] :: Array Int)
+      count <- signal 0
+      mounted <- mount $ H.div_
+        [ Control.forEachUnkeyedElse items.get (\item _ -> pure (text (show <$> item))) (text "no items")
+        , text "|"
+        , Control.repeatElse count.get (\i -> pure (text (show i))) (text "zero")
+        ]
+      html mounted >>= shouldEqual "<div>no items|zero</div>"
+      write items [ 4 ]
+      write count 2
+      html mounted >>= shouldEqual "<div>4|01</div>"
+      liftEffect mounted.dispose
+
+    solidIt "reveal takes any subset of its options" do
+      mounted <- mount $ H.div_
+        [ Control.reveal {} [ text "a" ]
+        , Control.reveal { order: Control.together, collapsed: true } [ text "b" ]
+        ]
+      html mounted >>= shouldEqual "<div>ab</div>"
+      liftEffect mounted.dispose
+
     solidIt "switch renders the first matching case" do
       n <- signal 1
       mounted <- mount $ Control.switch

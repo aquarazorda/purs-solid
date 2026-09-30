@@ -16,7 +16,6 @@
             "exceptions",
             "foreign-object",
             "functions",
-            "js-uri",
             "maybe",
             "media-types",
             "nullable",
@@ -1180,16 +1179,6 @@
         "functions",
         "maybe",
         "newtype",
-        "prelude"
-      ]
-    },
-    "js-uri": {
-      "type": "registry",
-      "version": "3.1.0",
-      "integrity": "sha256-7waHOctAfqhhw540FNJ7C/YsDMQW9TmA+SpHhduH6Uw=",
-      "dependencies": [
-        "functions",
-        "maybe",
         "prelude"
       ]
     },

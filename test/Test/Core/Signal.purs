@@ -9,7 +9,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Solid.Reactivity (createEffect_, createMemo, flush)
 import Solid.Root (createRoot)
-import Solid.Signal (Accessor, Equality(..), createSignal, createSignalWith, defaultSignalOptions, eqEquality, get, modify, set, untrack)
+import Solid.Signal (Accessor, alwaysNotify, createSignal, createSignalWith, eqEquality, get, modify, set, untrack)
 import Test.Solid (settle, solidIt)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -91,18 +91,18 @@ spec = describe "Solid.Signal" do
       result `shouldEqual` { before: true, after: false }
 
   describe "equality" do
-    solidIt "DefaultEquals notifies for an equal but new record" do
-      runs <- countEffectRuns DefaultEquals
+    solidIt "reference equality notifies for an equal but new record" do
+      runs <- countEffectRuns (createSignalWith {})
       runs `shouldEqual` 2
 
     solidIt "eqEquality skips an equal record" do
-      runs <- countEffectRuns eqEquality
+      runs <- countEffectRuns (createSignalWith { equals: eqEquality })
       runs `shouldEqual` 1
 
-    solidIt "AlwaysNotify notifies even for the same value" do
+    solidIt "alwaysNotify notifies even for the same value" do
       runs <- liftEffect (Ref.new 0)
       setValue <- liftEffect $ createRoot \_ -> do
-        value /\ setValue <- createSignalWith (defaultSignalOptions { equality = AlwaysNotify }) 1
+        value /\ setValue <- createSignalWith { equals: alwaysNotify } 1
         createEffect_ value \_ -> Ref.modify_ (_ + 1) runs
         pure setValue
       settle
@@ -126,10 +126,10 @@ spec = describe "Solid.Signal" do
     settle
     liftEffect (Ref.read runs) >>= shouldEqual 2
   where
-  countEffectRuns equality = do
+  countEffectRuns create = do
     runs <- liftEffect (Ref.new 0)
     setValue <- liftEffect $ createRoot \_ -> do
-      value /\ setValue <- createSignalWith (defaultSignalOptions { equality = equality }) { n: 1 }
+      value /\ setValue <- create { n: 1 }
       createEffect_ value \_ -> Ref.modify_ (_ + 1) runs
       pure setValue
     settle

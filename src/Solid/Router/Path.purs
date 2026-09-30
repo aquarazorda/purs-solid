@@ -18,20 +18,15 @@ module Solid.Router.Path
 
 import Prelude
 
-import Data.Array as Array
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.String (joinWith)
-import Data.String as String
-import Data.String.CodeUnits as CodeUnits
+import Data.Function.Uncurried (Fn3, runFn3)
+import Data.Maybe (Maybe)
+import Data.Nullable (Nullable, toNullable)
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import JSURI as JSURI
 import Prim.Row as Row
 import Prim.RowList (RowList)
 import Prim.RowList as RL
 import Prim.Symbol as Symbol
-import Record.Unsafe (unsafeGet)
 import Type.Proxy (Proxy(..))
-import Unsafe.Coerce (unsafeCoerce)
 
 -- | `params` is the row of params that `path` declares.
 class PathParams :: Symbol -> Row Type -> Constraint
@@ -81,24 +76,6 @@ else instance (IsSymbol name, ParamFields tail) => ParamFields (RL.Cons name Str
 
 -- | `Nothing` optional params are left out; values are URI-encoded.
 href :: forall @path params. IsSymbol path => PathParams path params => { | params } -> String
-href params = renderPattern (reflectSymbol (Proxy :: Proxy path)) (unsafeCoerce params)
+href params = runFn3 hrefImpl toNullable (reflectSymbol (Proxy :: Proxy path)) params
 
--- Safe: `PathParams` guarantees the record has exactly the pattern's fields.
-renderPattern :: String -> ParamRecord -> String
-renderPattern pattern params =
-  "/" <> joinWith "/" (Array.mapMaybe renderSegment (Array.filter (_ /= "") (String.split (String.Pattern "/") pattern)))
-  where
-  renderSegment segment = case CodeUnits.uncons segment of
-    Just { head: ':', tail } -> case String.stripSuffix (String.Pattern "?") tail of
-      Just name -> encodeURIComponent <$> (unsafeGet name (unsafeCoerce params) :: Maybe String)
-      Nothing -> Just (encodeURIComponent (unsafeGet tail (unsafeCoerce params)))
-    Just { head: '*', tail } | tail /= "" -> Just (encodePath (unsafeGet tail (unsafeCoerce params)))
-    _ -> Just segment
-
-foreign import data ParamRecord :: Type
-
-encodeURIComponent :: String -> String
-encodeURIComponent value = fromMaybe value (JSURI.encodeURIComponent value)
-
-encodePath :: String -> String
-encodePath = joinWith "/" <<< map encodeURIComponent <<< String.split (String.Pattern "/")
+foreign import hrefImpl :: forall params. Fn3 (Maybe String -> Nullable String) String { | params } String

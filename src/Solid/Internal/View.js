@@ -72,6 +72,8 @@ export const textJsx = (value) => value;
 
 export const reactiveJsx = (read) => new Reactive(read);
 
+export const textBindingImpl = (value) => (typeof value === "function" ? new Reactive(value) : value);
+
 export const fragment = (items) => items;
 
 export const empty = null;
@@ -83,7 +85,8 @@ const EVENT = 3;
 
 export const staticPropImpl = (k, v) => ({ k, m: STATIC, v });
 
-export const reactivePropImpl = (k, v) => ({ k, m: REACTIVE, v });
+export const bindingPropImpl = (k, convert, v) =>
+  typeof v === "function" ? { k, m: REACTIVE, v: () => convert(v()) } : { k, m: STATIC, v: convert(v) };
 
 export const eventPropImpl = (k, handler) => ({ k, m: EVENT, v: (event) => handler(event)() });
 
@@ -186,58 +189,30 @@ export const showImpl = (condition, fallback, content) => () =>
     },
   });
 
-export const showMaybeImpl = (condition, fallback, render) => () =>
+export const showMaybeImpl = (keyed, condition, fallback, render) => () =>
   createComponent(Show, {
     get when() {
       return condition();
     },
+    keyed,
     get fallback() {
       return realize(fallback);
     },
-    children: (value) => realize(render(() => fromWhen(value()))()),
+    children: keyed
+      ? (value) => realize(render(fromWhen(value))())
+      : (value) => realize(render(() => fromWhen(value()))()),
   });
 
-export const showMaybeKeyedImpl = (condition, fallback, render) => () =>
-  createComponent(Show, {
-    get when() {
-      return condition();
-    },
-    keyed: true,
-    get fallback() {
-      return realize(fallback);
-    },
-    children: (value) => realize(render(fromWhen(value))()),
-  });
+export const keyedByIdentity = true;
 
-export const forImpl = (each, fallback, render) => () =>
+export const keyedByPosition = false;
+
+export const forImpl = (keyed, each, fallback, render) => () =>
   createComponent(For, {
     get each() {
       return each();
     },
-    get fallback() {
-      return realize(fallback);
-    },
-    children: (item, index) => realize(render(item)(index)()),
-  });
-
-export const forUnkeyedImpl = (each, fallback, render) => () =>
-  createComponent(For, {
-    get each() {
-      return each();
-    },
-    keyed: false,
-    get fallback() {
-      return realize(fallback);
-    },
-    children: (item, index) => realize(render(item)(index)()),
-  });
-
-export const forByImpl = (key, each, fallback, render) => () =>
-  createComponent(For, {
-    get each() {
-      return each();
-    },
-    keyed: (item) => key(item),
+    keyed,
     get fallback() {
       return realize(fallback);
     },
@@ -304,10 +279,9 @@ export const erroredImpl = (renderFallback, content) => () =>
     },
   });
 
-export const revealImpl = (order, collapsed, items) => () =>
+export const revealImpl = (options, items) => () =>
   createComponent(Reveal, {
-    order,
-    collapsed,
+    ...options,
     get children() {
       return realize(items);
     },

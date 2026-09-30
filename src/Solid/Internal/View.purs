@@ -3,14 +3,16 @@
 module Solid.Internal.View
   ( JSX
   , Prop
-  , Binding(..)
   , class ToBinding
-  , binding
   , textJsx
+  , textBinding
   , reactiveJsx
   , fragment
   , empty
-  , Namespace(..)
+  , Namespace
+  , htmlNamespace
+  , svgNamespace
+  , mathmlNamespace
   , elementWith
   , staticProp
   , bindingProp
@@ -28,10 +30,11 @@ module Solid.Internal.View
   , whenValue
   , showImpl
   , showMaybeImpl
-  , showMaybeKeyedImpl
+  , Keyed
+  , keyedByIdentity
+  , keyedByPosition
+  , keyedBy
   , forImpl
-  , forUnkeyedImpl
-  , forByImpl
   , repeatImpl
   , switchImpl
   , matchImpl
@@ -53,12 +56,13 @@ module Solid.Internal.View
 import Prelude
 
 import Control.Promise (Promise)
-import Data.Function.Uncurried (Fn2, Fn3, Fn4, runFn2, runFn4)
+import Data.Function.Uncurried (Fn2, Fn3, Fn4, runFn2, runFn3, runFn4)
 import Data.Nullable (Nullable)
 import Effect (Effect)
 import Effect.Exception (Error)
 import Effect.Uncurried (EffectFn1)
 import Solid.Signal (Accessor)
+import Unsafe.Coerce (unsafeCoerce)
 import Web.DOM.Element (Element)
 
 foreign import data JSX :: Type
@@ -66,22 +70,22 @@ foreign import data JSX :: Type
 -- | A property for an element whose supported properties are `r`.
 foreign import data Prop :: Row Type -> Type
 
-data Binding a
-  = Static a
-  | Dynamic (Accessor a)
-
 -- | `v` is either `a` or `Accessor a`, so `class_ "btn"` and
--- | `class_ activeClass` both type-check.
+-- | `class_ activeClass` both type-check. The FFI tells them apart with
+-- | `typeof`: attribute and text values are never functions.
 class ToBinding :: Type -> Type -> Constraint
-class ToBinding v a | v -> a where
-  binding :: v -> Binding a
+class ToBinding v a | v -> a
 
-instance ToBinding (Accessor a) a where
-  binding = Dynamic
-else instance ToBinding a a where
-  binding = Static
+instance ToBinding (Accessor a) a
+else instance ToBinding a a
 
 foreign import textJsx :: String -> JSX
+
+-- | Text from a `String` or an `Accessor String`.
+foreign import textBindingImpl :: forall v. v -> JSX
+
+textBinding :: forall v. ToBinding v String => v -> JSX
+textBinding = textBindingImpl
 
 foreign import reactiveJsx :: Accessor JSX -> JSX
 
@@ -89,31 +93,32 @@ foreign import fragment :: Array JSX -> JSX
 
 foreign import empty :: JSX
 
-data Namespace = HtmlNamespace | SvgNamespace | MathMLNamespace
+newtype Namespace = Namespace Int
+
+htmlNamespace :: Namespace
+htmlNamespace = Namespace 0
+
+svgNamespace :: Namespace
+svgNamespace = Namespace 1
+
+mathmlNamespace :: Namespace
+mathmlNamespace = Namespace 2
 
 elementWith :: forall r. Namespace -> String -> Array (Prop r) -> Array JSX -> JSX
-elementWith namespace tag props children = runFn4 elementImpl code tag props children
-  where
-  code = case namespace of
-    HtmlNamespace -> 0
-    SvgNamespace -> 1
-    MathMLNamespace -> 2
+elementWith = runFn4 elementImpl
 
-foreign import elementImpl :: forall r. Fn4 Int String (Array (Prop r)) (Array JSX) JSX
+foreign import elementImpl :: forall r. Fn4 Namespace String (Array (Prop r)) (Array JSX) JSX
 
 foreign import staticPropImpl :: forall r a. Fn2 String a (Prop r)
-foreign import reactivePropImpl :: forall r a. Fn2 String (Accessor a) (Prop r)
 
 staticProp :: forall r a. String -> a -> Prop r
 staticProp = runFn2 staticPropImpl
 
-reactiveProp :: forall r a. String -> Accessor a -> Prop r
-reactiveProp = runFn2 reactivePropImpl
+foreign import bindingPropImpl :: forall r v a b. Fn3 String (a -> b) v (Prop r)
 
-bindingProp :: forall r a b. String -> (a -> b) -> Binding a -> Prop r
-bindingProp name convert = case _ of
-  Static value -> staticProp name (convert value)
-  Dynamic accessor -> reactiveProp name (convert <$> accessor)
+-- | `convert` is applied to the value, or to each value the accessor yields.
+bindingProp :: forall r v a b. ToBinding v a => String -> (a -> b) -> v -> Prop r
+bindingProp = runFn3 bindingPropImpl
 
 foreign import eventPropImpl :: forall r e. Fn2 String (e -> Effect Unit) (Prop r)
 
@@ -150,18 +155,23 @@ foreign import whenValue :: forall a. a -> WhenValue a
 
 foreign import showImpl :: Fn3 (Accessor Boolean) JSX JSX JSX
 
+-- | `keyed` passes the value itself (re-created per value), otherwise an accessor.
 foreign import showMaybeImpl
-  :: forall a. Fn3 (Accessor (Nullable (WhenValue a))) JSX (Accessor a -> Effect JSX) JSX
+  :: forall a v. Fn4 Boolean (Accessor (Nullable (WhenValue a))) JSX (v -> Effect JSX) JSX
 
-foreign import showMaybeKeyedImpl
-  :: forall a. Fn3 (Accessor (Nullable (WhenValue a))) JSX (a -> Effect JSX) JSX
+-- | How `For` matches items to views; `item` and `index` are what the
+-- | render callback receives in that mode.
+foreign import data Keyed :: Type -> Type -> Type -> Type
 
-foreign import forImpl :: forall a. Fn3 (Accessor (Array a)) JSX (a -> Accessor Int -> Effect JSX) JSX
+foreign import keyedByIdentity :: forall a. Keyed a a (Accessor Int)
 
-foreign import forUnkeyedImpl :: forall a. Fn3 (Accessor (Array a)) JSX (Accessor a -> Int -> Effect JSX) JSX
+foreign import keyedByPosition :: forall a. Keyed a (Accessor a) Int
 
-foreign import forByImpl
-  :: forall a k. Fn4 (a -> k) (Accessor (Array a)) JSX (Accessor a -> Accessor Int -> Effect JSX) JSX
+keyedBy :: forall a k. (a -> k) -> Keyed a (Accessor a) (Accessor Int)
+keyedBy = unsafeCoerce
+
+foreign import forImpl
+  :: forall a item index. Fn4 (Keyed a item index) (Accessor (Array a)) JSX (item -> index -> Effect JSX) JSX
 
 foreign import repeatImpl :: Fn3 (Accessor Int) JSX (Int -> Effect JSX) JSX
 
@@ -175,7 +185,7 @@ foreign import loadingImpl :: Fn2 JSX JSX JSX
 
 foreign import erroredImpl :: Fn2 (Accessor Error -> Effect Unit -> Effect JSX) JSX JSX
 
-foreign import revealImpl :: Fn3 String Boolean (Array JSX) JSX
+foreign import revealImpl :: forall options. Fn2 { | options } (Array JSX) JSX
 
 foreign import portalImpl :: Fn2 (Nullable Element) JSX JSX
 

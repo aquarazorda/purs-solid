@@ -2,166 +2,166 @@
 module Solid.DOM.SVG.Props where
 
 import Solid.DOM.AttrValue (class AttrValue, toAttrValue)
-import Solid.Internal.View (class ToBinding, Prop, binding, bindingProp)
+import Solid.Internal.View (class ToBinding, Prop, bindingProp)
 
 clipPath :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (clipPath :: a | r)
-clipPath v = bindingProp "clip-path" toAttrValue (binding v)
+clipPath = bindingProp "clip-path" toAttrValue
 
 clipRule :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (clipRule :: a | r)
-clipRule v = bindingProp "clip-rule" toAttrValue (binding v)
+clipRule = bindingProp "clip-rule" toAttrValue
 
 cx :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (cx :: a | r)
-cx v = bindingProp "cx" toAttrValue (binding v)
+cx = bindingProp "cx" toAttrValue
 
 cy :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (cy :: a | r)
-cy v = bindingProp "cy" toAttrValue (binding v)
+cy = bindingProp "cy" toAttrValue
 
 d :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (d :: a | r)
-d v = bindingProp "d" toAttrValue (binding v)
+d = bindingProp "d" toAttrValue
 
 display :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (display :: a | r)
-display v = bindingProp "display" toAttrValue (binding v)
+display = bindingProp "display" toAttrValue
 
 dominantBaseline :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (dominantBaseline :: a | r)
-dominantBaseline v = bindingProp "dominant-baseline" toAttrValue (binding v)
+dominantBaseline = bindingProp "dominant-baseline" toAttrValue
 
 dx :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (dx :: a | r)
-dx v = bindingProp "dx" toAttrValue (binding v)
+dx = bindingProp "dx" toAttrValue
 
 dy :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (dy :: a | r)
-dy v = bindingProp "dy" toAttrValue (binding v)
+dy = bindingProp "dy" toAttrValue
 
 fill :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (fill :: a | r)
-fill v = bindingProp "fill" toAttrValue (binding v)
+fill = bindingProp "fill" toAttrValue
 
 fillOpacity :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (fillOpacity :: a | r)
-fillOpacity v = bindingProp "fill-opacity" toAttrValue (binding v)
+fillOpacity = bindingProp "fill-opacity" toAttrValue
 
 fillRule :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (fillRule :: a | r)
-fillRule v = bindingProp "fill-rule" toAttrValue (binding v)
+fillRule = bindingProp "fill-rule" toAttrValue
 
 filter :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (filter :: a | r)
-filter v = bindingProp "filter" toAttrValue (binding v)
+filter = bindingProp "filter" toAttrValue
 
 fontFamily :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (fontFamily :: a | r)
-fontFamily v = bindingProp "font-family" toAttrValue (binding v)
+fontFamily = bindingProp "font-family" toAttrValue
 
 fontSize :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (fontSize :: a | r)
-fontSize v = bindingProp "font-size" toAttrValue (binding v)
+fontSize = bindingProp "font-size" toAttrValue
 
 fontWeight :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (fontWeight :: a | r)
-fontWeight v = bindingProp "font-weight" toAttrValue (binding v)
+fontWeight = bindingProp "font-weight" toAttrValue
 
 fx :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (fx :: a | r)
-fx v = bindingProp "fx" toAttrValue (binding v)
+fx = bindingProp "fx" toAttrValue
 
 fy :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (fy :: a | r)
-fy v = bindingProp "fy" toAttrValue (binding v)
+fy = bindingProp "fy" toAttrValue
 
 gradientTransform :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (gradientTransform :: a | r)
-gradientTransform v = bindingProp "gradientTransform" toAttrValue (binding v)
+gradientTransform = bindingProp "gradientTransform" toAttrValue
 
 gradientUnits :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (gradientUnits :: a | r)
-gradientUnits v = bindingProp "gradientUnits" toAttrValue (binding v)
+gradientUnits = bindingProp "gradientUnits" toAttrValue
 
 markerEnd :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (markerEnd :: a | r)
-markerEnd v = bindingProp "marker-end" toAttrValue (binding v)
+markerEnd = bindingProp "marker-end" toAttrValue
 
 markerMid :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (markerMid :: a | r)
-markerMid v = bindingProp "marker-mid" toAttrValue (binding v)
+markerMid = bindingProp "marker-mid" toAttrValue
 
 markerStart :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (markerStart :: a | r)
-markerStart v = bindingProp "marker-start" toAttrValue (binding v)
+markerStart = bindingProp "marker-start" toAttrValue
 
 mask :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (mask :: a | r)
-mask v = bindingProp "mask" toAttrValue (binding v)
+mask = bindingProp "mask" toAttrValue
 
 offset :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (offset :: a | r)
-offset v = bindingProp "offset" toAttrValue (binding v)
+offset = bindingProp "offset" toAttrValue
 
 opacity :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (opacity :: a | r)
-opacity v = bindingProp "opacity" toAttrValue (binding v)
+opacity = bindingProp "opacity" toAttrValue
 
 pathLength :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (pathLength :: a | r)
-pathLength v = bindingProp "pathLength" toAttrValue (binding v)
+pathLength = bindingProp "pathLength" toAttrValue
 
 patternUnits :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (patternUnits :: a | r)
-patternUnits v = bindingProp "patternUnits" toAttrValue (binding v)
+patternUnits = bindingProp "patternUnits" toAttrValue
 
 pointerEvents :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (pointerEvents :: a | r)
-pointerEvents v = bindingProp "pointer-events" toAttrValue (binding v)
+pointerEvents = bindingProp "pointer-events" toAttrValue
 
 points :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (points :: a | r)
-points v = bindingProp "points" toAttrValue (binding v)
+points = bindingProp "points" toAttrValue
 
 preserveAspectRatio :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (preserveAspectRatio :: a | r)
-preserveAspectRatio v = bindingProp "preserveAspectRatio" toAttrValue (binding v)
+preserveAspectRatio = bindingProp "preserveAspectRatio" toAttrValue
 
 r :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (r :: a | r)
-r v = bindingProp "r" toAttrValue (binding v)
+r = bindingProp "r" toAttrValue
 
 rx :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (rx :: a | r)
-rx v = bindingProp "rx" toAttrValue (binding v)
+rx = bindingProp "rx" toAttrValue
 
 ry :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (ry :: a | r)
-ry v = bindingProp "ry" toAttrValue (binding v)
+ry = bindingProp "ry" toAttrValue
 
 stopColor :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (stopColor :: a | r)
-stopColor v = bindingProp "stop-color" toAttrValue (binding v)
+stopColor = bindingProp "stop-color" toAttrValue
 
 stopOpacity :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (stopOpacity :: a | r)
-stopOpacity v = bindingProp "stop-opacity" toAttrValue (binding v)
+stopOpacity = bindingProp "stop-opacity" toAttrValue
 
 stroke :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (stroke :: a | r)
-stroke v = bindingProp "stroke" toAttrValue (binding v)
+stroke = bindingProp "stroke" toAttrValue
 
 strokeDasharray :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (strokeDasharray :: a | r)
-strokeDasharray v = bindingProp "stroke-dasharray" toAttrValue (binding v)
+strokeDasharray = bindingProp "stroke-dasharray" toAttrValue
 
 strokeDashoffset :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (strokeDashoffset :: a | r)
-strokeDashoffset v = bindingProp "stroke-dashoffset" toAttrValue (binding v)
+strokeDashoffset = bindingProp "stroke-dashoffset" toAttrValue
 
 strokeLinecap :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (strokeLinecap :: a | r)
-strokeLinecap v = bindingProp "stroke-linecap" toAttrValue (binding v)
+strokeLinecap = bindingProp "stroke-linecap" toAttrValue
 
 strokeLinejoin :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (strokeLinejoin :: a | r)
-strokeLinejoin v = bindingProp "stroke-linejoin" toAttrValue (binding v)
+strokeLinejoin = bindingProp "stroke-linejoin" toAttrValue
 
 strokeOpacity :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (strokeOpacity :: a | r)
-strokeOpacity v = bindingProp "stroke-opacity" toAttrValue (binding v)
+strokeOpacity = bindingProp "stroke-opacity" toAttrValue
 
 strokeWidth :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (strokeWidth :: a | r)
-strokeWidth v = bindingProp "stroke-width" toAttrValue (binding v)
+strokeWidth = bindingProp "stroke-width" toAttrValue
 
 textAnchor :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (textAnchor :: a | r)
-textAnchor v = bindingProp "text-anchor" toAttrValue (binding v)
+textAnchor = bindingProp "text-anchor" toAttrValue
 
 transform :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (transform :: a | r)
-transform v = bindingProp "transform" toAttrValue (binding v)
+transform = bindingProp "transform" toAttrValue
 
 vectorEffect :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (vectorEffect :: a | r)
-vectorEffect v = bindingProp "vector-effect" toAttrValue (binding v)
+vectorEffect = bindingProp "vector-effect" toAttrValue
 
 viewBox :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (viewBox :: a | r)
-viewBox v = bindingProp "viewBox" toAttrValue (binding v)
+viewBox = bindingProp "viewBox" toAttrValue
 
 visibility :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (visibility :: a | r)
-visibility v = bindingProp "visibility" toAttrValue (binding v)
+visibility = bindingProp "visibility" toAttrValue
 
 x :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (x :: a | r)
-x v = bindingProp "x" toAttrValue (binding v)
+x = bindingProp "x" toAttrValue
 
 x1 :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (x1 :: a | r)
-x1 v = bindingProp "x1" toAttrValue (binding v)
+x1 = bindingProp "x1" toAttrValue
 
 x2 :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (x2 :: a | r)
-x2 v = bindingProp "x2" toAttrValue (binding v)
+x2 = bindingProp "x2" toAttrValue
 
 y :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (y :: a | r)
-y v = bindingProp "y" toAttrValue (binding v)
+y = bindingProp "y" toAttrValue
 
 y1 :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (y1 :: a | r)
-y1 v = bindingProp "y1" toAttrValue (binding v)
+y1 = bindingProp "y1" toAttrValue
 
 y2 :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (y2 :: a | r)
-y2 v = bindingProp "y2" toAttrValue (binding v)
+y2 = bindingProp "y2" toAttrValue

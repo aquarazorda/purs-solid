@@ -2,7 +2,7 @@
 module Solid.DOM.SVG where
 
 import DOM.HTML.Indexed as I
-import Solid.Internal.View (JSX, Namespace(..), Prop, elementWith)
+import Solid.Internal.View (JSX, Prop, elementWith, svgNamespace)
 
 type SVGAttributes = I.InteractiveEvents
   ( class :: String
@@ -70,457 +70,457 @@ type SVGAttributes = I.InteractiveEvents
   )
 
 a :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-a = elementWith SvgNamespace "a"
+a = elementWith svgNamespace "a"
 
 a_ :: Array JSX -> JSX
-a_ = elementWith SvgNamespace "a" []
+a_ = elementWith svgNamespace "a" []
 
 altGlyph :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-altGlyph = elementWith SvgNamespace "altGlyph"
+altGlyph = elementWith svgNamespace "altGlyph"
 
 altGlyph_ :: Array JSX -> JSX
-altGlyph_ = elementWith SvgNamespace "altGlyph" []
+altGlyph_ = elementWith svgNamespace "altGlyph" []
 
 altGlyphDef :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-altGlyphDef = elementWith SvgNamespace "altGlyphDef"
+altGlyphDef = elementWith svgNamespace "altGlyphDef"
 
 altGlyphDef_ :: Array JSX -> JSX
-altGlyphDef_ = elementWith SvgNamespace "altGlyphDef" []
+altGlyphDef_ = elementWith svgNamespace "altGlyphDef" []
 
 altGlyphItem :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-altGlyphItem = elementWith SvgNamespace "altGlyphItem"
+altGlyphItem = elementWith svgNamespace "altGlyphItem"
 
 altGlyphItem_ :: Array JSX -> JSX
-altGlyphItem_ = elementWith SvgNamespace "altGlyphItem" []
+altGlyphItem_ = elementWith svgNamespace "altGlyphItem" []
 
 animate :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-animate = elementWith SvgNamespace "animate"
+animate = elementWith svgNamespace "animate"
 
 animate_ :: Array JSX -> JSX
-animate_ = elementWith SvgNamespace "animate" []
+animate_ = elementWith svgNamespace "animate" []
 
 animateColor :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-animateColor = elementWith SvgNamespace "animateColor"
+animateColor = elementWith svgNamespace "animateColor"
 
 animateColor_ :: Array JSX -> JSX
-animateColor_ = elementWith SvgNamespace "animateColor" []
+animateColor_ = elementWith svgNamespace "animateColor" []
 
 animateMotion :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-animateMotion = elementWith SvgNamespace "animateMotion"
+animateMotion = elementWith svgNamespace "animateMotion"
 
 animateMotion_ :: Array JSX -> JSX
-animateMotion_ = elementWith SvgNamespace "animateMotion" []
+animateMotion_ = elementWith svgNamespace "animateMotion" []
 
 animateTransform :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-animateTransform = elementWith SvgNamespace "animateTransform"
+animateTransform = elementWith svgNamespace "animateTransform"
 
 animateTransform_ :: Array JSX -> JSX
-animateTransform_ = elementWith SvgNamespace "animateTransform" []
+animateTransform_ = elementWith svgNamespace "animateTransform" []
 
 circle :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-circle = elementWith SvgNamespace "circle"
+circle = elementWith svgNamespace "circle"
 
 circle_ :: Array JSX -> JSX
-circle_ = elementWith SvgNamespace "circle" []
+circle_ = elementWith svgNamespace "circle" []
 
 clipPath :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-clipPath = elementWith SvgNamespace "clipPath"
+clipPath = elementWith svgNamespace "clipPath"
 
 clipPath_ :: Array JSX -> JSX
-clipPath_ = elementWith SvgNamespace "clipPath" []
+clipPath_ = elementWith svgNamespace "clipPath" []
 
 colorProfile :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-colorProfile = elementWith SvgNamespace "colorProfile"
+colorProfile = elementWith svgNamespace "colorProfile"
 
 colorProfile_ :: Array JSX -> JSX
-colorProfile_ = elementWith SvgNamespace "colorProfile" []
+colorProfile_ = elementWith svgNamespace "colorProfile" []
 
 cursor :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-cursor = elementWith SvgNamespace "cursor"
+cursor = elementWith svgNamespace "cursor"
 
 cursor_ :: Array JSX -> JSX
-cursor_ = elementWith SvgNamespace "cursor" []
+cursor_ = elementWith svgNamespace "cursor" []
 
 defs :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-defs = elementWith SvgNamespace "defs"
+defs = elementWith svgNamespace "defs"
 
 defs_ :: Array JSX -> JSX
-defs_ = elementWith SvgNamespace "defs" []
+defs_ = elementWith svgNamespace "defs" []
 
 desc :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-desc = elementWith SvgNamespace "desc"
+desc = elementWith svgNamespace "desc"
 
 desc_ :: Array JSX -> JSX
-desc_ = elementWith SvgNamespace "desc" []
+desc_ = elementWith svgNamespace "desc" []
 
 ellipse :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-ellipse = elementWith SvgNamespace "ellipse"
+ellipse = elementWith svgNamespace "ellipse"
 
 ellipse_ :: Array JSX -> JSX
-ellipse_ = elementWith SvgNamespace "ellipse" []
+ellipse_ = elementWith svgNamespace "ellipse" []
 
 feBlend :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feBlend = elementWith SvgNamespace "feBlend"
+feBlend = elementWith svgNamespace "feBlend"
 
 feBlend_ :: Array JSX -> JSX
-feBlend_ = elementWith SvgNamespace "feBlend" []
+feBlend_ = elementWith svgNamespace "feBlend" []
 
 feColorMatrix :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feColorMatrix = elementWith SvgNamespace "feColorMatrix"
+feColorMatrix = elementWith svgNamespace "feColorMatrix"
 
 feColorMatrix_ :: Array JSX -> JSX
-feColorMatrix_ = elementWith SvgNamespace "feColorMatrix" []
+feColorMatrix_ = elementWith svgNamespace "feColorMatrix" []
 
 feComponentTransfer :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feComponentTransfer = elementWith SvgNamespace "feComponentTransfer"
+feComponentTransfer = elementWith svgNamespace "feComponentTransfer"
 
 feComponentTransfer_ :: Array JSX -> JSX
-feComponentTransfer_ = elementWith SvgNamespace "feComponentTransfer" []
+feComponentTransfer_ = elementWith svgNamespace "feComponentTransfer" []
 
 feComposite :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feComposite = elementWith SvgNamespace "feComposite"
+feComposite = elementWith svgNamespace "feComposite"
 
 feComposite_ :: Array JSX -> JSX
-feComposite_ = elementWith SvgNamespace "feComposite" []
+feComposite_ = elementWith svgNamespace "feComposite" []
 
 feConvolveMatrix :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feConvolveMatrix = elementWith SvgNamespace "feConvolveMatrix"
+feConvolveMatrix = elementWith svgNamespace "feConvolveMatrix"
 
 feConvolveMatrix_ :: Array JSX -> JSX
-feConvolveMatrix_ = elementWith SvgNamespace "feConvolveMatrix" []
+feConvolveMatrix_ = elementWith svgNamespace "feConvolveMatrix" []
 
 feDiffuseLighting :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feDiffuseLighting = elementWith SvgNamespace "feDiffuseLighting"
+feDiffuseLighting = elementWith svgNamespace "feDiffuseLighting"
 
 feDiffuseLighting_ :: Array JSX -> JSX
-feDiffuseLighting_ = elementWith SvgNamespace "feDiffuseLighting" []
+feDiffuseLighting_ = elementWith svgNamespace "feDiffuseLighting" []
 
 feDisplacementMap :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feDisplacementMap = elementWith SvgNamespace "feDisplacementMap"
+feDisplacementMap = elementWith svgNamespace "feDisplacementMap"
 
 feDisplacementMap_ :: Array JSX -> JSX
-feDisplacementMap_ = elementWith SvgNamespace "feDisplacementMap" []
+feDisplacementMap_ = elementWith svgNamespace "feDisplacementMap" []
 
 feDistantLight :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feDistantLight = elementWith SvgNamespace "feDistantLight"
+feDistantLight = elementWith svgNamespace "feDistantLight"
 
 feDistantLight_ :: Array JSX -> JSX
-feDistantLight_ = elementWith SvgNamespace "feDistantLight" []
+feDistantLight_ = elementWith svgNamespace "feDistantLight" []
 
 feDropShadow :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feDropShadow = elementWith SvgNamespace "feDropShadow"
+feDropShadow = elementWith svgNamespace "feDropShadow"
 
 feDropShadow_ :: Array JSX -> JSX
-feDropShadow_ = elementWith SvgNamespace "feDropShadow" []
+feDropShadow_ = elementWith svgNamespace "feDropShadow" []
 
 feFlood :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feFlood = elementWith SvgNamespace "feFlood"
+feFlood = elementWith svgNamespace "feFlood"
 
 feFlood_ :: Array JSX -> JSX
-feFlood_ = elementWith SvgNamespace "feFlood" []
+feFlood_ = elementWith svgNamespace "feFlood" []
 
 feFuncA :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feFuncA = elementWith SvgNamespace "feFuncA"
+feFuncA = elementWith svgNamespace "feFuncA"
 
 feFuncA_ :: Array JSX -> JSX
-feFuncA_ = elementWith SvgNamespace "feFuncA" []
+feFuncA_ = elementWith svgNamespace "feFuncA" []
 
 feFuncB :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feFuncB = elementWith SvgNamespace "feFuncB"
+feFuncB = elementWith svgNamespace "feFuncB"
 
 feFuncB_ :: Array JSX -> JSX
-feFuncB_ = elementWith SvgNamespace "feFuncB" []
+feFuncB_ = elementWith svgNamespace "feFuncB" []
 
 feFuncG :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feFuncG = elementWith SvgNamespace "feFuncG"
+feFuncG = elementWith svgNamespace "feFuncG"
 
 feFuncG_ :: Array JSX -> JSX
-feFuncG_ = elementWith SvgNamespace "feFuncG" []
+feFuncG_ = elementWith svgNamespace "feFuncG" []
 
 feFuncR :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feFuncR = elementWith SvgNamespace "feFuncR"
+feFuncR = elementWith svgNamespace "feFuncR"
 
 feFuncR_ :: Array JSX -> JSX
-feFuncR_ = elementWith SvgNamespace "feFuncR" []
+feFuncR_ = elementWith svgNamespace "feFuncR" []
 
 feGaussianBlur :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feGaussianBlur = elementWith SvgNamespace "feGaussianBlur"
+feGaussianBlur = elementWith svgNamespace "feGaussianBlur"
 
 feGaussianBlur_ :: Array JSX -> JSX
-feGaussianBlur_ = elementWith SvgNamespace "feGaussianBlur" []
+feGaussianBlur_ = elementWith svgNamespace "feGaussianBlur" []
 
 feImage :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feImage = elementWith SvgNamespace "feImage"
+feImage = elementWith svgNamespace "feImage"
 
 feImage_ :: Array JSX -> JSX
-feImage_ = elementWith SvgNamespace "feImage" []
+feImage_ = elementWith svgNamespace "feImage" []
 
 feMerge :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feMerge = elementWith SvgNamespace "feMerge"
+feMerge = elementWith svgNamespace "feMerge"
 
 feMerge_ :: Array JSX -> JSX
-feMerge_ = elementWith SvgNamespace "feMerge" []
+feMerge_ = elementWith svgNamespace "feMerge" []
 
 feMergeNode :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feMergeNode = elementWith SvgNamespace "feMergeNode"
+feMergeNode = elementWith svgNamespace "feMergeNode"
 
 feMergeNode_ :: Array JSX -> JSX
-feMergeNode_ = elementWith SvgNamespace "feMergeNode" []
+feMergeNode_ = elementWith svgNamespace "feMergeNode" []
 
 feMorphology :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feMorphology = elementWith SvgNamespace "feMorphology"
+feMorphology = elementWith svgNamespace "feMorphology"
 
 feMorphology_ :: Array JSX -> JSX
-feMorphology_ = elementWith SvgNamespace "feMorphology" []
+feMorphology_ = elementWith svgNamespace "feMorphology" []
 
 feOffset :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feOffset = elementWith SvgNamespace "feOffset"
+feOffset = elementWith svgNamespace "feOffset"
 
 feOffset_ :: Array JSX -> JSX
-feOffset_ = elementWith SvgNamespace "feOffset" []
+feOffset_ = elementWith svgNamespace "feOffset" []
 
 fePointLight :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-fePointLight = elementWith SvgNamespace "fePointLight"
+fePointLight = elementWith svgNamespace "fePointLight"
 
 fePointLight_ :: Array JSX -> JSX
-fePointLight_ = elementWith SvgNamespace "fePointLight" []
+fePointLight_ = elementWith svgNamespace "fePointLight" []
 
 feSpecularLighting :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feSpecularLighting = elementWith SvgNamespace "feSpecularLighting"
+feSpecularLighting = elementWith svgNamespace "feSpecularLighting"
 
 feSpecularLighting_ :: Array JSX -> JSX
-feSpecularLighting_ = elementWith SvgNamespace "feSpecularLighting" []
+feSpecularLighting_ = elementWith svgNamespace "feSpecularLighting" []
 
 feSpotLight :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feSpotLight = elementWith SvgNamespace "feSpotLight"
+feSpotLight = elementWith svgNamespace "feSpotLight"
 
 feSpotLight_ :: Array JSX -> JSX
-feSpotLight_ = elementWith SvgNamespace "feSpotLight" []
+feSpotLight_ = elementWith svgNamespace "feSpotLight" []
 
 feTile :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feTile = elementWith SvgNamespace "feTile"
+feTile = elementWith svgNamespace "feTile"
 
 feTile_ :: Array JSX -> JSX
-feTile_ = elementWith SvgNamespace "feTile" []
+feTile_ = elementWith svgNamespace "feTile" []
 
 feTurbulence :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feTurbulence = elementWith SvgNamespace "feTurbulence"
+feTurbulence = elementWith svgNamespace "feTurbulence"
 
 feTurbulence_ :: Array JSX -> JSX
-feTurbulence_ = elementWith SvgNamespace "feTurbulence" []
+feTurbulence_ = elementWith svgNamespace "feTurbulence" []
 
 filter :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-filter = elementWith SvgNamespace "filter"
+filter = elementWith svgNamespace "filter"
 
 filter_ :: Array JSX -> JSX
-filter_ = elementWith SvgNamespace "filter" []
+filter_ = elementWith svgNamespace "filter" []
 
 font :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-font = elementWith SvgNamespace "font"
+font = elementWith svgNamespace "font"
 
 font_ :: Array JSX -> JSX
-font_ = elementWith SvgNamespace "font" []
+font_ = elementWith svgNamespace "font" []
 
 foreignObject :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-foreignObject = elementWith SvgNamespace "foreignObject"
+foreignObject = elementWith svgNamespace "foreignObject"
 
 foreignObject_ :: Array JSX -> JSX
-foreignObject_ = elementWith SvgNamespace "foreignObject" []
+foreignObject_ = elementWith svgNamespace "foreignObject" []
 
 g :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-g = elementWith SvgNamespace "g"
+g = elementWith svgNamespace "g"
 
 g_ :: Array JSX -> JSX
-g_ = elementWith SvgNamespace "g" []
+g_ = elementWith svgNamespace "g" []
 
 glyph :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-glyph = elementWith SvgNamespace "glyph"
+glyph = elementWith svgNamespace "glyph"
 
 glyph_ :: Array JSX -> JSX
-glyph_ = elementWith SvgNamespace "glyph" []
+glyph_ = elementWith svgNamespace "glyph" []
 
 glyphRef :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-glyphRef = elementWith SvgNamespace "glyphRef"
+glyphRef = elementWith svgNamespace "glyphRef"
 
 glyphRef_ :: Array JSX -> JSX
-glyphRef_ = elementWith SvgNamespace "glyphRef" []
+glyphRef_ = elementWith svgNamespace "glyphRef" []
 
 hkern :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-hkern = elementWith SvgNamespace "hkern"
+hkern = elementWith svgNamespace "hkern"
 
 hkern_ :: Array JSX -> JSX
-hkern_ = elementWith SvgNamespace "hkern" []
+hkern_ = elementWith svgNamespace "hkern" []
 
 image :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-image = elementWith SvgNamespace "image"
+image = elementWith svgNamespace "image"
 
 image_ :: Array JSX -> JSX
-image_ = elementWith SvgNamespace "image" []
+image_ = elementWith svgNamespace "image" []
 
 line :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-line = elementWith SvgNamespace "line"
+line = elementWith svgNamespace "line"
 
 line_ :: Array JSX -> JSX
-line_ = elementWith SvgNamespace "line" []
+line_ = elementWith svgNamespace "line" []
 
 linearGradient :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-linearGradient = elementWith SvgNamespace "linearGradient"
+linearGradient = elementWith svgNamespace "linearGradient"
 
 linearGradient_ :: Array JSX -> JSX
-linearGradient_ = elementWith SvgNamespace "linearGradient" []
+linearGradient_ = elementWith svgNamespace "linearGradient" []
 
 marker :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-marker = elementWith SvgNamespace "marker"
+marker = elementWith svgNamespace "marker"
 
 marker_ :: Array JSX -> JSX
-marker_ = elementWith SvgNamespace "marker" []
+marker_ = elementWith svgNamespace "marker" []
 
 mask :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-mask = elementWith SvgNamespace "mask"
+mask = elementWith svgNamespace "mask"
 
 mask_ :: Array JSX -> JSX
-mask_ = elementWith SvgNamespace "mask" []
+mask_ = elementWith svgNamespace "mask" []
 
 metadata :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-metadata = elementWith SvgNamespace "metadata"
+metadata = elementWith svgNamespace "metadata"
 
 metadata_ :: Array JSX -> JSX
-metadata_ = elementWith SvgNamespace "metadata" []
+metadata_ = elementWith svgNamespace "metadata" []
 
 missingGlyph :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-missingGlyph = elementWith SvgNamespace "missingGlyph"
+missingGlyph = elementWith svgNamespace "missingGlyph"
 
 missingGlyph_ :: Array JSX -> JSX
-missingGlyph_ = elementWith SvgNamespace "missingGlyph" []
+missingGlyph_ = elementWith svgNamespace "missingGlyph" []
 
 mpath :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-mpath = elementWith SvgNamespace "mpath"
+mpath = elementWith svgNamespace "mpath"
 
 mpath_ :: Array JSX -> JSX
-mpath_ = elementWith SvgNamespace "mpath" []
+mpath_ = elementWith svgNamespace "mpath" []
 
 path :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-path = elementWith SvgNamespace "path"
+path = elementWith svgNamespace "path"
 
 path_ :: Array JSX -> JSX
-path_ = elementWith SvgNamespace "path" []
+path_ = elementWith svgNamespace "path" []
 
 pattern :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-pattern = elementWith SvgNamespace "pattern"
+pattern = elementWith svgNamespace "pattern"
 
 pattern_ :: Array JSX -> JSX
-pattern_ = elementWith SvgNamespace "pattern" []
+pattern_ = elementWith svgNamespace "pattern" []
 
 polygon :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-polygon = elementWith SvgNamespace "polygon"
+polygon = elementWith svgNamespace "polygon"
 
 polygon_ :: Array JSX -> JSX
-polygon_ = elementWith SvgNamespace "polygon" []
+polygon_ = elementWith svgNamespace "polygon" []
 
 polyline :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-polyline = elementWith SvgNamespace "polyline"
+polyline = elementWith svgNamespace "polyline"
 
 polyline_ :: Array JSX -> JSX
-polyline_ = elementWith SvgNamespace "polyline" []
+polyline_ = elementWith svgNamespace "polyline" []
 
 radialGradient :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-radialGradient = elementWith SvgNamespace "radialGradient"
+radialGradient = elementWith svgNamespace "radialGradient"
 
 radialGradient_ :: Array JSX -> JSX
-radialGradient_ = elementWith SvgNamespace "radialGradient" []
+radialGradient_ = elementWith svgNamespace "radialGradient" []
 
 rect :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-rect = elementWith SvgNamespace "rect"
+rect = elementWith svgNamespace "rect"
 
 rect_ :: Array JSX -> JSX
-rect_ = elementWith SvgNamespace "rect" []
+rect_ = elementWith svgNamespace "rect" []
 
 script :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-script = elementWith SvgNamespace "script"
+script = elementWith svgNamespace "script"
 
 script_ :: Array JSX -> JSX
-script_ = elementWith SvgNamespace "script" []
+script_ = elementWith svgNamespace "script" []
 
 set :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-set = elementWith SvgNamespace "set"
+set = elementWith svgNamespace "set"
 
 set_ :: Array JSX -> JSX
-set_ = elementWith SvgNamespace "set" []
+set_ = elementWith svgNamespace "set" []
 
 stop :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-stop = elementWith SvgNamespace "stop"
+stop = elementWith svgNamespace "stop"
 
 stop_ :: Array JSX -> JSX
-stop_ = elementWith SvgNamespace "stop" []
+stop_ = elementWith svgNamespace "stop" []
 
 style :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-style = elementWith SvgNamespace "style"
+style = elementWith svgNamespace "style"
 
 style_ :: Array JSX -> JSX
-style_ = elementWith SvgNamespace "style" []
+style_ = elementWith svgNamespace "style" []
 
 svg :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-svg = elementWith SvgNamespace "svg"
+svg = elementWith svgNamespace "svg"
 
 svg_ :: Array JSX -> JSX
-svg_ = elementWith SvgNamespace "svg" []
+svg_ = elementWith svgNamespace "svg" []
 
 switch :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-switch = elementWith SvgNamespace "switch"
+switch = elementWith svgNamespace "switch"
 
 switch_ :: Array JSX -> JSX
-switch_ = elementWith SvgNamespace "switch" []
+switch_ = elementWith svgNamespace "switch" []
 
 symbol :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-symbol = elementWith SvgNamespace "symbol"
+symbol = elementWith svgNamespace "symbol"
 
 symbol_ :: Array JSX -> JSX
-symbol_ = elementWith SvgNamespace "symbol" []
+symbol_ = elementWith svgNamespace "symbol" []
 
 text :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-text = elementWith SvgNamespace "text"
+text = elementWith svgNamespace "text"
 
 text_ :: Array JSX -> JSX
-text_ = elementWith SvgNamespace "text" []
+text_ = elementWith svgNamespace "text" []
 
 textPath :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-textPath = elementWith SvgNamespace "textPath"
+textPath = elementWith svgNamespace "textPath"
 
 textPath_ :: Array JSX -> JSX
-textPath_ = elementWith SvgNamespace "textPath" []
+textPath_ = elementWith svgNamespace "textPath" []
 
 title :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-title = elementWith SvgNamespace "title"
+title = elementWith svgNamespace "title"
 
 title_ :: Array JSX -> JSX
-title_ = elementWith SvgNamespace "title" []
+title_ = elementWith svgNamespace "title" []
 
 tref :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-tref = elementWith SvgNamespace "tref"
+tref = elementWith svgNamespace "tref"
 
 tref_ :: Array JSX -> JSX
-tref_ = elementWith SvgNamespace "tref" []
+tref_ = elementWith svgNamespace "tref" []
 
 tspan :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-tspan = elementWith SvgNamespace "tspan"
+tspan = elementWith svgNamespace "tspan"
 
 tspan_ :: Array JSX -> JSX
-tspan_ = elementWith SvgNamespace "tspan" []
+tspan_ = elementWith svgNamespace "tspan" []
 
 use :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-use = elementWith SvgNamespace "use"
+use = elementWith svgNamespace "use"
 
 use_ :: Array JSX -> JSX
-use_ = elementWith SvgNamespace "use" []
+use_ = elementWith svgNamespace "use" []
 
 view :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-view = elementWith SvgNamespace "view"
+view = elementWith svgNamespace "view"
 
 view_ :: Array JSX -> JSX
-view_ = elementWith SvgNamespace "view" []
+view_ = elementWith svgNamespace "view" []
 
 vkern :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-vkern = elementWith SvgNamespace "vkern"
+vkern = elementWith svgNamespace "vkern"
 
 vkern_ :: Array JSX -> JSX
-vkern_ = elementWith SvgNamespace "vkern" []
+vkern_ = elementWith svgNamespace "vkern" []

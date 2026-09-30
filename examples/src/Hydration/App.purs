@@ -10,7 +10,7 @@ import Data.Tuple.Nested ((/\))
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
 import Effect (Effect)
-import Solid.Async (createAsyncWith, defaultAsyncOptions, serialized)
+import Solid.Async (createAsyncWith, serialized)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM (classWhen)
@@ -37,7 +37,7 @@ root = Component.component \_ -> do
   count /\ setCount <- createSignal 0
   items /\ setItems <- createSignal [ "alpha", "beta" ]
   detail /\ setDetail <- createSignal (Nothing :: Maybe String)
-  greeting /\ _ <- createAsyncWith (defaultAsyncOptions { ssr = serialized }) (pure fetchGreeting)
+  greeting /\ _ <- createAsyncWith { ssr: serialized } (pure fetchGreeting)
 
   pure $ H.main [ P.id "hydration-app" ]
     [ H.h1_ [ text "Hydration" ]

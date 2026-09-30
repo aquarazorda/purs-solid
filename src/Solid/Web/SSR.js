@@ -4,21 +4,13 @@ import {
   renderToString as solidRenderToString,
 } from "@solidjs/web";
 
-const toOptions = (rep) => {
-  const options = {};
-  if (rep.nonce != null) options.nonce = rep.nonce;
-  if (rep.renderId != null) options.renderId = rep.renderId;
-  if (rep.noScripts) options.noScripts = true;
-  return options;
-};
+export const renderToStringImpl = (realize, options, view) =>
+  solidRenderToString(() => realize(view), options);
 
-export const renderToStringImpl = (realize, rep, view) =>
-  solidRenderToString(() => realize(view), toOptions(rep));
-
-export const renderToStringWithHeadImpl = (realize, rep, view) => {
+export const renderToStringWithHeadImpl = (realize, options, view) => {
   let head = "";
   const html = solidRenderToString(() => realize(view), {
-    ...toOptions(rep),
+    ...options,
     onHead: (value) => {
       head = value;
     },
@@ -27,16 +19,15 @@ export const renderToStringWithHeadImpl = (realize, rep, view) => {
 };
 
 // An awaited render stream resolves to the fully settled HTML.
-export const renderToStringAsyncImpl = (realize, rep, view) => {
+export const renderToStringAsyncImpl = (realize, options, view) => {
   try {
-    return Promise.resolve(solidRenderToStream(() => realize(view), toOptions(rep)));
+    return Promise.resolve(solidRenderToStream(() => realize(view), options));
   } catch (error) {
     return Promise.reject(error);
   }
 };
 
-export const renderToReadableStreamImpl = (realize, rep, view) =>
-  solidRenderToStream(() => realize(view), toOptions(rep)).readable;
+export const renderToReadableStreamImpl = (realize, options, view) =>
+  solidRenderToStream(() => realize(view), options).readable;
 
-export const hydrationScriptImpl = (nonce) =>
-  solidGenerateHydrationScript(nonce == null ? {} : { nonce });
+export const hydrationScriptImpl = (options) => solidGenerateHydrationScript(options);

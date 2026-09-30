@@ -3,12 +3,10 @@
 -- | cleanup runs before the next apply and on disposal.
 module Solid.Reactivity
   ( MemoOptions
-  , defaultMemoOptions
   , createMemo
   , createMemoWith
   , createWritableMemo
   , EffectOptions
-  , defaultEffectOptions
   , createEffect
   , createEffect_
   , createEffectWith
@@ -23,44 +21,37 @@ module Solid.Reactivity
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable, toNullable)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Exception (Error)
-import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn5, mkEffectFn1, runEffectFn1, runEffectFn2, runEffectFn5)
-import Solid.Internal.Equality (Equality(..), EqualityFn, toEqualityFn)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, mkEffectFn1, runEffectFn1, runEffectFn2, runEffectFn3)
+import Prim.Row as Row
+import Solid.Internal.Equality (Equality)
 import Solid.Internal.Setup (Setup(..))
 import Solid.Signal (Accessor, Setter, Signal)
 
 type MemoOptions a =
-  { name :: String
-  , equality :: Equality a
+  ( name :: String
+  , equals :: Equality a
   -- | Defer the first computation until read; dispose when nothing observes it.
   , lazy :: Boolean
-  }
-
-defaultMemoOptions :: forall a. MemoOptions a
-defaultMemoOptions =
-  { name: ""
-  , equality: DefaultEquals
-  , lazy: false
-  }
+  )
 
 -- | Caches a derived accessor: it recomputes only when its dependencies change,
 -- | and notifies only when the result changes.
 createMemo :: forall a. Accessor a -> Setup (Accessor a)
-createMemo = createMemoWith defaultMemoOptions
+createMemo = createMemoWith {}
 
-createMemoWith :: forall a. MemoOptions a -> Accessor a -> Setup (Accessor a)
-createMemoWith options compute =
-  Setup (runEffectFn5 createMemoImpl options.name mode equals options.lazy compute)
-  where
-  { mode, equals } = toEqualityFn options.equality
+-- | Takes any subset of `MemoOptions`.
+createMemoWith
+  :: forall a given missing
+   . Row.Union given missing (MemoOptions a)
+  => { | given }
+  -> Accessor a
+  -> Setup (Accessor a)
+createMemoWith options compute = Setup (runEffectFn2 createMemoImpl options compute)
 
-foreign import createMemoImpl
-  :: forall a
-   . EffectFn5 String String (EqualityFn a) Boolean (Accessor a) (Accessor a)
+foreign import createMemoImpl :: forall options a. EffectFn2 { | options } (Accessor a) (Accessor a)
 
 -- | A signal derived from `compute` that can also be written locally. A write
 -- | wins until a dependency of `compute` changes, which re-derives it.
@@ -74,42 +65,35 @@ foreign import createWritableMemoImpl
    . EffectFn1 (Accessor a) { get :: Accessor a, set :: Setter a }
 
 type EffectOptions =
-  { name :: String
+  ( name :: String
   -- | Skip the apply phase for the initial value; run it on changes only.
   , defer :: Boolean
   -- | Handles compute-phase errors; without it Solid logs them and skips the run.
-  , onError :: Maybe (Error -> Effect Unit)
-  }
-
-defaultEffectOptions :: EffectOptions
-defaultEffectOptions =
-  { name: ""
-  , defer: false
-  , onError: Nothing
-  }
+  , onError :: Error -> Effect Unit
+  )
 
 -- | Runs `apply` with the value of `compute` now (after the current flush) and
 -- | whenever it changes. The `Effect Unit` that `apply` returns is its cleanup.
 createEffect :: forall a. Accessor a -> (a -> Effect (Effect Unit)) -> Setup Unit
-createEffect = createEffectWith defaultEffectOptions
+createEffect = createEffectWith {}
 
 createEffect_ :: forall a. Accessor a -> (a -> Effect Unit) -> Setup Unit
 createEffect_ compute apply = createEffect compute \value -> apply value $> pure unit
 
-createEffectWith :: forall a. EffectOptions -> Accessor a -> (a -> Effect (Effect Unit)) -> Setup Unit
+-- | Takes any subset of `EffectOptions`.
+createEffectWith
+  :: forall a given missing
+   . Row.Union given missing EffectOptions
+  => { | given }
+  -> Accessor a
+  -> (a -> Effect (Effect Unit))
+  -> Setup Unit
 createEffectWith options compute apply =
-  Setup
-    ( runEffectFn5 createEffectImpl
-        options.name
-        options.defer
-        (toNullable (mkEffectFn1 <$> options.onError))
-        compute
-        (mkEffectFn1 apply)
-    )
+  Setup (runEffectFn3 createEffectImpl options compute (mkEffectFn1 apply))
 
 foreign import createEffectImpl
-  :: forall a
-   . EffectFn5 String Boolean (Nullable (EffectFn1 Error Unit)) (Accessor a) (EffectFn1 a (Effect Unit)) Unit
+  :: forall options a
+   . EffectFn3 { | options } (Accessor a) (EffectFn1 a (Effect Unit)) Unit
 
 -- | Like `createEffect`, but the apply phase runs synchronously during
 -- | rendering, before the DOM is committed.

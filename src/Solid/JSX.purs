@@ -8,18 +8,14 @@ module Solid.JSX
   , empty
   ) where
 
-import Prelude
-
-import Solid.Internal.View (Binding(..), JSX, class ToBinding, binding, reactiveJsx, textJsx)
+import Solid.Internal.View (JSX, class ToBinding, reactiveJsx, textBinding)
 import Solid.Internal.View (JSX) as Exports
 import Solid.Internal.View as View
 import Solid.Signal (Accessor)
 
 -- | Text, fixed (`text "Hello"`) or reactive (`text (show <$> count)`).
 text :: forall v. ToBinding v String => v -> JSX
-text value = case binding value of
-  Static string -> textJsx string
-  Dynamic accessor -> reactiveJsx (textJsx <$> accessor)
+text = textBinding
 
 -- | Re-renders when the accessor changes. Prefer `Solid.Control` for
 -- | conditionals and lists; it reuses DOM.

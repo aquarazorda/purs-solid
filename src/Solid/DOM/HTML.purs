@@ -2,676 +2,676 @@
 module Solid.DOM.HTML where
 
 import DOM.HTML.Indexed as I
-import Solid.Internal.View (JSX, Namespace(..), Prop, elementWith)
+import Solid.Internal.View (JSX, Prop, elementWith, htmlNamespace)
 
 a :: Array (Prop I.HTMLa) -> Array JSX -> JSX
-a = elementWith HtmlNamespace "a"
+a = elementWith htmlNamespace "a"
 
 a_ :: Array JSX -> JSX
-a_ = elementWith HtmlNamespace "a" []
+a_ = elementWith htmlNamespace "a" []
 
 abbr :: Array (Prop I.HTMLabbr) -> Array JSX -> JSX
-abbr = elementWith HtmlNamespace "abbr"
+abbr = elementWith htmlNamespace "abbr"
 
 abbr_ :: Array JSX -> JSX
-abbr_ = elementWith HtmlNamespace "abbr" []
+abbr_ = elementWith htmlNamespace "abbr" []
 
 address :: Array (Prop I.HTMLaddress) -> Array JSX -> JSX
-address = elementWith HtmlNamespace "address"
+address = elementWith htmlNamespace "address"
 
 address_ :: Array JSX -> JSX
-address_ = elementWith HtmlNamespace "address" []
+address_ = elementWith htmlNamespace "address" []
 
 area :: Array (Prop I.HTMLarea) -> JSX
-area props = elementWith HtmlNamespace "area" props []
+area props = elementWith htmlNamespace "area" props []
 
 area_ :: JSX
-area_ = elementWith HtmlNamespace "area" [] []
+area_ = elementWith htmlNamespace "area" [] []
 
 article :: Array (Prop I.HTMLarticle) -> Array JSX -> JSX
-article = elementWith HtmlNamespace "article"
+article = elementWith htmlNamespace "article"
 
 article_ :: Array JSX -> JSX
-article_ = elementWith HtmlNamespace "article" []
+article_ = elementWith htmlNamespace "article" []
 
 aside :: Array (Prop I.HTMLaside) -> Array JSX -> JSX
-aside = elementWith HtmlNamespace "aside"
+aside = elementWith htmlNamespace "aside"
 
 aside_ :: Array JSX -> JSX
-aside_ = elementWith HtmlNamespace "aside" []
+aside_ = elementWith htmlNamespace "aside" []
 
 audio :: Array (Prop I.HTMLaudio) -> Array JSX -> JSX
-audio = elementWith HtmlNamespace "audio"
+audio = elementWith htmlNamespace "audio"
 
 audio_ :: Array JSX -> JSX
-audio_ = elementWith HtmlNamespace "audio" []
+audio_ = elementWith htmlNamespace "audio" []
 
 b :: Array (Prop I.HTMLb) -> Array JSX -> JSX
-b = elementWith HtmlNamespace "b"
+b = elementWith htmlNamespace "b"
 
 b_ :: Array JSX -> JSX
-b_ = elementWith HtmlNamespace "b" []
+b_ = elementWith htmlNamespace "b" []
 
 base :: Array (Prop I.HTMLbase) -> JSX
-base props = elementWith HtmlNamespace "base" props []
+base props = elementWith htmlNamespace "base" props []
 
 base_ :: JSX
-base_ = elementWith HtmlNamespace "base" [] []
+base_ = elementWith htmlNamespace "base" [] []
 
 bdi :: Array (Prop I.HTMLbdi) -> Array JSX -> JSX
-bdi = elementWith HtmlNamespace "bdi"
+bdi = elementWith htmlNamespace "bdi"
 
 bdi_ :: Array JSX -> JSX
-bdi_ = elementWith HtmlNamespace "bdi" []
+bdi_ = elementWith htmlNamespace "bdi" []
 
 bdo :: Array (Prop I.HTMLbdo) -> Array JSX -> JSX
-bdo = elementWith HtmlNamespace "bdo"
+bdo = elementWith htmlNamespace "bdo"
 
 bdo_ :: Array JSX -> JSX
-bdo_ = elementWith HtmlNamespace "bdo" []
+bdo_ = elementWith htmlNamespace "bdo" []
 
 blockquote :: Array (Prop I.HTMLblockquote) -> Array JSX -> JSX
-blockquote = elementWith HtmlNamespace "blockquote"
+blockquote = elementWith htmlNamespace "blockquote"
 
 blockquote_ :: Array JSX -> JSX
-blockquote_ = elementWith HtmlNamespace "blockquote" []
+blockquote_ = elementWith htmlNamespace "blockquote" []
 
 body :: Array (Prop I.HTMLbody) -> Array JSX -> JSX
-body = elementWith HtmlNamespace "body"
+body = elementWith htmlNamespace "body"
 
 body_ :: Array JSX -> JSX
-body_ = elementWith HtmlNamespace "body" []
+body_ = elementWith htmlNamespace "body" []
 
 br :: Array (Prop I.HTMLbr) -> JSX
-br props = elementWith HtmlNamespace "br" props []
+br props = elementWith htmlNamespace "br" props []
 
 br_ :: JSX
-br_ = elementWith HtmlNamespace "br" [] []
+br_ = elementWith htmlNamespace "br" [] []
 
 button :: Array (Prop I.HTMLbutton) -> Array JSX -> JSX
-button = elementWith HtmlNamespace "button"
+button = elementWith htmlNamespace "button"
 
 button_ :: Array JSX -> JSX
-button_ = elementWith HtmlNamespace "button" []
+button_ = elementWith htmlNamespace "button" []
 
 canvas :: Array (Prop I.HTMLcanvas) -> Array JSX -> JSX
-canvas = elementWith HtmlNamespace "canvas"
+canvas = elementWith htmlNamespace "canvas"
 
 canvas_ :: Array JSX -> JSX
-canvas_ = elementWith HtmlNamespace "canvas" []
+canvas_ = elementWith htmlNamespace "canvas" []
 
 caption :: Array (Prop I.HTMLcaption) -> Array JSX -> JSX
-caption = elementWith HtmlNamespace "caption"
+caption = elementWith htmlNamespace "caption"
 
 caption_ :: Array JSX -> JSX
-caption_ = elementWith HtmlNamespace "caption" []
+caption_ = elementWith htmlNamespace "caption" []
 
 cite :: Array (Prop I.HTMLcite) -> Array JSX -> JSX
-cite = elementWith HtmlNamespace "cite"
+cite = elementWith htmlNamespace "cite"
 
 cite_ :: Array JSX -> JSX
-cite_ = elementWith HtmlNamespace "cite" []
+cite_ = elementWith htmlNamespace "cite" []
 
 code :: Array (Prop I.HTMLcode) -> Array JSX -> JSX
-code = elementWith HtmlNamespace "code"
+code = elementWith htmlNamespace "code"
 
 code_ :: Array JSX -> JSX
-code_ = elementWith HtmlNamespace "code" []
+code_ = elementWith htmlNamespace "code" []
 
 col :: Array (Prop I.HTMLcol) -> JSX
-col props = elementWith HtmlNamespace "col" props []
+col props = elementWith htmlNamespace "col" props []
 
 col_ :: JSX
-col_ = elementWith HtmlNamespace "col" [] []
+col_ = elementWith htmlNamespace "col" [] []
 
 colgroup :: Array (Prop I.HTMLcolgroup) -> Array JSX -> JSX
-colgroup = elementWith HtmlNamespace "colgroup"
+colgroup = elementWith htmlNamespace "colgroup"
 
 colgroup_ :: Array JSX -> JSX
-colgroup_ = elementWith HtmlNamespace "colgroup" []
+colgroup_ = elementWith htmlNamespace "colgroup" []
 
 command :: Array (Prop I.HTMLcommand) -> JSX
-command props = elementWith HtmlNamespace "command" props []
+command props = elementWith htmlNamespace "command" props []
 
 command_ :: JSX
-command_ = elementWith HtmlNamespace "command" [] []
+command_ = elementWith htmlNamespace "command" [] []
 
 datalist :: Array (Prop I.HTMLdatalist) -> Array JSX -> JSX
-datalist = elementWith HtmlNamespace "datalist"
+datalist = elementWith htmlNamespace "datalist"
 
 datalist_ :: Array JSX -> JSX
-datalist_ = elementWith HtmlNamespace "datalist" []
+datalist_ = elementWith htmlNamespace "datalist" []
 
 dd :: Array (Prop I.HTMLdd) -> Array JSX -> JSX
-dd = elementWith HtmlNamespace "dd"
+dd = elementWith htmlNamespace "dd"
 
 dd_ :: Array JSX -> JSX
-dd_ = elementWith HtmlNamespace "dd" []
+dd_ = elementWith htmlNamespace "dd" []
 
 del :: Array (Prop I.HTMLdel) -> Array JSX -> JSX
-del = elementWith HtmlNamespace "del"
+del = elementWith htmlNamespace "del"
 
 del_ :: Array JSX -> JSX
-del_ = elementWith HtmlNamespace "del" []
+del_ = elementWith htmlNamespace "del" []
 
 details :: Array (Prop I.HTMLdetails) -> Array JSX -> JSX
-details = elementWith HtmlNamespace "details"
+details = elementWith htmlNamespace "details"
 
 details_ :: Array JSX -> JSX
-details_ = elementWith HtmlNamespace "details" []
+details_ = elementWith htmlNamespace "details" []
 
 dfn :: Array (Prop I.HTMLdfn) -> Array JSX -> JSX
-dfn = elementWith HtmlNamespace "dfn"
+dfn = elementWith htmlNamespace "dfn"
 
 dfn_ :: Array JSX -> JSX
-dfn_ = elementWith HtmlNamespace "dfn" []
+dfn_ = elementWith htmlNamespace "dfn" []
 
 dialog :: Array (Prop I.HTMLdialog) -> Array JSX -> JSX
-dialog = elementWith HtmlNamespace "dialog"
+dialog = elementWith htmlNamespace "dialog"
 
 dialog_ :: Array JSX -> JSX
-dialog_ = elementWith HtmlNamespace "dialog" []
+dialog_ = elementWith htmlNamespace "dialog" []
 
 div :: Array (Prop I.HTMLdiv) -> Array JSX -> JSX
-div = elementWith HtmlNamespace "div"
+div = elementWith htmlNamespace "div"
 
 div_ :: Array JSX -> JSX
-div_ = elementWith HtmlNamespace "div" []
+div_ = elementWith htmlNamespace "div" []
 
 dl :: Array (Prop I.HTMLdl) -> Array JSX -> JSX
-dl = elementWith HtmlNamespace "dl"
+dl = elementWith htmlNamespace "dl"
 
 dl_ :: Array JSX -> JSX
-dl_ = elementWith HtmlNamespace "dl" []
+dl_ = elementWith htmlNamespace "dl" []
 
 dt :: Array (Prop I.HTMLdt) -> Array JSX -> JSX
-dt = elementWith HtmlNamespace "dt"
+dt = elementWith htmlNamespace "dt"
 
 dt_ :: Array JSX -> JSX
-dt_ = elementWith HtmlNamespace "dt" []
+dt_ = elementWith htmlNamespace "dt" []
 
 em :: Array (Prop I.HTMLem) -> Array JSX -> JSX
-em = elementWith HtmlNamespace "em"
+em = elementWith htmlNamespace "em"
 
 em_ :: Array JSX -> JSX
-em_ = elementWith HtmlNamespace "em" []
+em_ = elementWith htmlNamespace "em" []
 
 embed :: Array (Prop I.HTMLembed) -> JSX
-embed props = elementWith HtmlNamespace "embed" props []
+embed props = elementWith htmlNamespace "embed" props []
 
 embed_ :: JSX
-embed_ = elementWith HtmlNamespace "embed" [] []
+embed_ = elementWith htmlNamespace "embed" [] []
 
 fieldset :: Array (Prop I.HTMLfieldset) -> Array JSX -> JSX
-fieldset = elementWith HtmlNamespace "fieldset"
+fieldset = elementWith htmlNamespace "fieldset"
 
 fieldset_ :: Array JSX -> JSX
-fieldset_ = elementWith HtmlNamespace "fieldset" []
+fieldset_ = elementWith htmlNamespace "fieldset" []
 
 figcaption :: Array (Prop I.HTMLfigcaption) -> Array JSX -> JSX
-figcaption = elementWith HtmlNamespace "figcaption"
+figcaption = elementWith htmlNamespace "figcaption"
 
 figcaption_ :: Array JSX -> JSX
-figcaption_ = elementWith HtmlNamespace "figcaption" []
+figcaption_ = elementWith htmlNamespace "figcaption" []
 
 figure :: Array (Prop I.HTMLfigure) -> Array JSX -> JSX
-figure = elementWith HtmlNamespace "figure"
+figure = elementWith htmlNamespace "figure"
 
 figure_ :: Array JSX -> JSX
-figure_ = elementWith HtmlNamespace "figure" []
+figure_ = elementWith htmlNamespace "figure" []
 
 footer :: Array (Prop I.HTMLfooter) -> Array JSX -> JSX
-footer = elementWith HtmlNamespace "footer"
+footer = elementWith htmlNamespace "footer"
 
 footer_ :: Array JSX -> JSX
-footer_ = elementWith HtmlNamespace "footer" []
+footer_ = elementWith htmlNamespace "footer" []
 
 form :: Array (Prop I.HTMLform) -> Array JSX -> JSX
-form = elementWith HtmlNamespace "form"
+form = elementWith htmlNamespace "form"
 
 form_ :: Array JSX -> JSX
-form_ = elementWith HtmlNamespace "form" []
+form_ = elementWith htmlNamespace "form" []
 
 h1 :: Array (Prop I.HTMLh1) -> Array JSX -> JSX
-h1 = elementWith HtmlNamespace "h1"
+h1 = elementWith htmlNamespace "h1"
 
 h1_ :: Array JSX -> JSX
-h1_ = elementWith HtmlNamespace "h1" []
+h1_ = elementWith htmlNamespace "h1" []
 
 h2 :: Array (Prop I.HTMLh2) -> Array JSX -> JSX
-h2 = elementWith HtmlNamespace "h2"
+h2 = elementWith htmlNamespace "h2"
 
 h2_ :: Array JSX -> JSX
-h2_ = elementWith HtmlNamespace "h2" []
+h2_ = elementWith htmlNamespace "h2" []
 
 h3 :: Array (Prop I.HTMLh3) -> Array JSX -> JSX
-h3 = elementWith HtmlNamespace "h3"
+h3 = elementWith htmlNamespace "h3"
 
 h3_ :: Array JSX -> JSX
-h3_ = elementWith HtmlNamespace "h3" []
+h3_ = elementWith htmlNamespace "h3" []
 
 h4 :: Array (Prop I.HTMLh4) -> Array JSX -> JSX
-h4 = elementWith HtmlNamespace "h4"
+h4 = elementWith htmlNamespace "h4"
 
 h4_ :: Array JSX -> JSX
-h4_ = elementWith HtmlNamespace "h4" []
+h4_ = elementWith htmlNamespace "h4" []
 
 h5 :: Array (Prop I.HTMLh5) -> Array JSX -> JSX
-h5 = elementWith HtmlNamespace "h5"
+h5 = elementWith htmlNamespace "h5"
 
 h5_ :: Array JSX -> JSX
-h5_ = elementWith HtmlNamespace "h5" []
+h5_ = elementWith htmlNamespace "h5" []
 
 h6 :: Array (Prop I.HTMLh6) -> Array JSX -> JSX
-h6 = elementWith HtmlNamespace "h6"
+h6 = elementWith htmlNamespace "h6"
 
 h6_ :: Array JSX -> JSX
-h6_ = elementWith HtmlNamespace "h6" []
+h6_ = elementWith htmlNamespace "h6" []
 
 head :: Array (Prop I.HTMLhead) -> Array JSX -> JSX
-head = elementWith HtmlNamespace "head"
+head = elementWith htmlNamespace "head"
 
 head_ :: Array JSX -> JSX
-head_ = elementWith HtmlNamespace "head" []
+head_ = elementWith htmlNamespace "head" []
 
 header :: Array (Prop I.HTMLheader) -> Array JSX -> JSX
-header = elementWith HtmlNamespace "header"
+header = elementWith htmlNamespace "header"
 
 header_ :: Array JSX -> JSX
-header_ = elementWith HtmlNamespace "header" []
+header_ = elementWith htmlNamespace "header" []
 
 hr :: Array (Prop I.HTMLhr) -> JSX
-hr props = elementWith HtmlNamespace "hr" props []
+hr props = elementWith htmlNamespace "hr" props []
 
 hr_ :: JSX
-hr_ = elementWith HtmlNamespace "hr" [] []
+hr_ = elementWith htmlNamespace "hr" [] []
 
 html :: Array (Prop I.HTMLhtml) -> Array JSX -> JSX
-html = elementWith HtmlNamespace "html"
+html = elementWith htmlNamespace "html"
 
 html_ :: Array JSX -> JSX
-html_ = elementWith HtmlNamespace "html" []
+html_ = elementWith htmlNamespace "html" []
 
 i :: Array (Prop I.HTMLi) -> Array JSX -> JSX
-i = elementWith HtmlNamespace "i"
+i = elementWith htmlNamespace "i"
 
 i_ :: Array JSX -> JSX
-i_ = elementWith HtmlNamespace "i" []
+i_ = elementWith htmlNamespace "i" []
 
 iframe :: Array (Prop I.HTMLiframe) -> Array JSX -> JSX
-iframe = elementWith HtmlNamespace "iframe"
+iframe = elementWith htmlNamespace "iframe"
 
 iframe_ :: Array JSX -> JSX
-iframe_ = elementWith HtmlNamespace "iframe" []
+iframe_ = elementWith htmlNamespace "iframe" []
 
 img :: Array (Prop I.HTMLimg) -> JSX
-img props = elementWith HtmlNamespace "img" props []
+img props = elementWith htmlNamespace "img" props []
 
 img_ :: JSX
-img_ = elementWith HtmlNamespace "img" [] []
+img_ = elementWith htmlNamespace "img" [] []
 
 input :: Array (Prop I.HTMLinput) -> JSX
-input props = elementWith HtmlNamespace "input" props []
+input props = elementWith htmlNamespace "input" props []
 
 input_ :: JSX
-input_ = elementWith HtmlNamespace "input" [] []
+input_ = elementWith htmlNamespace "input" [] []
 
 ins :: Array (Prop I.HTMLins) -> Array JSX -> JSX
-ins = elementWith HtmlNamespace "ins"
+ins = elementWith htmlNamespace "ins"
 
 ins_ :: Array JSX -> JSX
-ins_ = elementWith HtmlNamespace "ins" []
+ins_ = elementWith htmlNamespace "ins" []
 
 kbd :: Array (Prop I.HTMLkbd) -> Array JSX -> JSX
-kbd = elementWith HtmlNamespace "kbd"
+kbd = elementWith htmlNamespace "kbd"
 
 kbd_ :: Array JSX -> JSX
-kbd_ = elementWith HtmlNamespace "kbd" []
+kbd_ = elementWith htmlNamespace "kbd" []
 
 label :: Array (Prop I.HTMLlabel) -> Array JSX -> JSX
-label = elementWith HtmlNamespace "label"
+label = elementWith htmlNamespace "label"
 
 label_ :: Array JSX -> JSX
-label_ = elementWith HtmlNamespace "label" []
+label_ = elementWith htmlNamespace "label" []
 
 legend :: Array (Prop I.HTMLlegend) -> Array JSX -> JSX
-legend = elementWith HtmlNamespace "legend"
+legend = elementWith htmlNamespace "legend"
 
 legend_ :: Array JSX -> JSX
-legend_ = elementWith HtmlNamespace "legend" []
+legend_ = elementWith htmlNamespace "legend" []
 
 li :: Array (Prop I.HTMLli) -> Array JSX -> JSX
-li = elementWith HtmlNamespace "li"
+li = elementWith htmlNamespace "li"
 
 li_ :: Array JSX -> JSX
-li_ = elementWith HtmlNamespace "li" []
+li_ = elementWith htmlNamespace "li" []
 
 link :: Array (Prop I.HTMLlink) -> JSX
-link props = elementWith HtmlNamespace "link" props []
+link props = elementWith htmlNamespace "link" props []
 
 link_ :: JSX
-link_ = elementWith HtmlNamespace "link" [] []
+link_ = elementWith htmlNamespace "link" [] []
 
 main :: Array (Prop I.HTMLmain) -> Array JSX -> JSX
-main = elementWith HtmlNamespace "main"
+main = elementWith htmlNamespace "main"
 
 main_ :: Array JSX -> JSX
-main_ = elementWith HtmlNamespace "main" []
+main_ = elementWith htmlNamespace "main" []
 
 map :: Array (Prop I.HTMLmap) -> Array JSX -> JSX
-map = elementWith HtmlNamespace "map"
+map = elementWith htmlNamespace "map"
 
 map_ :: Array JSX -> JSX
-map_ = elementWith HtmlNamespace "map" []
+map_ = elementWith htmlNamespace "map" []
 
 mark :: Array (Prop I.HTMLmark) -> Array JSX -> JSX
-mark = elementWith HtmlNamespace "mark"
+mark = elementWith htmlNamespace "mark"
 
 mark_ :: Array JSX -> JSX
-mark_ = elementWith HtmlNamespace "mark" []
+mark_ = elementWith htmlNamespace "mark" []
 
 menu :: Array (Prop I.HTMLmenu) -> Array JSX -> JSX
-menu = elementWith HtmlNamespace "menu"
+menu = elementWith htmlNamespace "menu"
 
 menu_ :: Array JSX -> JSX
-menu_ = elementWith HtmlNamespace "menu" []
+menu_ = elementWith htmlNamespace "menu" []
 
 menuitem :: Array (Prop I.HTMLmenuitem) -> Array JSX -> JSX
-menuitem = elementWith HtmlNamespace "menuitem"
+menuitem = elementWith htmlNamespace "menuitem"
 
 menuitem_ :: Array JSX -> JSX
-menuitem_ = elementWith HtmlNamespace "menuitem" []
+menuitem_ = elementWith htmlNamespace "menuitem" []
 
 meta :: Array (Prop I.HTMLmeta) -> JSX
-meta props = elementWith HtmlNamespace "meta" props []
+meta props = elementWith htmlNamespace "meta" props []
 
 meta_ :: JSX
-meta_ = elementWith HtmlNamespace "meta" [] []
+meta_ = elementWith htmlNamespace "meta" [] []
 
 meter :: Array (Prop I.HTMLmeter) -> Array JSX -> JSX
-meter = elementWith HtmlNamespace "meter"
+meter = elementWith htmlNamespace "meter"
 
 meter_ :: Array JSX -> JSX
-meter_ = elementWith HtmlNamespace "meter" []
+meter_ = elementWith htmlNamespace "meter" []
 
 nav :: Array (Prop I.HTMLnav) -> Array JSX -> JSX
-nav = elementWith HtmlNamespace "nav"
+nav = elementWith htmlNamespace "nav"
 
 nav_ :: Array JSX -> JSX
-nav_ = elementWith HtmlNamespace "nav" []
+nav_ = elementWith htmlNamespace "nav" []
 
 noscript :: Array (Prop I.HTMLnoscript) -> Array JSX -> JSX
-noscript = elementWith HtmlNamespace "noscript"
+noscript = elementWith htmlNamespace "noscript"
 
 noscript_ :: Array JSX -> JSX
-noscript_ = elementWith HtmlNamespace "noscript" []
+noscript_ = elementWith htmlNamespace "noscript" []
 
 object :: Array (Prop I.HTMLobject) -> Array JSX -> JSX
-object = elementWith HtmlNamespace "object"
+object = elementWith htmlNamespace "object"
 
 object_ :: Array JSX -> JSX
-object_ = elementWith HtmlNamespace "object" []
+object_ = elementWith htmlNamespace "object" []
 
 ol :: Array (Prop I.HTMLol) -> Array JSX -> JSX
-ol = elementWith HtmlNamespace "ol"
+ol = elementWith htmlNamespace "ol"
 
 ol_ :: Array JSX -> JSX
-ol_ = elementWith HtmlNamespace "ol" []
+ol_ = elementWith htmlNamespace "ol" []
 
 optgroup :: Array (Prop I.HTMLoptgroup) -> Array JSX -> JSX
-optgroup = elementWith HtmlNamespace "optgroup"
+optgroup = elementWith htmlNamespace "optgroup"
 
 optgroup_ :: Array JSX -> JSX
-optgroup_ = elementWith HtmlNamespace "optgroup" []
+optgroup_ = elementWith htmlNamespace "optgroup" []
 
 option :: Array (Prop I.HTMLoption) -> Array JSX -> JSX
-option = elementWith HtmlNamespace "option"
+option = elementWith htmlNamespace "option"
 
 option_ :: Array JSX -> JSX
-option_ = elementWith HtmlNamespace "option" []
+option_ = elementWith htmlNamespace "option" []
 
 output :: Array (Prop I.HTMLoutput) -> Array JSX -> JSX
-output = elementWith HtmlNamespace "output"
+output = elementWith htmlNamespace "output"
 
 output_ :: Array JSX -> JSX
-output_ = elementWith HtmlNamespace "output" []
+output_ = elementWith htmlNamespace "output" []
 
 p :: Array (Prop I.HTMLp) -> Array JSX -> JSX
-p = elementWith HtmlNamespace "p"
+p = elementWith htmlNamespace "p"
 
 p_ :: Array JSX -> JSX
-p_ = elementWith HtmlNamespace "p" []
+p_ = elementWith htmlNamespace "p" []
 
 param :: Array (Prop I.HTMLparam) -> JSX
-param props = elementWith HtmlNamespace "param" props []
+param props = elementWith htmlNamespace "param" props []
 
 param_ :: JSX
-param_ = elementWith HtmlNamespace "param" [] []
+param_ = elementWith htmlNamespace "param" [] []
 
 picture :: Array (Prop (I.Interactive ())) -> Array JSX -> JSX
-picture = elementWith HtmlNamespace "picture"
+picture = elementWith htmlNamespace "picture"
 
 picture_ :: Array JSX -> JSX
-picture_ = elementWith HtmlNamespace "picture" []
+picture_ = elementWith htmlNamespace "picture" []
 
 pre :: Array (Prop I.HTMLpre) -> Array JSX -> JSX
-pre = elementWith HtmlNamespace "pre"
+pre = elementWith htmlNamespace "pre"
 
 pre_ :: Array JSX -> JSX
-pre_ = elementWith HtmlNamespace "pre" []
+pre_ = elementWith htmlNamespace "pre" []
 
 progress :: Array (Prop I.HTMLprogress) -> Array JSX -> JSX
-progress = elementWith HtmlNamespace "progress"
+progress = elementWith htmlNamespace "progress"
 
 progress_ :: Array JSX -> JSX
-progress_ = elementWith HtmlNamespace "progress" []
+progress_ = elementWith htmlNamespace "progress" []
 
 q :: Array (Prop I.HTMLq) -> Array JSX -> JSX
-q = elementWith HtmlNamespace "q"
+q = elementWith htmlNamespace "q"
 
 q_ :: Array JSX -> JSX
-q_ = elementWith HtmlNamespace "q" []
+q_ = elementWith htmlNamespace "q" []
 
 rp :: Array (Prop I.HTMLrp) -> Array JSX -> JSX
-rp = elementWith HtmlNamespace "rp"
+rp = elementWith htmlNamespace "rp"
 
 rp_ :: Array JSX -> JSX
-rp_ = elementWith HtmlNamespace "rp" []
+rp_ = elementWith htmlNamespace "rp" []
 
 rt :: Array (Prop I.HTMLrt) -> Array JSX -> JSX
-rt = elementWith HtmlNamespace "rt"
+rt = elementWith htmlNamespace "rt"
 
 rt_ :: Array JSX -> JSX
-rt_ = elementWith HtmlNamespace "rt" []
+rt_ = elementWith htmlNamespace "rt" []
 
 ruby :: Array (Prop I.HTMLruby) -> Array JSX -> JSX
-ruby = elementWith HtmlNamespace "ruby"
+ruby = elementWith htmlNamespace "ruby"
 
 ruby_ :: Array JSX -> JSX
-ruby_ = elementWith HtmlNamespace "ruby" []
+ruby_ = elementWith htmlNamespace "ruby" []
 
 samp :: Array (Prop I.HTMLsamp) -> Array JSX -> JSX
-samp = elementWith HtmlNamespace "samp"
+samp = elementWith htmlNamespace "samp"
 
 samp_ :: Array JSX -> JSX
-samp_ = elementWith HtmlNamespace "samp" []
+samp_ = elementWith htmlNamespace "samp" []
 
 script :: Array (Prop I.HTMLscript) -> Array JSX -> JSX
-script = elementWith HtmlNamespace "script"
+script = elementWith htmlNamespace "script"
 
 script_ :: Array JSX -> JSX
-script_ = elementWith HtmlNamespace "script" []
+script_ = elementWith htmlNamespace "script" []
 
 search :: Array (Prop (I.Interactive ())) -> Array JSX -> JSX
-search = elementWith HtmlNamespace "search"
+search = elementWith htmlNamespace "search"
 
 search_ :: Array JSX -> JSX
-search_ = elementWith HtmlNamespace "search" []
+search_ = elementWith htmlNamespace "search" []
 
 section :: Array (Prop I.HTMLsection) -> Array JSX -> JSX
-section = elementWith HtmlNamespace "section"
+section = elementWith htmlNamespace "section"
 
 section_ :: Array JSX -> JSX
-section_ = elementWith HtmlNamespace "section" []
+section_ = elementWith htmlNamespace "section" []
 
 select :: Array (Prop I.HTMLselect) -> Array JSX -> JSX
-select = elementWith HtmlNamespace "select"
+select = elementWith htmlNamespace "select"
 
 select_ :: Array JSX -> JSX
-select_ = elementWith HtmlNamespace "select" []
+select_ = elementWith htmlNamespace "select" []
 
 slot :: Array (Prop (I.Interactive ())) -> Array JSX -> JSX
-slot = elementWith HtmlNamespace "slot"
+slot = elementWith htmlNamespace "slot"
 
 slot_ :: Array JSX -> JSX
-slot_ = elementWith HtmlNamespace "slot" []
+slot_ = elementWith htmlNamespace "slot" []
 
 small :: Array (Prop I.HTMLsmall) -> Array JSX -> JSX
-small = elementWith HtmlNamespace "small"
+small = elementWith htmlNamespace "small"
 
 small_ :: Array JSX -> JSX
-small_ = elementWith HtmlNamespace "small" []
+small_ = elementWith htmlNamespace "small" []
 
 source :: Array (Prop I.HTMLsource) -> JSX
-source props = elementWith HtmlNamespace "source" props []
+source props = elementWith htmlNamespace "source" props []
 
 source_ :: JSX
-source_ = elementWith HtmlNamespace "source" [] []
+source_ = elementWith htmlNamespace "source" [] []
 
 span :: Array (Prop I.HTMLspan) -> Array JSX -> JSX
-span = elementWith HtmlNamespace "span"
+span = elementWith htmlNamespace "span"
 
 span_ :: Array JSX -> JSX
-span_ = elementWith HtmlNamespace "span" []
+span_ = elementWith htmlNamespace "span" []
 
 strong :: Array (Prop I.HTMLstrong) -> Array JSX -> JSX
-strong = elementWith HtmlNamespace "strong"
+strong = elementWith htmlNamespace "strong"
 
 strong_ :: Array JSX -> JSX
-strong_ = elementWith HtmlNamespace "strong" []
+strong_ = elementWith htmlNamespace "strong" []
 
 style :: Array (Prop I.HTMLstyle) -> Array JSX -> JSX
-style = elementWith HtmlNamespace "style"
+style = elementWith htmlNamespace "style"
 
 style_ :: Array JSX -> JSX
-style_ = elementWith HtmlNamespace "style" []
+style_ = elementWith htmlNamespace "style" []
 
 sub :: Array (Prop I.HTMLsub) -> Array JSX -> JSX
-sub = elementWith HtmlNamespace "sub"
+sub = elementWith htmlNamespace "sub"
 
 sub_ :: Array JSX -> JSX
-sub_ = elementWith HtmlNamespace "sub" []
+sub_ = elementWith htmlNamespace "sub" []
 
 summary :: Array (Prop I.HTMLsummary) -> Array JSX -> JSX
-summary = elementWith HtmlNamespace "summary"
+summary = elementWith htmlNamespace "summary"
 
 summary_ :: Array JSX -> JSX
-summary_ = elementWith HtmlNamespace "summary" []
+summary_ = elementWith htmlNamespace "summary" []
 
 sup :: Array (Prop I.HTMLsup) -> Array JSX -> JSX
-sup = elementWith HtmlNamespace "sup"
+sup = elementWith htmlNamespace "sup"
 
 sup_ :: Array JSX -> JSX
-sup_ = elementWith HtmlNamespace "sup" []
+sup_ = elementWith htmlNamespace "sup" []
 
 table :: Array (Prop I.HTMLtable) -> Array JSX -> JSX
-table = elementWith HtmlNamespace "table"
+table = elementWith htmlNamespace "table"
 
 table_ :: Array JSX -> JSX
-table_ = elementWith HtmlNamespace "table" []
+table_ = elementWith htmlNamespace "table" []
 
 tbody :: Array (Prop I.HTMLtbody) -> Array JSX -> JSX
-tbody = elementWith HtmlNamespace "tbody"
+tbody = elementWith htmlNamespace "tbody"
 
 tbody_ :: Array JSX -> JSX
-tbody_ = elementWith HtmlNamespace "tbody" []
+tbody_ = elementWith htmlNamespace "tbody" []
 
 td :: Array (Prop I.HTMLtd) -> Array JSX -> JSX
-td = elementWith HtmlNamespace "td"
+td = elementWith htmlNamespace "td"
 
 td_ :: Array JSX -> JSX
-td_ = elementWith HtmlNamespace "td" []
+td_ = elementWith htmlNamespace "td" []
 
 template :: Array (Prop (I.Interactive ())) -> Array JSX -> JSX
-template = elementWith HtmlNamespace "template"
+template = elementWith htmlNamespace "template"
 
 template_ :: Array JSX -> JSX
-template_ = elementWith HtmlNamespace "template" []
+template_ = elementWith htmlNamespace "template" []
 
 textarea :: Array (Prop I.HTMLtextarea) -> Array JSX -> JSX
-textarea = elementWith HtmlNamespace "textarea"
+textarea = elementWith htmlNamespace "textarea"
 
 textarea_ :: Array JSX -> JSX
-textarea_ = elementWith HtmlNamespace "textarea" []
+textarea_ = elementWith htmlNamespace "textarea" []
 
 tfoot :: Array (Prop I.HTMLtfoot) -> Array JSX -> JSX
-tfoot = elementWith HtmlNamespace "tfoot"
+tfoot = elementWith htmlNamespace "tfoot"
 
 tfoot_ :: Array JSX -> JSX
-tfoot_ = elementWith HtmlNamespace "tfoot" []
+tfoot_ = elementWith htmlNamespace "tfoot" []
 
 th :: Array (Prop I.HTMLth) -> Array JSX -> JSX
-th = elementWith HtmlNamespace "th"
+th = elementWith htmlNamespace "th"
 
 th_ :: Array JSX -> JSX
-th_ = elementWith HtmlNamespace "th" []
+th_ = elementWith htmlNamespace "th" []
 
 thead :: Array (Prop I.HTMLthead) -> Array JSX -> JSX
-thead = elementWith HtmlNamespace "thead"
+thead = elementWith htmlNamespace "thead"
 
 thead_ :: Array JSX -> JSX
-thead_ = elementWith HtmlNamespace "thead" []
+thead_ = elementWith htmlNamespace "thead" []
 
 time :: Array (Prop I.HTMLtime) -> Array JSX -> JSX
-time = elementWith HtmlNamespace "time"
+time = elementWith htmlNamespace "time"
 
 time_ :: Array JSX -> JSX
-time_ = elementWith HtmlNamespace "time" []
+time_ = elementWith htmlNamespace "time" []
 
 title :: Array (Prop I.HTMLtitle) -> Array JSX -> JSX
-title = elementWith HtmlNamespace "title"
+title = elementWith htmlNamespace "title"
 
 title_ :: Array JSX -> JSX
-title_ = elementWith HtmlNamespace "title" []
+title_ = elementWith htmlNamespace "title" []
 
 tr :: Array (Prop I.HTMLtr) -> Array JSX -> JSX
-tr = elementWith HtmlNamespace "tr"
+tr = elementWith htmlNamespace "tr"
 
 tr_ :: Array JSX -> JSX
-tr_ = elementWith HtmlNamespace "tr" []
+tr_ = elementWith htmlNamespace "tr" []
 
 track :: Array (Prop I.HTMLtrack) -> JSX
-track props = elementWith HtmlNamespace "track" props []
+track props = elementWith htmlNamespace "track" props []
 
 track_ :: JSX
-track_ = elementWith HtmlNamespace "track" [] []
+track_ = elementWith htmlNamespace "track" [] []
 
 u :: Array (Prop I.HTMLu) -> Array JSX -> JSX
-u = elementWith HtmlNamespace "u"
+u = elementWith htmlNamespace "u"
 
 u_ :: Array JSX -> JSX
-u_ = elementWith HtmlNamespace "u" []
+u_ = elementWith htmlNamespace "u" []
 
 ul :: Array (Prop I.HTMLul) -> Array JSX -> JSX
-ul = elementWith HtmlNamespace "ul"
+ul = elementWith htmlNamespace "ul"
 
 ul_ :: Array JSX -> JSX
-ul_ = elementWith HtmlNamespace "ul" []
+ul_ = elementWith htmlNamespace "ul" []
 
 var :: Array (Prop I.HTMLvar) -> Array JSX -> JSX
-var = elementWith HtmlNamespace "var"
+var = elementWith htmlNamespace "var"
 
 var_ :: Array JSX -> JSX
-var_ = elementWith HtmlNamespace "var" []
+var_ = elementWith htmlNamespace "var" []
 
 video :: Array (Prop I.HTMLvideo) -> Array JSX -> JSX
-video = elementWith HtmlNamespace "video"
+video = elementWith htmlNamespace "video"
 
 video_ :: Array JSX -> JSX
-video_ = elementWith HtmlNamespace "video" []
+video_ = elementWith htmlNamespace "video" []
 
 wbr :: Array (Prop I.HTMLwbr) -> JSX
-wbr props = elementWith HtmlNamespace "wbr" props []
+wbr props = elementWith htmlNamespace "wbr" props []
 
 wbr_ :: JSX
-wbr_ = elementWith HtmlNamespace "wbr" [] []
+wbr_ = elementWith htmlNamespace "wbr" [] []

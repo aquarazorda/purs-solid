@@ -12,7 +12,6 @@ package:
     - exceptions
     - foreign-object
     - functions
-    - js-uri
     - maybe
     - media-types
     - nullable

@@ -29,7 +29,7 @@ withRouter :: String -> Array Router.Route -> Aff { mounted :: Mounted, navigate
 withRouter url routes = do
   navigateRef <- liftEffect (Ref.new Nothing)
   history <- liftEffect (Router.memoryHistory url)
-  router <- liftEffect (Router.createRouter Router.defaultRouterConfig { routes = routes, history = Just history })
+  router <- liftEffect (Router.createRouter { routes, history })
   let
     shell = Component.component \props -> do
       nav <- Router.useNavigate

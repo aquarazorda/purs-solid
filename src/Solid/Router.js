@@ -40,12 +40,7 @@ export const browserHistory = () => solidBrowserHistory();
 export const hashHistory = () => solidHashHistory();
 export const memoryHistory = (url) => () => solidMemoryHistory(url);
 
-export const createRouterImpl = (config) => {
-  const options = { routes: config.routes };
-  if (config.base != null) options.base = config.base;
-  if (config.history != null) options.history = config.history;
-  return solidCreateRouter(options);
-};
+export const createRouterImpl = (options) => solidCreateRouter(options);
 
 export const routerViewImpl = (router) => (url) => (root) => (realize) => () =>
   createComponent(router, {
@@ -73,7 +68,7 @@ export const useMatchImpl = (pattern) => {
 
 export const useNavigateImpl = () => solidUseNavigate();
 
-export const navigateImpl = (navigate, { to, options }) => {
+export const navigateImpl = (navigate, to, options) => {
   navigate(to, options);
 };
 

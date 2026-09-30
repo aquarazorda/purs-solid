@@ -1,31 +1,23 @@
 import { createSignal as solidCreateSignal, untrack as solidUntrack } from "solid-js";
 
-const equalityOptions = (name, mode, equals) => {
-  const options = {};
-  if (name !== "") options.name = name;
-  if (mode === "never") options.equals = false;
-  else if (mode === "custom") options.equals = equals;
-  return options;
-};
-
-// Solid treats function values as compute functions / updaters, so box them.
-export const createSignalImpl = (name, mode, equals, initial) => {
+// Solid treats function values as compute functions / updaters, so box them
+// and compare the boxed values, never the boxes (every write makes a new box).
+export const createSignalImpl = (options, initial) => {
   if (typeof initial !== "function") {
-    const [get, set] = solidCreateSignal(initial, equalityOptions(name, mode, equals));
+    const [get, set] = solidCreateSignal(initial, options);
     return { get, set };
   }
 
-  // Compare the boxed values, never the boxes (every write makes a new box).
-  const boxedMode = mode === "never" ? "never" : "custom";
-  const boxedEquals = mode === "custom"
-    ? (a, b) => equals(a.value, b.value)
-    : (a, b) => a.value === b.value;
-  const [getBox, setBox] = solidCreateSignal({ value: initial }, equalityOptions(name, boxedMode, boxedEquals));
+  const { equals } = options;
+  const [getBox, setBox] = solidCreateSignal(
+    { value: initial },
+    { ...options, equals: equals === false ? false : equals === undefined ? (a, b) => a.value === b.value : (a, b) => equals(a.value, b.value) }
+  );
 
   const get = () => getBox().value;
   const set = (update) => setBox((box) => ({ value: update(box.value) }));
 
-  return { get, set, boxed: true };
+  return { get, set };
 };
 
 // Setters always receive an updater so values are never interpreted as one.
@@ -41,8 +33,6 @@ export const modifyImpl = (setter, update) => {
 
 // `Accessor` is a zero-argument function, like `Effect`: reading is calling.
 export const get = (accessor) => accessor;
-
-export const untrackImpl = (accessor) => () => solidUntrack(accessor);
 
 export const untrack = (accessor) => () => solidUntrack(accessor);
 

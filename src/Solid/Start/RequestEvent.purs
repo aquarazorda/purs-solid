@@ -7,8 +7,10 @@ module Solid.Start.RequestEvent
   , cookies
   , cookie
   , CookieOptions
-  , defaultCookieOptions
-  , SameSite(..)
+  , SameSite
+  , lax
+  , strict
+  , none
   , setCookie
   , LocalKey
   , localKey
@@ -18,11 +20,12 @@ module Solid.Start.RequestEvent
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable, toMaybe, toNullable)
+import Data.Maybe (Maybe)
+import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn2, EffectFn3, EffectFn4, runEffectFn2, runEffectFn3, runEffectFn4)
 import Foreign.Object (Object)
+import Prim.Row as Row
 import Foreign.Object as Object
 import Web.Fetch.Request (Request)
 
@@ -41,55 +44,42 @@ foreign import cookies :: RequestEvent -> Object String
 cookie :: String -> RequestEvent -> Maybe String
 cookie name = Object.lookup name <<< cookies
 
-data SameSite = Lax | Strict | None
+newtype SameSite = SameSite String
+
+derive newtype instance Eq SameSite
+
+lax :: SameSite
+lax = SameSite "lax"
+
+strict :: SameSite
+strict = SameSite "strict"
+
+none :: SameSite
+none = SameSite "none"
 
 type CookieOptions =
-  { path :: String
-  , domain :: Maybe String
+  ( path :: String
+  , domain :: String
   -- | Seconds.
-  , maxAge :: Maybe Int
+  , maxAge :: Int
   , httpOnly :: Boolean
   , secure :: Boolean
-  , sameSite :: Maybe SameSite
-  }
+  , sameSite :: SameSite
+  )
 
--- | Path `/`, `HttpOnly`, `Secure`, `SameSite=Lax`.
-defaultCookieOptions :: CookieOptions
-defaultCookieOptions =
-  { path: "/"
-  , domain: Nothing
-  , maxAge: Nothing
-  , httpOnly: true
-  , secure: true
-  , sameSite: Just Lax
-  }
+-- | Takes any subset of `CookieOptions`. Unset fields default to path `/`,
+-- | `HttpOnly`, `Secure` and `SameSite=Lax`.
+setCookie
+  :: forall given missing
+   . Row.Union given missing CookieOptions
+  => String
+  -> String
+  -> { | given }
+  -> RequestEvent
+  -> Effect Unit
+setCookie name value options event = runEffectFn4 setCookieImpl event name value options
 
-setCookie :: String -> String -> CookieOptions -> RequestEvent -> Effect Unit
-setCookie name value options event =
-  runEffectFn4 setCookieImpl event name value
-    { path: options.path
-    , domain: toNullable options.domain
-    , maxAge: toNullable options.maxAge
-    , httpOnly: options.httpOnly
-    , secure: options.secure
-    , sameSite: toNullable (sameSiteName <$> options.sameSite)
-    }
-  where
-  sameSiteName = case _ of
-    Lax -> "lax"
-    Strict -> "strict"
-    None -> "none"
-
-foreign import setCookieImpl
-  :: EffectFn4 RequestEvent String String
-       { path :: String
-       , domain :: Nullable String
-       , maxAge :: Nullable Int
-       , httpOnly :: Boolean
-       , secure :: Boolean
-       , sameSite :: Nullable String
-       }
-       Unit
+foreign import setCookieImpl :: forall options. EffectFn4 RequestEvent String String { | options } Unit
 
 -- | A typed slot in the request's `locals`. Define each key once and share it:
 -- | two keys with the same name refer to the same slot.

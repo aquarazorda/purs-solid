@@ -14,7 +14,7 @@ import Data.Tuple.Nested ((/\))
 import Effect.Exception (message)
 import Examples.HackerNews.Api (Comment, Feed(..), Story, feedLabel, feedPath, parseFeed)
 import Examples.HackerNews.Api as Api
-import Solid.Async (class Serializable, AsyncOptions, createAsyncWith, defaultAsyncOptions, serialized)
+import Solid.Async (class Serializable, AsyncSsr, createAsyncWith, serialized)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM (innerHTML)
@@ -31,8 +31,8 @@ import Solid.Start.Response (httpStatus)
 
 app :: Component.Component {}
 app = Component.component \_ -> do
-  router <- liftSetup $ Router.createRouter Router.defaultRouterConfig
-    { routes =
+  router <- liftSetup $ Router.createRouter
+    { routes:
         [ Router.route @"/" \_ -> feedPage Top
         , Router.route @"/stories/:id" \props -> storyPage props.params
         , Router.route @"/users/:id" \props -> userPage props.params
@@ -54,8 +54,8 @@ app = Component.component \_ -> do
   where
   navLink feed = H.a [ P.href (feedPath feed) ] [ H.strong_ [ text (feedLabel feed) ] ]
 
-serverData :: forall a. Serializable a => AsyncOptions a
-serverData = defaultAsyncOptions { ssr = serialized }
+serverData :: forall a. Serializable a => { ssr :: AsyncSsr a }
+serverData = { ssr: serialized }
 
 feedComponent :: Component.Component { feed :: Feed }
 feedComponent = Component.component \props -> feedPage props.feed

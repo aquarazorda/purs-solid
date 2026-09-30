@@ -25,7 +25,7 @@ import Effect.Aff (Aff)
 import Effect.Uncurried (EffectFn1, EffectFn2, runEffectFn1, runEffectFn2)
 import Solid.Internal.Serializable (class Serializable)
 import Solid.Internal.Serializable (class Serializable) as Exports
-import Solid.Start.ServerFunction (ServerFunction)
+import Solid.Internal.ServerFunction (ServerFunction, checked)
 
 foreign import data Query :: Type -> Type -> Type
 
@@ -35,7 +35,7 @@ query name load = runFn2 queryImpl name (fromAff <<< load)
 -- | The client calls it with a `GET`. As with `call`, `output/**/foreign.js` must be
 -- | in the Vite plugin's `serverFunctions.filter.include`.
 queryServer :: forall a b. Serializable a => Serializable b => String -> ServerFunction a b -> Query a b
-queryServer = runFn2 queryServerImpl
+queryServer name fn = runFn2 queryServerImpl name (checked fn)
 
 -- | From the cache when it's fresh, loading it otherwise.
 runQuery :: forall a b. Query a b -> a -> Aff b

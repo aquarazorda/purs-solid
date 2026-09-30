@@ -8,7 +8,7 @@ import DOM.HTML.Indexed.ButtonType (ButtonType(..))
 import Data.Tuple.Nested ((/\))
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
-import Solid.Async (createAsyncWith, defaultAsyncOptions, serialized)
+import Solid.Async (createAsyncWith, serialized)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM.HTML as H
@@ -24,7 +24,7 @@ greet = call greetOnServer
 
 app :: Component.Component {}
 app = Component.component \_ -> do
-  greeting /\ _ <- createAsyncWith (defaultAsyncOptions { ssr = serialized }) (pure (greet "page"))
+  greeting /\ _ <- createAsyncWith { ssr: serialized } (pure (greet "page"))
   reply /\ setReply <- createSignal "not asked"
   pure $ H.main_
     [ H.h1_ [ text "start mode" ]

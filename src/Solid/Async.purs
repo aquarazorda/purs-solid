@@ -4,7 +4,6 @@
 -- | or `withCodec`.
 module Solid.Async
   ( AsyncOptions
-  , defaultAsyncOptions
   , AsyncSsr
   , onClient
   , serialized
@@ -32,26 +31,20 @@ import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
 import Effect.Aff (Aff, killFiber, launchAff_, runAff)
 import Effect.Exception (Error, error)
-import Effect.Uncurried (EffectFn1, EffectFn5, runEffectFn1, runEffectFn5)
-import Solid.Internal.Equality (Equality(..), EqualityFn, toEqualityFn)
+import Effect.Uncurried (EffectFn1, EffectFn4, runEffectFn1, runEffectFn4)
+import Prim.Row as Row
+import Solid.Internal.Equality (Equality)
 import Solid.Internal.Setup (Setup(..))
 import Solid.Signal (Accessor)
 
 type AsyncOptions a =
-  { name :: String
-  , equality :: Equality a
+  ( name :: String
+  , equals :: Equality a
+  -- | Where the value loads when the page is server-rendered. Default `onClient`.
   , ssr :: AsyncSsr a
   -- | Hold the streamed shell until this value is ready.
   , deferStream :: Boolean
-  }
-
-defaultAsyncOptions :: forall a. AsyncOptions a
-defaultAsyncOptions =
-  { name: ""
-  , equality: DefaultEquals
-  , ssr: onClient
-  , deferStream: false
-  }
+  )
 
 -- | Where an async value loads when the page is server-rendered.
 newtype AsyncSsr a = AsyncSsr
@@ -76,39 +69,30 @@ withCodec encode decode = AsyncSsr { source: "server", encode: notNull encode, d
 foreign import data Refresh :: Type -> Type
 
 createAsync :: forall a. Accessor (Aff a) -> Setup (Accessor a /\ Refresh a)
-createAsync = createAsyncWith defaultAsyncOptions
+createAsync = createAsyncWith {}
 
-createAsyncWith :: forall a. AsyncOptions a -> Accessor (Aff a) -> Setup (Accessor a /\ Refresh a)
+-- | Takes any subset of `AsyncOptions`.
+createAsyncWith
+  :: forall a given missing
+   . Row.Union given missing (AsyncOptions a)
+  => { | given }
+  -> Accessor (Aff a)
+  -> Setup (Accessor a /\ Refresh a)
 createAsyncWith options compute = Setup do
-  parts <- runEffectFn5 createAsyncImpl start rep mode equals compute
+  parts <- runEffectFn4 createAsyncImpl start either options compute
   pure (parts.value /\ parts.refresh)
-  where
-  { mode, equals } = toEqualityFn options.equality
-  AsyncSsr ssr = options.ssr
-  rep :: AsyncRep a
-  rep = { name: options.name, source: ssr.source, encode: ssr.encode, decode: ssr.decode, deferStream: options.deferStream, either }
 
 start :: forall a. Aff a -> (a -> Effect Unit) -> (Error -> Effect Unit) -> Effect (Effect Unit)
 start aff onValue onError = do
   fiber <- runAff (either onError onValue) aff
   pure (launchAff_ (killFiber (error "purs-solid: superseded async value") fiber))
 
-type AsyncRep a =
-  { name :: String
-  , source :: String
-  , encode :: Nullable (a -> Json)
-  , decode :: Nullable (Json -> Either String a)
-  , deferStream :: Boolean
-  , either :: forall r. (String -> r) -> (a -> r) -> Either String a -> r
-  }
-
 foreign import createAsyncImpl
-  :: forall a
-   . EffectFn5
+  :: forall options a
+   . EffectFn4
        (Aff a -> (a -> Effect Unit) -> (Error -> Effect Unit) -> Effect (Effect Unit))
-       (AsyncRep a)
-       String
-       (EqualityFn a)
+       (forall r. (String -> r) -> (a -> r) -> Either String a -> r)
+       { | options }
        (Accessor (Aff a))
        { value :: Accessor a, refresh :: Refresh a }
 

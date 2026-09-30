@@ -7,21 +7,15 @@ import {
   resolve as solidResolve,
 } from "solid-js";
 
-const equalityOptions = (name, mode, equals) => {
-  const options = {};
-  if (name !== "") options.name = name;
-  if (mode === "never") options.equals = false;
-  else if (mode === "custom") options.equals = equals;
-  return options;
-};
+const onClient = { source: "client", encode: null, decode: null };
 
 // With a codec, the memo holds the encoded value (what Solid serializes) and a
 // second memo decodes it.
-export const createAsyncImpl = (start, rep, mode, equals, compute) => {
-  const encode = rep.encode;
-  const options = equalityOptions(rep.name, encode == null ? mode : "default", equals);
-  options.ssrSource = rep.source;
-  if (rep.deferStream) options.deferStream = true;
+export const createAsyncImpl = (start, either, options, compute) => {
+  const { ssr = onClient, equals, ...rest } = options;
+  const { encode, decode } = ssr;
+  const sourceOptions = { ...rest, ssrSource: ssr.source };
+  if (encode == null && equals !== undefined) sourceOptions.equals = equals;
 
   const source = createMemo(() => {
     const aff = compute();
@@ -47,17 +41,16 @@ export const createAsyncImpl = (start, rep, mode, equals, compute) => {
         }
       });
     });
-  }, options);
+  }, sourceOptions);
 
-  if (rep.decode == null) return { value: source, refresh: source };
+  if (decode == null) return { value: source, refresh: source };
 
-  const decode = rep.decode;
   const value = createMemo(
     () =>
-      rep.either((message) => {
+      either((message) => {
         throw new Error(`purs-solid: could not decode server value: ${message}`);
       })((decoded) => decoded)(decode(source())),
-    equalityOptions("", mode, equals)
+    equals === undefined ? undefined : { equals }
   );
 
   return { value, refresh: source };

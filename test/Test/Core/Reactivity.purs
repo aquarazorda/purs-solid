@@ -5,14 +5,13 @@ module Test.Core.Reactivity
 import Prelude
 
 import Data.Array as Array
-import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Exception (message)
 import Effect.Ref as Ref
 import Partial.Unsafe (unsafeCrashWith)
-import Solid.Reactivity (createEffect, createEffectWith, createEffect_, createMemo, createReaction, createRenderEffect_, createWritableMemo, defaultEffectOptions, flush, track, withFlush)
+import Solid.Reactivity (createEffect, createEffectWith, createEffect_, createMemo, createReaction, createRenderEffect_, createWritableMemo, flush, track, withFlush)
 import Solid.Root (createRoot)
 import Solid.Signal (createSignal, get, set)
 import Test.Solid (settle, solidIt)
@@ -94,7 +93,7 @@ spec = describe "Solid.Reactivity" do
       log <- liftEffect (Ref.new [])
       setValue <- liftEffect $ createRoot \_ -> do
         value /\ setValue <- createSignal 0
-        createEffectWith (defaultEffectOptions { defer = true }) value \v -> do
+        createEffectWith { defer: true } value \v -> do
           logTo log (show v)
           pure (pure unit)
         pure setValue
@@ -108,7 +107,7 @@ spec = describe "Solid.Reactivity" do
       setValue <- liftEffect $ createRoot \_ -> do
         value /\ setValue <- createSignal 0
         let checked = value <#> \v -> if v > 0 then unsafeCrashWith "boom" else v
-        createEffectWith (defaultEffectOptions { onError = Just (logTo log <<< message) }) checked \v -> do
+        createEffectWith { onError: logTo log <<< message } checked \v -> do
           logTo log ("apply " <> show v)
           pure (pure unit)
         pure setValue

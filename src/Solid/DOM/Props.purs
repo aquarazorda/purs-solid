@@ -13,209 +13,209 @@ import Web.PointerEvent (PointerEvent)
 import Web.TouchEvent (TouchEvent)
 import Web.UIEvent.WheelEvent (WheelEvent)
 import Solid.DOM.AttrValue (class AttrValue, toAttrValue)
-import Solid.Internal.View (class ToBinding, Prop, binding, bindingProp, eventProp)
+import Solid.Internal.View (class ToBinding, Prop, bindingProp, eventProp)
 import Effect (Effect)
 
 abbr :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (abbr :: a | r)
-abbr v = bindingProp "abbr" toAttrValue (binding v)
+abbr = bindingProp "abbr" toAttrValue
 
 accept :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (accept :: a | r)
-accept v = bindingProp "accept" toAttrValue (binding v)
+accept = bindingProp "accept" toAttrValue
 
 acceptCharset :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (acceptCharset :: a | r)
-acceptCharset v = bindingProp "accept-charset" toAttrValue (binding v)
+acceptCharset = bindingProp "accept-charset" toAttrValue
 
 accessKey :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (accessKey :: a | r)
-accessKey v = bindingProp "accesskey" toAttrValue (binding v)
+accessKey = bindingProp "accesskey" toAttrValue
 
 action :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (action :: a | r)
-action v = bindingProp "action" toAttrValue (binding v)
+action = bindingProp "action" toAttrValue
 
 alt :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (alt :: a | r)
-alt v = bindingProp "alt" toAttrValue (binding v)
+alt = bindingProp "alt" toAttrValue
 
 async :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (async :: a | r)
-async v = bindingProp "async" toAttrValue (binding v)
+async = bindingProp "async" toAttrValue
 
 autocomplete :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (autocomplete :: a | r)
-autocomplete v = bindingProp "autocomplete" toAttrValue (binding v)
+autocomplete = bindingProp "autocomplete" toAttrValue
 
 autofocus :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (autofocus :: a | r)
-autofocus v = bindingProp "autofocus" toAttrValue (binding v)
+autofocus = bindingProp "autofocus" toAttrValue
 
 autoplay :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (autoplay :: a | r)
-autoplay v = bindingProp "autoplay" toAttrValue (binding v)
+autoplay = bindingProp "autoplay" toAttrValue
 
 charset :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (charset :: a | r)
-charset v = bindingProp "charset" toAttrValue (binding v)
+charset = bindingProp "charset" toAttrValue
 
 checked :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (checked :: a | r)
-checked v = bindingProp "checked" toAttrValue (binding v)
+checked = bindingProp "checked" toAttrValue
 
 cite :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (cite :: a | r)
-cite v = bindingProp "cite" toAttrValue (binding v)
+cite = bindingProp "cite" toAttrValue
 
 class_ :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (class :: a | r)
-class_ v = bindingProp "class" toAttrValue (binding v)
+class_ = bindingProp "class" toAttrValue
 
 colSpan :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (colSpan :: a | r)
-colSpan v = bindingProp "colspan" toAttrValue (binding v)
+colSpan = bindingProp "colspan" toAttrValue
 
 cols :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (cols :: a | r)
-cols v = bindingProp "cols" toAttrValue (binding v)
+cols = bindingProp "cols" toAttrValue
 
 command :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (command :: a | r)
-command v = bindingProp "command" toAttrValue (binding v)
+command = bindingProp "command" toAttrValue
 
 content :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (content :: a | r)
-content v = bindingProp "content" toAttrValue (binding v)
+content = bindingProp "content" toAttrValue
 
 contentEditable :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (contentEditable :: a | r)
-contentEditable v = bindingProp "contenteditable" toAttrValue (binding v)
+contentEditable = bindingProp "contenteditable" toAttrValue
 
 controls :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (controls :: a | r)
-controls v = bindingProp "controls" toAttrValue (binding v)
+controls = bindingProp "controls" toAttrValue
 
 coords :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (coords :: a | r)
-coords v = bindingProp "coords" toAttrValue (binding v)
+coords = bindingProp "coords" toAttrValue
 
 crossOrigin :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (crossOrigin :: a | r)
-crossOrigin v = bindingProp "crossorigin" toAttrValue (binding v)
+crossOrigin = bindingProp "crossorigin" toAttrValue
 
 data_ :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (data :: a | r)
-data_ v = bindingProp "data" toAttrValue (binding v)
+data_ = bindingProp "data" toAttrValue
 
 datetime :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (datetime :: a | r)
-datetime v = bindingProp "datetime" toAttrValue (binding v)
+datetime = bindingProp "datetime" toAttrValue
 
 default :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (default :: a | r)
-default v = bindingProp "default" toAttrValue (binding v)
+default = bindingProp "default" toAttrValue
 
 defer :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (defer :: a | r)
-defer v = bindingProp "defer" toAttrValue (binding v)
+defer = bindingProp "defer" toAttrValue
 
 dir :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (dir :: a | r)
-dir v = bindingProp "dir" toAttrValue (binding v)
+dir = bindingProp "dir" toAttrValue
 
 disabled :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (disabled :: a | r)
-disabled v = bindingProp "disabled" toAttrValue (binding v)
+disabled = bindingProp "disabled" toAttrValue
 
 download :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (download :: a | r)
-download v = bindingProp "download" toAttrValue (binding v)
+download = bindingProp "download" toAttrValue
 
 draggable :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (draggable :: a | r)
-draggable v = bindingProp "draggable" toAttrValue (binding v)
+draggable = bindingProp "draggable" toAttrValue
 
 enctype :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (enctype :: a | r)
-enctype v = bindingProp "enctype" toAttrValue (binding v)
+enctype = bindingProp "enctype" toAttrValue
 
 for :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (for :: a | r)
-for v = bindingProp "for" toAttrValue (binding v)
+for = bindingProp "for" toAttrValue
 
 form :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (form :: a | r)
-form v = bindingProp "form" toAttrValue (binding v)
+form = bindingProp "form" toAttrValue
 
 formAction :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (formAction :: a | r)
-formAction v = bindingProp "formaction" toAttrValue (binding v)
+formAction = bindingProp "formaction" toAttrValue
 
 formEncType :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (formEncType :: a | r)
-formEncType v = bindingProp "formenctype" toAttrValue (binding v)
+formEncType = bindingProp "formenctype" toAttrValue
 
 formMethod :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (formMethod :: a | r)
-formMethod v = bindingProp "formmethod" toAttrValue (binding v)
+formMethod = bindingProp "formmethod" toAttrValue
 
 formNoValidate :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (formNoValidate :: a | r)
-formNoValidate v = bindingProp "formnovalidate" toAttrValue (binding v)
+formNoValidate = bindingProp "formnovalidate" toAttrValue
 
 formTarget :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (formTarget :: a | r)
-formTarget v = bindingProp "formtarget" toAttrValue (binding v)
+formTarget = bindingProp "formtarget" toAttrValue
 
 headers :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (headers :: a | r)
-headers v = bindingProp "headers" toAttrValue (binding v)
+headers = bindingProp "headers" toAttrValue
 
 height :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (height :: a | r)
-height v = bindingProp "height" toAttrValue (binding v)
+height = bindingProp "height" toAttrValue
 
 hidden :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (hidden :: a | r)
-hidden v = bindingProp "hidden" toAttrValue (binding v)
+hidden = bindingProp "hidden" toAttrValue
 
 high :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (high :: a | r)
-high v = bindingProp "high" toAttrValue (binding v)
+high = bindingProp "high" toAttrValue
 
 href :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (href :: a | r)
-href v = bindingProp "href" toAttrValue (binding v)
+href = bindingProp "href" toAttrValue
 
 hrefLang :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (hrefLang :: a | r)
-hrefLang v = bindingProp "hreflang" toAttrValue (binding v)
+hrefLang = bindingProp "hreflang" toAttrValue
 
 hreflang :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (hreflang :: a | r)
-hreflang v = bindingProp "hreflang" toAttrValue (binding v)
+hreflang = bindingProp "hreflang" toAttrValue
 
 httpEquiv :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (httpEquiv :: a | r)
-httpEquiv v = bindingProp "http-equiv" toAttrValue (binding v)
+httpEquiv = bindingProp "http-equiv" toAttrValue
 
 icon :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (icon :: a | r)
-icon v = bindingProp "icon" toAttrValue (binding v)
+icon = bindingProp "icon" toAttrValue
 
 id :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (id :: a | r)
-id v = bindingProp "id" toAttrValue (binding v)
+id = bindingProp "id" toAttrValue
 
 isMap :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (isMap :: a | r)
-isMap v = bindingProp "ismap" toAttrValue (binding v)
+isMap = bindingProp "ismap" toAttrValue
 
 kind :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (kind :: a | r)
-kind v = bindingProp "kind" toAttrValue (binding v)
+kind = bindingProp "kind" toAttrValue
 
 label :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (label :: a | r)
-label v = bindingProp "label" toAttrValue (binding v)
+label = bindingProp "label" toAttrValue
 
 lang :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (lang :: a | r)
-lang v = bindingProp "lang" toAttrValue (binding v)
+lang = bindingProp "lang" toAttrValue
 
 list :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (list :: a | r)
-list v = bindingProp "list" toAttrValue (binding v)
+list = bindingProp "list" toAttrValue
 
 longDesc :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (longDesc :: a | r)
-longDesc v = bindingProp "longdesc" toAttrValue (binding v)
+longDesc = bindingProp "longdesc" toAttrValue
 
 loop :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (loop :: a | r)
-loop v = bindingProp "loop" toAttrValue (binding v)
+loop = bindingProp "loop" toAttrValue
 
 low :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (low :: a | r)
-low v = bindingProp "low" toAttrValue (binding v)
+low = bindingProp "low" toAttrValue
 
 manifest :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (manifest :: a | r)
-manifest v = bindingProp "manifest" toAttrValue (binding v)
+manifest = bindingProp "manifest" toAttrValue
 
 max :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (max :: a | r)
-max v = bindingProp "max" toAttrValue (binding v)
+max = bindingProp "max" toAttrValue
 
 maxLength :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (maxLength :: a | r)
-maxLength v = bindingProp "maxlength" toAttrValue (binding v)
+maxLength = bindingProp "maxlength" toAttrValue
 
 media :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (media :: a | r)
-media v = bindingProp "media" toAttrValue (binding v)
+media = bindingProp "media" toAttrValue
 
 method :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (method :: a | r)
-method v = bindingProp "method" toAttrValue (binding v)
+method = bindingProp "method" toAttrValue
 
 min :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (min :: a | r)
-min v = bindingProp "min" toAttrValue (binding v)
+min = bindingProp "min" toAttrValue
 
 minLength :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (minLength :: a | r)
-minLength v = bindingProp "minlength" toAttrValue (binding v)
+minLength = bindingProp "minlength" toAttrValue
 
 multiple :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (multiple :: a | r)
-multiple v = bindingProp "multiple" toAttrValue (binding v)
+multiple = bindingProp "multiple" toAttrValue
 
 muted :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (muted :: a | r)
-muted v = bindingProp "muted" toAttrValue (binding v)
+muted = bindingProp "muted" toAttrValue
 
 name :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (name :: a | r)
-name v = bindingProp "name" toAttrValue (binding v)
+name = bindingProp "name" toAttrValue
 
 noValidate :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (noValidate :: a | r)
-noValidate v = bindingProp "novalidate" toAttrValue (binding v)
+noValidate = bindingProp "novalidate" toAttrValue
 
 onAbort :: forall r. (Event -> Effect Unit) -> Prop (onAbort :: Event | r)
 onAbort = eventProp "onAbort"
@@ -473,121 +473,121 @@ onWheel :: forall r. (WheelEvent -> Effect Unit) -> Prop (onWheel :: WheelEvent 
 onWheel = eventProp "onWheel"
 
 open :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (open :: a | r)
-open v = bindingProp "open" toAttrValue (binding v)
+open = bindingProp "open" toAttrValue
 
 optimum :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (optimum :: a | r)
-optimum v = bindingProp "optimum" toAttrValue (binding v)
+optimum = bindingProp "optimum" toAttrValue
 
 pattern :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (pattern :: a | r)
-pattern v = bindingProp "pattern" toAttrValue (binding v)
+pattern = bindingProp "pattern" toAttrValue
 
 placeholder :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (placeholder :: a | r)
-placeholder v = bindingProp "placeholder" toAttrValue (binding v)
+placeholder = bindingProp "placeholder" toAttrValue
 
 poster :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (poster :: a | r)
-poster v = bindingProp "poster" toAttrValue (binding v)
+poster = bindingProp "poster" toAttrValue
 
 preload :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (preload :: a | r)
-preload v = bindingProp "preload" toAttrValue (binding v)
+preload = bindingProp "preload" toAttrValue
 
 radioGroup :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (radioGroup :: a | r)
-radioGroup v = bindingProp "radiogroup" toAttrValue (binding v)
+radioGroup = bindingProp "radiogroup" toAttrValue
 
 readOnly :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (readOnly :: a | r)
-readOnly v = bindingProp "readonly" toAttrValue (binding v)
+readOnly = bindingProp "readonly" toAttrValue
 
 rel :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (rel :: a | r)
-rel v = bindingProp "rel" toAttrValue (binding v)
+rel = bindingProp "rel" toAttrValue
 
 required :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (required :: a | r)
-required v = bindingProp "required" toAttrValue (binding v)
+required = bindingProp "required" toAttrValue
 
 reversed :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (reversed :: a | r)
-reversed v = bindingProp "reversed" toAttrValue (binding v)
+reversed = bindingProp "reversed" toAttrValue
 
 rowSpan :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (rowSpan :: a | r)
-rowSpan v = bindingProp "rowspan" toAttrValue (binding v)
+rowSpan = bindingProp "rowspan" toAttrValue
 
 rows :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (rows :: a | r)
-rows v = bindingProp "rows" toAttrValue (binding v)
+rows = bindingProp "rows" toAttrValue
 
 sandbox :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (sandbox :: a | r)
-sandbox v = bindingProp "sandbox" toAttrValue (binding v)
+sandbox = bindingProp "sandbox" toAttrValue
 
 scope :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (scope :: a | r)
-scope v = bindingProp "scope" toAttrValue (binding v)
+scope = bindingProp "scope" toAttrValue
 
 scoped :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (scoped :: a | r)
-scoped v = bindingProp "scoped" toAttrValue (binding v)
+scoped = bindingProp "scoped" toAttrValue
 
 selected :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (selected :: a | r)
-selected v = bindingProp "selected" toAttrValue (binding v)
+selected = bindingProp "selected" toAttrValue
 
 selectedIndex :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (selectedIndex :: a | r)
-selectedIndex v = bindingProp "selectedindex" toAttrValue (binding v)
+selectedIndex = bindingProp "selectedindex" toAttrValue
 
 shape :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (shape :: a | r)
-shape v = bindingProp "shape" toAttrValue (binding v)
+shape = bindingProp "shape" toAttrValue
 
 size :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (size :: a | r)
-size v = bindingProp "size" toAttrValue (binding v)
+size = bindingProp "size" toAttrValue
 
 sizes :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (sizes :: a | r)
-sizes v = bindingProp "sizes" toAttrValue (binding v)
+sizes = bindingProp "sizes" toAttrValue
 
 sortable :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (sortable :: a | r)
-sortable v = bindingProp "sortable" toAttrValue (binding v)
+sortable = bindingProp "sortable" toAttrValue
 
 sorted :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (sorted :: a | r)
-sorted v = bindingProp "sorted" toAttrValue (binding v)
+sorted = bindingProp "sorted" toAttrValue
 
 span :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (span :: a | r)
-span v = bindingProp "span" toAttrValue (binding v)
+span = bindingProp "span" toAttrValue
 
 spellcheck :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (spellcheck :: a | r)
-spellcheck v = bindingProp "spellcheck" toAttrValue (binding v)
+spellcheck = bindingProp "spellcheck" toAttrValue
 
 src :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (src :: a | r)
-src v = bindingProp "src" toAttrValue (binding v)
+src = bindingProp "src" toAttrValue
 
 srcDoc :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (srcDoc :: a | r)
-srcDoc v = bindingProp "srcdoc" toAttrValue (binding v)
+srcDoc = bindingProp "srcdoc" toAttrValue
 
 srcLang :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (srcLang :: a | r)
-srcLang v = bindingProp "srclang" toAttrValue (binding v)
+srcLang = bindingProp "srclang" toAttrValue
 
 start :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (start :: a | r)
-start v = bindingProp "start" toAttrValue (binding v)
+start = bindingProp "start" toAttrValue
 
 step :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (step :: a | r)
-step v = bindingProp "step" toAttrValue (binding v)
+step = bindingProp "step" toAttrValue
 
 style :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (style :: a | r)
-style v = bindingProp "style" toAttrValue (binding v)
+style = bindingProp "style" toAttrValue
 
 tabIndex :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (tabIndex :: a | r)
-tabIndex v = bindingProp "tabindex" toAttrValue (binding v)
+tabIndex = bindingProp "tabindex" toAttrValue
 
 target :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (target :: a | r)
-target v = bindingProp "target" toAttrValue (binding v)
+target = bindingProp "target" toAttrValue
 
 title :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (title :: a | r)
-title v = bindingProp "title" toAttrValue (binding v)
+title = bindingProp "title" toAttrValue
 
 type_ :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (type :: a | r)
-type_ v = bindingProp "type" toAttrValue (binding v)
+type_ = bindingProp "type" toAttrValue
 
 useMap :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (useMap :: a | r)
-useMap v = bindingProp "usemap" toAttrValue (binding v)
+useMap = bindingProp "usemap" toAttrValue
 
 value :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (value :: a | r)
-value v = bindingProp "value" toAttrValue (binding v)
+value = bindingProp "value" toAttrValue
 
 width :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (width :: a | r)
-width v = bindingProp "width" toAttrValue (binding v)
+width = bindingProp "width" toAttrValue
 
 wrap :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (wrap :: a | r)
-wrap v = bindingProp "wrap" toAttrValue (binding v)
+wrap = bindingProp "wrap" toAttrValue
 
 xmlns :: forall r v a. ToBinding v a => AttrValue a => v -> Prop (xmlns :: a | r)
-xmlns v = bindingProp "xmlns" toAttrValue (binding v)
+xmlns = bindingProp "xmlns" toAttrValue

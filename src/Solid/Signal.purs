@@ -7,7 +7,6 @@ module Solid.Signal
   , Signal
   , module Exports
   , SignalOptions
-  , defaultSignalOptions
   , createSignal
   , createSignalWith
   , get
@@ -23,9 +22,10 @@ import Prelude
 import Data.HeytingAlgebra (ff, implies, tt)
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
-import Effect.Uncurried (EffectFn2, EffectFn4, runEffectFn2, runEffectFn4)
-import Solid.Internal.Equality (Equality(..), EqualityFn, toEqualityFn)
-import Solid.Internal.Equality (Equality(..), eqEquality) as Exports
+import Effect.Uncurried (EffectFn2, runEffectFn2)
+import Prim.Row as Row
+import Solid.Internal.Equality (Equality)
+import Solid.Internal.Equality (Equality, alwaysNotify, customEquals, eqEquality) as Exports
 import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
 
 foreign import data Accessor :: Type -> Type
@@ -72,30 +72,29 @@ instance HeytingAlgebra a => HeytingAlgebra (Accessor a) where
 instance BooleanAlgebra a => BooleanAlgebra (Accessor a)
 
 type SignalOptions a =
-  { name :: String
-  , equality :: Equality a
-  }
-
-defaultSignalOptions :: forall a. SignalOptions a
-defaultSignalOptions =
-  { name: ""
-  , equality: DefaultEquals
-  }
+  ( name :: String
+  , equals :: Equality a
+  )
 
 -- | Works in `Effect` or `Setup`; signals need no disposal.
 createSignal :: forall m a. MonadReactive m => a -> m (Signal a)
-createSignal = createSignalWith defaultSignalOptions
+createSignal = createSignalWith {}
 
-createSignalWith :: forall m a. MonadReactive m => SignalOptions a -> a -> m (Signal a)
+-- | Takes any subset of `SignalOptions`.
+createSignalWith
+  :: forall m a given missing
+   . MonadReactive m
+  => Row.Union given missing (SignalOptions a)
+  => { | given }
+  -> a
+  -> m (Signal a)
 createSignalWith options initial = liftReactive do
-  parts <- runEffectFn4 createSignalImpl options.name mode equals initial
+  parts <- runEffectFn2 createSignalImpl options initial
   pure (parts.get /\ parts.set)
-  where
-  { mode, equals } = toEqualityFn options.equality
 
 foreign import createSignalImpl
-  :: forall a
-   . EffectFn4 String String (EqualityFn a) a { get :: Accessor a, set :: Setter a }
+  :: forall options a
+   . EffectFn2 { | options } a { get :: Accessor a, set :: Setter a }
 
 -- | Reads the current value without subscribing. Throws `NotReadyError` for an
 -- | async value that hasn't loaded yet; use `Solid.Async.resolve` to wait.
@@ -104,9 +103,7 @@ foreign import get :: forall a. Accessor a -> Effect a
 -- | Reads the current value during setup without tracking. For initial values;
 -- | pass the `Accessor` on for anything that should stay reactive.
 sample :: forall a. Accessor a -> Setup a
-sample accessor = Setup (untrackImpl accessor)
-
-foreign import untrackImpl :: forall a. Accessor a -> Effect a
+sample accessor = Setup (get (untrack accessor))
 
 -- | An accessor that reads `accessor` without subscribing the computation
 -- | reading it.

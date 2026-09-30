@@ -38,7 +38,6 @@ module Solid.Store
 
 import Prelude
 
-import Data.Nullable (Nullable)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
@@ -75,12 +74,12 @@ createStore
   => s
   -> m (Store s /\ StoreSetter s)
 createStore initial = liftReactive do
-  parts <- runEffectFn2 createStoreImpl (preparer (Proxy :: Proxy s)) initial
+  parts <- runEffectFn2 createStoreImpl (preparer :: Preparer s) initial
   pure (parts.store /\ parts.setter)
 
 foreign import createStoreImpl
   :: forall s
-   . EffectFn2 (Nullable Preparer) s { store :: Store s, setter :: StoreSetter s }
+   . EffectFn2 (Preparer s) s { store :: Store s, setter :: StoreSetter s }
 
 -- | A path to a field, built from record labels with `key` and composed with `>>>`.
 newtype Path :: Type -> Type -> Type
@@ -138,19 +137,19 @@ at (Path keys) change = atImpl keys change
 foreign import atImpl :: forall s a. Array String -> Update a -> Update s
 
 set :: forall a. StoreValue a => a -> Update a
-set next = setImpl (preparer (Proxy :: Proxy a)) next
+set next = setImpl (preparer :: Preparer a) next
 
-foreign import setImpl :: forall a. Nullable Preparer -> a -> Update a
+foreign import setImpl :: forall a. Preparer a -> a -> Update a
 
 modify :: forall a. StoreValue a => (a -> a) -> Update a
-modify f = modifyImpl (preparer (Proxy :: Proxy a)) f
+modify f = modifyImpl (preparer :: Preparer a) f
 
-foreign import modifyImpl :: forall a. Nullable Preparer -> (a -> a) -> Update a
+foreign import modifyImpl :: forall a. Preparer a -> (a -> a) -> Update a
 
 push :: forall a. StoreValue a => a -> Update (Array a)
-push element = pushImpl (preparer (Proxy :: Proxy a)) element
+push element = pushImpl (preparer :: Preparer a) element
 
-foreign import pushImpl :: forall a. Nullable Preparer -> a -> Update (Array a)
+foreign import pushImpl :: forall a. Preparer a -> a -> Update (Array a)
 
 -- | Removes failing elements in place; kept elements keep their identity and
 -- | readers.
@@ -166,15 +165,15 @@ foreign import eachWhere :: forall a. (a -> Boolean) -> Update a -> Update (Arra
 -- | Replaces the value with `next`, keeping everything that didn't change
 -- | (and its readers). Array elements are matched by their `id` field.
 reconcile :: forall a. StoreValue a => a -> Update a
-reconcile next = reconcileImpl (preparer (Proxy :: Proxy a)) next
+reconcile next = reconcileImpl (preparer :: Preparer a) next
 
 -- | `reconcile` for an array, matching elements by a key function. Keys are
 -- | compared with `===`, so use primitives.
 reconcileBy :: forall a k. StoreValue a => (a -> k) -> Array a -> Update (Array a)
-reconcileBy toKey next = reconcileByImpl (preparer (Proxy :: Proxy (Array a))) toKey next
+reconcileBy toKey next = reconcileByImpl (preparer :: Preparer (Array a)) toKey next
 
-foreign import reconcileImpl :: forall a. Nullable Preparer -> a -> Update a
-foreign import reconcileByImpl :: forall a k. Nullable Preparer -> (a -> k) -> Array a -> Update (Array a)
+foreign import reconcileImpl :: forall a. Preparer a -> a -> Update a
+foreign import reconcileByImpl :: forall a k. Preparer (Array a) -> (a -> k) -> Array a -> Update (Array a)
 
 -- | A read-only store derived from reactive sources: `compute` is tracked and
 -- | yields the update to apply whenever its dependencies change.
@@ -186,11 +185,11 @@ createProjection
   -> s
   -> Setup (Store s)
 createProjection compute seed =
-  Setup (runEffectFn3 createProjectionImpl (preparer (Proxy :: Proxy s)) compute seed)
+  Setup (runEffectFn3 createProjectionImpl (preparer :: Preparer s) compute seed)
 
 foreign import createProjectionImpl
   :: forall s
-   . EffectFn3 (Nullable Preparer) (Accessor (Update s)) s (Store s)
+   . EffectFn3 (Preparer s) (Accessor (Update s)) s (Store s)
 
 -- | `isSelected x` is true when `source` equals `x` (compared by `toKey`). A
 -- | selection change notifies only the two affected readers.
@@ -213,12 +212,12 @@ createOptimisticStore
   => s
   -> m (Store s /\ OptimisticStore s)
 createOptimisticStore initial = liftReactive do
-  parts <- runEffectFn2 createOptimisticStoreImpl (preparer (Proxy :: Proxy s)) initial
+  parts <- runEffectFn2 createOptimisticStoreImpl (preparer :: Preparer s) initial
   pure (parts.store /\ parts.setter)
 
 foreign import createOptimisticStoreImpl
   :: forall s
-   . EffectFn2 (Nullable Preparer) s { store :: Store s, setter :: OptimisticStore s }
+   . EffectFn2 (Preparer s) s { store :: Store s, setter :: OptimisticStore s }
 
 -- | Follows `compute` like `createProjection`, with tentative updates layered
 -- | on top during actions.
@@ -230,12 +229,12 @@ createOptimisticProjection
   -> s
   -> Setup (Store s /\ OptimisticStore s)
 createOptimisticProjection compute seed = Setup do
-  parts <- runEffectFn3 createOptimisticProjectionImpl (preparer (Proxy :: Proxy s)) compute seed
+  parts <- runEffectFn3 createOptimisticProjectionImpl (preparer :: Preparer s) compute seed
   pure (parts.store /\ parts.setter)
 
 foreign import createOptimisticProjectionImpl
   :: forall s
-   . EffectFn3 (Nullable Preparer) (Accessor (Update s)) s { store :: Store s, setter :: OptimisticStore s }
+   . EffectFn3 (Preparer s) (Accessor (Update s)) s { store :: Store s, setter :: OptimisticStore s }
 
 -- | A tentative update, as a step of a `Solid.Action.Action`.
 updateOptimistic :: forall m s. MonadOptimistic m => OptimisticStore s -> Update s -> m Unit

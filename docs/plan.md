@@ -60,18 +60,21 @@ Every phase ends with `npm test`, `npm run test:purescript:es` and `npm run test
 - [x] `Solid.Context`: box values in the FFI, like signals do, so `Unit` and other `undefined` values work.
 
 ### Phase 1 — FFI-first refactor (less PureScript, fewer allocations)
-- [ ] Options pass through as optional-field records:
+- [x] Options pass through as optional-field records:
   - `createSignalWith`, `createMemoWith`, `createEffectWith`, `createAsyncWith`;
   - the SSR render options, `RouterConfig`, `navigateWith`.
 
-  Delete the `default*Options` records. Callback fields are typed as `EffectFn`s so they pass as is.
-- [ ] `Equality` becomes a foreign type holding Solid's `equals` value (`false` or a function). Delete `toEqualityFn` and the three `equalityOptions` copies.
-- [ ] `ToBinding` becomes a method-less constraint. The FFI dispatches on `typeof v === "function"` (attribute values are never functions). Delete `Binding` and `bindingProp`'s PureScript branch.
-- [ ] Enums become foreign constants: `RevealOrder`, `SameSite`, `Namespace`, `AsyncSsr`.
-- [ ] `href`: keep the type-level parsing and move rendering to JS (native `encodeURIComponent`, parsed pattern cached). Drop `js-uri` if nothing else needs it.
-- [ ] Store `preparer` becomes a value (`Preparer a`), so it's built once per type.
-- [ ] One `forImpl` and one `showMaybeImpl` taking `keyed`. Drop `untrackImpl`. Share the server-function guard.
-- [ ] Control fallbacks: one consistent form for every list and conditional (see open question 5).
+  Delete the `default*Options` records. `onError` stays a PureScript callback, unwrapped in the FFI.
+- [x] `Equality` becomes a foreign type holding Solid's `equals` value (`false` or a function). Delete `toEqualityFn` and the three `equalityOptions` copies.
+- [x] `ToBinding` becomes a method-less constraint. The FFI dispatches on `typeof v === "function"` (attribute values are never functions). Delete `Binding` and `bindingProp`'s PureScript branch.
+- [x] Enums become newtypes over Solid's own values (`RevealOrder`, `SameSite`, `Namespace`); `AsyncSsr` already was one.
+- [x] `href`: keep the type-level parsing and move rendering to JS (native `encodeURIComponent`, parsed pattern cached). Drop `js-uri` if nothing else needs it.
+- [x] Store `preparer` becomes a value (`Preparer a`), so it's built once per type.
+- [x] Cookie options pass through too; our secure defaults (open question 1: kept) are merged in the FFI. `SameSite` is a newtype over Solid's string.
+- [x] One `forImpl` and one `showMaybeImpl` taking `keyed`. Drop `untrackImpl`. Share the server-function guard.
+- [x] Control fallbacks: `*Else` variants for every list (`forEachUnkeyedElse`, `forEachByElse`, `repeatElse`); open question 5 resolved that way.
+
+Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6 ms, bundle 99.6 → 97.3 kB.
 
 ### Phase 2 — Measured performance experiments
 - [ ] Eager static children (finding 2). Keep it only if `test:hydration` and the SSR specs pass.
@@ -135,9 +138,9 @@ Every phase ends with `npm test`, `npm run test:purescript:es` and `npm run test
 
 ## Open questions
 
-1. **Cookie defaults.** `defaultCookieOptions` (`HttpOnly`, `Secure`, `SameSite=Lax`) is our policy, not Solid's. Keep it as a secure default, or pass through?
+1. ~~**Cookie defaults.**~~ Kept as a secure default, merged in the FFI (Phase 1).
 2. **Mutations.** One `Action` API over core `action` and the router's form-bound `action`, or two?
 3. **Typed params.** Where do filters go: a filters record next to `route @"/users/:id"`, or syntax in the path (`@"/users/:id<int>"`) parsed at the type level?
 4. **Testing helpers.** In the library, or a separate package?
-5. **Control fallbacks.** `*Else` variants for every list and conditional, or a single form that takes the fallback?
+5. ~~**Control fallbacks.**~~ `*Else` variants everywhere (Phase 1).
 6. **Eager children.** If it passes hydration, is ~5% on creation worth the changed realization order?

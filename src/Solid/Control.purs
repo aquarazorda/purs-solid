@@ -10,8 +10,11 @@ module Solid.Control
   , forEach
   , forEachElse
   , forEachUnkeyed
+  , forEachUnkeyedElse
   , forEachBy
+  , forEachByElse
   , repeat
+  , repeatElse
   , Case
   , match
   , matchMaybe
@@ -19,7 +22,11 @@ module Solid.Control
   , switch_
   , loading
   , errored
-  , RevealOrder(..)
+  , RevealOrder
+  , sequential
+  , together
+  , natural
+  , RevealOptions
   , reveal
   , portal
   , portalAt
@@ -37,7 +44,8 @@ import Effect (Effect)
 import Effect.Exception (Error)
 import Solid.Component (Component)
 import Solid.Internal.Setup (Setup, runSetup)
-import Solid.Internal.View (JSX, WhenValue, empty, erroredImpl, forByImpl, forImpl, forUnkeyedImpl, hydrationImpl, loadingImpl, matchImpl, matchMaybeImpl, noHydrationImpl, portalImpl, repeatImpl, revealImpl, showImpl, showMaybeImpl, showMaybeKeyedImpl, switchImpl, whenValue)
+import Prim.Row as Row
+import Solid.Internal.View (JSX, WhenValue, empty, erroredImpl, forImpl, hydrationImpl, keyedBy, keyedByIdentity, keyedByPosition, loadingImpl, matchImpl, matchMaybeImpl, noHydrationImpl, portalImpl, repeatImpl, revealImpl, showImpl, showMaybeImpl, switchImpl, whenValue)
 import Solid.Internal.View as View
 import Solid.Signal (Accessor)
 import Web.DOM.Element (Element)
@@ -56,14 +64,14 @@ showMaybe :: forall a. Accessor (Maybe a) -> (Accessor a -> Setup JSX) -> JSX
 showMaybe value render = showMaybeElse value render empty
 
 showMaybeElse :: forall a. Accessor (Maybe a) -> (Accessor a -> Setup JSX) -> JSX -> JSX
-showMaybeElse value render fallback = runFn3 showMaybeImpl (toWhen value) fallback (runSetup <<< render)
+showMaybeElse value render fallback = runFn4 showMaybeImpl false (toWhen value) fallback (runSetup <<< render)
 
 -- | Re-creates the branch whenever the value changes (by identity).
 showMaybeKeyed :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> JSX
 showMaybeKeyed value render = showMaybeKeyedElse value render empty
 
 showMaybeKeyedElse :: forall a. Accessor (Maybe a) -> (a -> Setup JSX) -> JSX -> JSX
-showMaybeKeyedElse value render fallback = runFn3 showMaybeKeyedImpl (toWhen value) fallback (runSetup <<< render)
+showMaybeKeyedElse value render fallback = runFn4 showMaybeImpl true (toWhen value) fallback (runSetup <<< render)
 
 -- | Keyed by item identity (`===`): an item's view is created once and moved
 -- | with the item. Use store `items` or stable values.
@@ -71,19 +79,28 @@ forEach :: forall a. Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> J
 forEach items render = forEachElse items render empty
 
 forEachElse :: forall a. Accessor (Array a) -> (a -> Accessor Int -> Setup JSX) -> JSX -> JSX
-forEachElse items render fallback = runFn3 forImpl items fallback (\item index -> runSetup (render item index))
+forEachElse items render fallback = runFn4 forImpl keyedByIdentity items fallback (\item index -> runSetup (render item index))
 
 -- | Keyed by position: the view at each index stays and its item accessor updates.
 forEachUnkeyed :: forall a. Accessor (Array a) -> (Accessor a -> Int -> Setup JSX) -> JSX
-forEachUnkeyed items render = runFn3 forUnkeyedImpl items empty (\item index -> runSetup (render item index))
+forEachUnkeyed items render = forEachUnkeyedElse items render empty
+
+forEachUnkeyedElse :: forall a. Accessor (Array a) -> (Accessor a -> Int -> Setup JSX) -> JSX -> JSX
+forEachUnkeyedElse items render fallback = runFn4 forImpl keyedByPosition items fallback (\item index -> runSetup (render item index))
 
 -- | Keyed by a derived key (e.g. `_.id`); the item accessor updates to the newest value.
 forEachBy :: forall a k. (a -> k) -> Accessor (Array a) -> (Accessor a -> Accessor Int -> Setup JSX) -> JSX
-forEachBy key items render = runFn4 forByImpl key items empty (\item index -> runSetup (render item index))
+forEachBy key items render = forEachByElse key items render empty
+
+forEachByElse :: forall a k. (a -> k) -> Accessor (Array a) -> (Accessor a -> Accessor Int -> Setup JSX) -> JSX -> JSX
+forEachByElse key items render fallback = runFn4 forImpl (keyedBy key) items fallback (\item index -> runSetup (render item index))
 
 -- | Renders the indices `0 .. count - 1`.
 repeat :: Accessor Int -> (Int -> Setup JSX) -> JSX
-repeat count render = runFn3 repeatImpl count empty (runSetup <<< render)
+repeat count render = repeatElse count render empty
+
+repeatElse :: Accessor Int -> (Int -> Setup JSX) -> JSX -> JSX
+repeatElse count render fallback = runFn3 repeatImpl count fallback (runSetup <<< render)
 
 newtype Case = Case JSX
 
@@ -113,25 +130,32 @@ errored :: (Accessor Error -> Effect Unit -> Setup JSX) -> JSX -> JSX
 errored renderFallback content =
   runFn2 erroredImpl (\error reset -> runSetup (renderFallback error reset)) content
 
-data RevealOrder
-  -- | In order: each waits for the ones before it.
-  = Sequential
-  -- | All at once, when all are ready.
-  | Together
-  -- | Each as soon as it's ready.
-  | Natural
+newtype RevealOrder = RevealOrder String
 
-derive instance Eq RevealOrder
+derive newtype instance Eq RevealOrder
 
--- | Coordinates the loading boundaries among `children`. With `collapsed`,
--- | unrevealed boundaries show nothing instead of their fallbacks.
-reveal :: { order :: RevealOrder, collapsed :: Boolean } -> Array JSX -> JSX
-reveal options children = runFn3 revealImpl order options.collapsed children
-  where
-  order = case options.order of
-    Sequential -> "sequential"
-    Together -> "together"
-    Natural -> "natural"
+-- | In order: each waits for the ones before it.
+sequential :: RevealOrder
+sequential = RevealOrder "sequential"
+
+-- | All at once, when all are ready.
+together :: RevealOrder
+together = RevealOrder "together"
+
+-- | Each as soon as it's ready.
+natural :: RevealOrder
+natural = RevealOrder "natural"
+
+type RevealOptions =
+  ( order :: RevealOrder
+  -- | Unrevealed boundaries show nothing instead of their fallbacks.
+  , collapsed :: Boolean
+  )
+
+-- | Coordinates the loading boundaries among `children`. Takes any subset of
+-- | `RevealOptions`.
+reveal :: forall given missing. Row.Union given missing RevealOptions => { | given } -> Array JSX -> JSX
+reveal = runFn2 revealImpl
 
 -- | Renders `content` into `document.body` (client only).
 portal :: JSX -> JSX

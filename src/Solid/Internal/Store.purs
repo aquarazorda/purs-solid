@@ -5,56 +5,57 @@ module Solid.Internal.Store
   , preparer
   , class StoreFields
   , storeFields
+  , Fields
   ) where
 
-import Prelude
-
-import Data.Nullable (Nullable, null)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Type.Proxy (Proxy(..))
 
--- | Freezes every atomic value inside a value so Solid stores it as-is. `null`
+-- | Freezes every atomic value inside an `a` so Solid stores it as-is. `null`
 -- | means nothing to do.
-foreign import data Preparer :: Type
+foreign import data Preparer :: Type -> Type
 
 -- | How a type is stored: records and arrays are tracked per field / element;
--- | anything else is atomic. Every type has an instance.
+-- | anything else is atomic. Every type has an instance. `preparer` is a value,
+-- | so it's built once per type.
 class StoreValue :: Type -> Constraint
 class StoreValue a where
-  preparer :: Proxy a -> Nullable Preparer
+  preparer :: Preparer a
 
 instance StoreValue Int where
-  preparer _ = null
+  preparer = noPreparer
 else instance StoreValue Number where
-  preparer _ = null
+  preparer = noPreparer
 else instance StoreValue String where
-  preparer _ = null
+  preparer = noPreparer
 else instance StoreValue Boolean where
-  preparer _ = null
+  preparer = noPreparer
 else instance StoreValue Char where
-  preparer _ = null
+  preparer = noPreparer
 else instance (RowToList r rl, StoreFields rl) => StoreValue (Record r) where
-  preparer _ = recordPreparer (storeFields (Proxy :: Proxy rl))
+  preparer = recordPreparer (storeFields :: Fields rl)
 else instance StoreValue a => StoreValue (Array a) where
-  preparer _ = arrayPreparer (preparer (Proxy :: Proxy a))
+  preparer = arrayPreparer (preparer :: Preparer a)
 else instance StoreValue a where
-  preparer _ = atomicPreparer
+  preparer = atomicPreparer
+
+foreign import data Fields :: RowList Type -> Type
 
 class StoreFields :: RowList Type -> Constraint
 class StoreFields rl where
-  storeFields :: Proxy rl -> Array { name :: String, preparer :: Nullable Preparer }
+  storeFields :: Fields rl
 
 instance StoreFields RL.Nil where
-  storeFields _ = []
+  storeFields = noFields
 
 instance (IsSymbol l, StoreValue a, StoreFields tail) => StoreFields (RL.Cons l a tail) where
-  storeFields _ =
-    [ { name: reflectSymbol (Proxy :: Proxy l), preparer: preparer (Proxy :: Proxy a) } ]
-      <> storeFields (Proxy :: Proxy tail)
+  storeFields = consField (reflectSymbol (Proxy :: Proxy l)) (preparer :: Preparer a) (storeFields :: Fields tail)
 
-foreign import recordPreparer :: Array { name :: String, preparer :: Nullable Preparer } -> Nullable Preparer
-foreign import arrayPreparer :: Nullable Preparer -> Nullable Preparer
-foreign import atomicPreparer :: Nullable Preparer
-
+foreign import noPreparer :: forall a. Preparer a
+foreign import atomicPreparer :: forall a. Preparer a
+foreign import recordPreparer :: forall r rl. Fields rl -> Preparer (Record r)
+foreign import arrayPreparer :: forall a. Preparer a -> Preparer (Array a)
+foreign import noFields :: Fields RL.Nil
+foreign import consField :: forall l a tail. String -> Preparer a -> Fields tail -> Fields (RL.Cons l a tail)

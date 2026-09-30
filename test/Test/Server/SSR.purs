@@ -14,7 +14,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay, throwError)
 import Effect.Class (liftEffect)
 import Effect.Exception (Error)
-import Solid.Async (createAsync, createAsyncWith, defaultAsyncOptions, serialized, withCodec)
+import Solid.Async (createAsync, createAsyncWith, serialized, withCodec)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM (classWhen, ref)
@@ -111,28 +111,28 @@ spec = describe "Solid.Web.SSR" do
       html `shouldSatisfy` (not <<< has "never on the server")
 
     solidIt "serialized values load on the server and are sent with the page" do
-      html <- renderAsync $ withLoading $ page (defaultAsyncOptions { ssr = serialized })
+      html <- renderAsync $ withLoading $ page { ssr: serialized }
       html `shouldSatisfy` has "<p"
       html `shouldSatisfy` has "hello from the server"
 
     solidIt "renderToString renders fallbacks without waiting" do
-      html <- render $ withLoading $ page (defaultAsyncOptions { ssr = serialized })
+      html <- render $ withLoading $ page { ssr: serialized }
       html `shouldSatisfy` has "loading…"
 
     solidIt "ADTs load on the server through a codec" do
       html <- renderAsync $ withLoading $ Component.element (Component.component \_ -> do
-        status /\ _ <- createAsyncWith (defaultAsyncOptions { ssr = withCodec encodeStatus decodeStatus })
+        status /\ _ <- createAsyncWith { ssr: withCodec encodeStatus decodeStatus }
           (pure (later (Offline "maintenance")))
         pure (text (renderStatus <$> status))) {}
       html `shouldSatisfy` has "offline: maintenance"
 
     solidIt "renderToReadableStream streams the settled HTML" do
-      stream <- liftEffect (SSR.renderToReadableStream SSR.defaultRenderOptions (withLoading (page (defaultAsyncOptions { ssr = serialized })))) >>= orFail
+      stream <- liftEffect (SSR.renderToReadableStream {} (withLoading (page { ssr: serialized }))) >>= orFail
       html <- readAll stream
       html `shouldSatisfy` has "hello from the server"
 
   solidIt "hydration script honours the nonce, and noScripts omits scripts" do
-    script <- liftEffect (SSR.hydrationScriptWith (Just "abc123")) >>= orFail
+    script <- liftEffect (SSR.hydrationScriptWith { nonce: "abc123" }) >>= orFail
     script `shouldSatisfy` has "abc123"
-    html <- liftEffect (SSR.renderToStringWith (SSR.defaultRenderOptions { noScripts = true }) (H.p_ [ text "static" ])) >>= orFail
+    html <- liftEffect (SSR.renderToStringWith { noScripts: true } (H.p_ [ text "static" ])) >>= orFail
     (has "<script" html) `shouldEqual` false

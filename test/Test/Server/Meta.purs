@@ -23,7 +23,7 @@ import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual, shouldSatisfy)
 
 renderHead :: JSX -> Aff { html :: String, head :: String }
-renderHead view = liftEffect (SSR.renderToStringWithHead SSR.defaultRenderOptions view) >>= either throwError pure
+renderHead view = liftEffect (SSR.renderToStringWithHead {} view) >>= either throwError pure
 
 count :: String -> String -> Int
 count pattern = maybe 0 NEA.length <<< match (unsafeRegex pattern global)

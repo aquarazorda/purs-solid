@@ -9,8 +9,7 @@ module Solid.Router
   , layout
   , Router
   , History
-  , RouterConfig
-  , defaultRouterConfig
+  , RouterOptions
   , browserHistory
   , hashHistory
   , memoryHistory
@@ -27,7 +26,6 @@ module Solid.Router
   , useMatch
   , Navigate
   , NavigateOptions
-  , defaultNavigateOptions
   , useNavigate
   , navigate
   , navigateWith
@@ -42,7 +40,8 @@ import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Effect (Effect)
-import Effect.Uncurried (EffectFn1, EffectFn2, runEffectFn1, runEffectFn2)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
+import Prim.Row as Row
 import Prim.RowList (class RowToList)
 import Solid.Internal.Setup (Setup(..), runSetup)
 import Solid.Internal.View (JSX, Realized, realize)
@@ -115,25 +114,22 @@ foreign import hashHistory :: Effect History
 -- | Starts at the given URL.
 foreign import memoryHistory :: String -> Effect History
 
-type RouterConfig =
-  { routes :: Array Route
-  -- | A path prefix for all routes (e.g. `"/app"`).
-  , base :: Maybe String
-  -- | `Nothing` uses browser history.
-  , history :: Maybe History
-  }
+type RouterOptions =
+  ( -- | A path prefix for all routes (e.g. `"/app"`).
+    base :: String
+  -- | Browser history when left out.
+  , history :: History
+  )
 
-defaultRouterConfig :: RouterConfig
-defaultRouterConfig = { routes: [], base: Nothing, history: Nothing }
+-- | The route tree is fixed. Takes `routes` and any subset of `RouterOptions`.
+createRouter
+  :: forall given missing
+   . Row.Union given missing RouterOptions
+  => { routes :: Array Route | given }
+  -> Effect Router
+createRouter = runEffectFn1 createRouterImpl
 
--- | The route tree is fixed.
-createRouter :: RouterConfig -> Effect Router
-createRouter config =
-  runEffectFn1 createRouterImpl
-    { routes: config.routes, base: toNullable config.base, history: toNullable config.history }
-
-foreign import createRouterImpl
-  :: EffectFn1 { routes :: Array Route, base :: Nullable String, history :: Nullable History } Router
+foreign import createRouterImpl :: forall options. EffectFn1 { | options } Router
 
 -- | `root` wraps the matched route (the app shell).
 routerView :: Router -> (JSX -> Setup JSX) -> JSX
@@ -179,14 +175,11 @@ foreign import useMatchImpl :: EffectFn1 String (Accessor Boolean)
 foreign import data Navigate :: Type
 
 type NavigateOptions =
-  { replace :: Boolean
+  ( replace :: Boolean
   , scroll :: Boolean
   -- | Resolve relative to the current route (like an `href`).
   , resolve :: Boolean
-  }
-
-defaultNavigateOptions :: NavigateOptions
-defaultNavigateOptions = { replace: false, scroll: true, resolve: true }
+  )
 
 useNavigate :: Setup Navigate
 useNavigate = Setup useNavigateImpl
@@ -195,10 +188,17 @@ foreign import useNavigateImpl :: Effect Navigate
 
 -- | Call from an event handler or effect.
 navigate :: Navigate -> String -> Effect Unit
-navigate nav to = runEffectFn2 navigateImpl nav { to, options: defaultNavigateOptions }
+navigate = navigateWith {}
 
-navigateWith :: NavigateOptions -> Navigate -> String -> Effect Unit
-navigateWith options nav to = runEffectFn2 navigateImpl nav { to, options }
+-- | Takes any subset of `NavigateOptions`.
+navigateWith
+  :: forall given missing
+   . Row.Union given missing NavigateOptions
+  => { | given }
+  -> Navigate
+  -> String
+  -> Effect Unit
+navigateWith options nav to = runEffectFn3 navigateImpl nav to options
 
 -- | `navigateTo @"/users/:id" nav { id: "42" }`.
 navigateTo
@@ -210,7 +210,7 @@ navigateTo
   -> Effect Unit
 navigateTo nav params = navigate nav (href @path params)
 
-foreign import navigateImpl :: EffectFn2 Navigate { to :: String, options :: NavigateOptions } Unit
+foreign import navigateImpl :: forall options. EffectFn3 Navigate String { | options } Unit
 
 -- | `go nav (-1)` is back.
 go :: Navigate -> Int -> Effect Unit

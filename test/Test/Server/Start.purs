@@ -60,10 +60,14 @@ spec = describe "Solid.Start" do
       event <- Request.getRequestEvent >>= maybe' (throw "no request event")
       Request.setLocal userKey { name: "ada" } event
       user <- Request.getLocal userKey event
-      Request.setCookie "seen" "yes" Request.defaultCookieOptions event
+      Request.setCookie "seen" "yes" {} event
+      Request.setCookie "pref" "1" { maxAge: 60, httpOnly: false, sameSite: Request.strict } event
       pure { session: Request.cookie "session" event, theme: Request.cookie "theme" event, user }
     scoped.result `shouldEqual` { session: Just "abc 123", theme: Just "dark", user: Just { name: "ada" } }
-    scoped.headers `shouldEqual` [ "seen=yes; Path=/; HttpOnly; Secure; SameSite=Lax" ]
+    scoped.headers `shouldEqual`
+      [ "seen=yes; Path=/; HttpOnly; Secure; SameSite=Lax"
+      , "pref=1; Path=/; Max-Age=60; Secure; SameSite=Strict"
+      ]
 
   solidIt "outside a request there is no request event" do
     event <- liftEffect Request.getRequestEvent
