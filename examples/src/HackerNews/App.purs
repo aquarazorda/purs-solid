@@ -6,7 +6,6 @@ import Prelude
 
 import DOM.HTML.Indexed.ButtonType (ButtonType(..))
 import Data.Array as Array
-import Data.Int as Int
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toMaybe)
@@ -25,6 +24,7 @@ import Solid.JSX as JSX
 import Solid.Meta as Meta
 import Solid.Router (href)
 import Solid.Router as Router
+import Solid.Router.Search (searchParams, useSearch)
 import Solid.Setup (Setup)
 import Solid.Signal (Accessor, createSignal, modify_)
 import Solid.Start.Response (httpStatus)
@@ -64,8 +64,8 @@ feedComponent = Component.component \props -> feedPage props.feed
 
 feedPage :: Feed -> Setup JSX
 feedPage feed = do
-  location <- Router.useLocation
-  let page = fromMaybe 1 <<< (_ >>= Int.fromString) <$> Router.queryParam "page" location
+  search <- useSearch @(page :: Maybe Int)
+  let page = fromMaybe 1 <<< _.page <$> searchParams search
   items /\ _ <- createAsyncWith serverData (Api.stories feed <$> page)
   pure $ H.div [ P.class_ "news-view" ]
     [ Meta.title ("Hacker News | " <> feedLabel feed)

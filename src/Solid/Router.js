@@ -12,7 +12,6 @@ import {
   useNavigate as solidUseNavigate,
   usePreloadRoute,
   useResolvedPath,
-  useSearchParams,
 } from "@solidjs/router";
 import { createComponent } from "solid-js";
 
@@ -26,6 +25,12 @@ const readParams = (pattern, just, nothing) => (params) => {
     record[param.name] = param.optional ? (value == null ? nothing : just(value)) : (value ?? "");
   }
   return record;
+};
+
+const matchFiltersOf = (pattern) => {
+  const matchFilters = {};
+  for (const param of pattern.params) if (param.filter !== null) matchFilters[param.name] = filters[param.filter];
+  return Object.keys(matchFilters).length > 0 ? matchFilters : undefined;
 };
 
 export const routeImpl = (spec) => {
@@ -43,9 +48,8 @@ export const routeImpl = (spec) => {
       ),
   };
 
-  const matchFilters = {};
-  for (const param of pattern.params) if (param.filter !== null) matchFilters[param.name] = filters[param.filter];
-  if (Object.keys(matchFilters).length > 0) definition.matchFilters = matchFilters;
+  const matchFilters = matchFiltersOf(pattern);
+  if (matchFilters !== undefined) definition.matchFilters = matchFilters;
 
   if (options.preload !== undefined) {
     definition.preload = (args) => {
@@ -79,31 +83,19 @@ export const pathname = (location) => () => location.pathname;
 export const search = (location) => () => location.search;
 export const hash = (location) => () => location.hash;
 
-export const queryParamImpl = (name) => (location) => () => {
-  const value = location.query[name];
-  return Array.isArray(value) ? value[0] ?? null : value ?? null;
-};
-
-export const queryParams = (name) => (location) => () => {
-  const value = location.query[name];
-  return value == null ? [] : Array.isArray(value) ? value : [value];
-};
-
 export const locationStateImpl = (location) => () => location.state ?? null;
 
 export const locationKey = (location) => () => location.key;
 
-export const useSearchParamsImpl = () => useSearchParams()[1];
-
-export const setSearchParamsImpl = (setter, params, options) => {
-  setter(params, options);
-};
-
 export const useIsRoutingImpl = () => solidUseIsRouting();
 
-export const useMatchImpl = (pattern) => {
-  const match = solidUseMatch(() => pattern);
-  return () => match() !== undefined;
+export const useMatchImpl = ({ pattern, just, nothing }) => {
+  const toParams = readParams(pattern, just, nothing);
+  const match = solidUseMatch(() => pattern.path, matchFiltersOf(pattern));
+  return () => {
+    const found = match();
+    return found === undefined ? nothing : just(toParams(found.params));
+  };
 };
 
 export const useLinkStateImpl = (to) => useLinkState(to);

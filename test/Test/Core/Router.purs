@@ -20,11 +20,11 @@ import Solid.JSX (JSX, text)
 import Solid.Router (href)
 import Solid.Router as Router
 import Data.Argonaut.Core (fromString, toString)
-import Foreign.Object as Object
 import Solid.Action (createOptimistic, setOptimistic)
 import Solid.Router.Action (onSettled, onSubmit, routerAction, useAction, useSubmissions)
 import Solid.Signal (get)
 import Solid.Router.Query (Query, revalidate, runQuery)
+import Solid.Router.Search (searchParams, setSearch, useSearch)
 import Solid.Start.Response (redirect, reply)
 import Solid.Router.Query as Query
 import Solid.Setup (liftSetup)
@@ -243,28 +243,48 @@ spec = describe "Solid.Router" do
       html r.mounted >>= shouldEqual "<main><section>admin users</section></main>"
       liftEffect r.mounted.dispose
 
+    solidIt "useMatch gives the typed params while the location matches" do
+      r <- withRouter "/users/7"
+        [ Router.route @"*rest" \_ -> do
+            match <- Router.useMatch @"/users/:id<int>"
+            pure (text (show <$> match))
+        ]
+      html r.mounted >>= shouldEqual "<main>(Just { id: 7 })</main>"
+      go r.navigate "/about"
+      waitLoad
+      html r.mounted >>= shouldEqual "<main>Nothing</main>"
+      go r.navigate "/users/x"
+      waitLoad
+      html r.mounted >>= shouldEqual "<main>Nothing</main>"
+      liftEffect r.mounted.dispose
+
     solidIt "navigation state, search params and link state" do
       r <- withRouter "/list?tag=a&tag=b"
         [ Router.route @"/list" \_ -> do
             location <- Router.useLocation
-            params <- Router.useSearchParams
+            search <- useSearch @(tag :: Array String, page :: Maybe Int)
             link <- Router.useLinkState (pure "/list")
             pure $ H.div_
-              [ text (show <$> Router.queryParams "tag" location)
+              [ text (show <<< _.tag <$> searchParams search)
               , text (show <<< map toString <$> Router.locationState location)
               , text (link.current <#> \c -> if c then " current" else "")
-              , H.button [ P.id "page", P.onClick \_ -> Router.setSearchParams (Object.singleton "page" (Just "2")) params ] [ text "" ]
-              , text (show <$> Router.queryParam "page" location)
+              , H.button [ P.id "page", P.onClick \_ -> setSearch search { page: Just 2 } ] [ text "" ]
+              , H.button [ P.id "tags", P.onClick \_ -> setSearch search { tag: [ "x", "y" ], page: Nothing } ] [ text "" ]
+              , text (show <<< _.page <$> searchParams search)
               ]
         ]
-      html r.mounted >>= shouldEqual """<main><div>["a","b"]Nothing current<button id="page"></button>Nothing</div></main>"""
+      let buttons = """<button id="page"></button><button id="tags"></button>"""
+      html r.mounted >>= shouldEqual ("""<main><div>["a","b"]Nothing current""" <> buttons <> """Nothing</div></main>""")
       query "#page" r.mounted >>= traverse_ (liftEffect <<< click)
       waitLoad
-      html r.mounted >>= shouldEqual """<main><div>["a","b"]Nothing current<button id="page"></button>(Just "2")</div></main>"""
+      html r.mounted >>= shouldEqual ("""<main><div>["a","b"]Nothing current""" <> buttons <> """(Just 2)</div></main>""")
+      query "#tags" r.mounted >>= traverse_ (liftEffect <<< click)
+      waitLoad
+      html r.mounted >>= shouldEqual ("""<main><div>["x","y"]Nothing current""" <> buttons <> """Nothing</div></main>""")
       nav <- liftEffect (Ref.read r.navigate)
       liftEffect (traverse_ (\n -> Router.navigateWith { state: fromString "hi" } n "/list") nav)
       waitLoad
-      html r.mounted >>= shouldEqual """<main><div>[](Just (Just "hi")) current<button id="page"></button>Nothing</div></main>"""
+      html r.mounted >>= shouldEqual ("""<main><div>[](Just (Just "hi")) current""" <> buttons <> """Nothing</div></main>""")
       liftEffect r.mounted.dispose
 
     solidIt "useBeforeLeave can block a navigation and retry it" do

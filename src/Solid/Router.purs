@@ -26,14 +26,8 @@ module Solid.Router
   , pathname
   , search
   , hash
-  , queryParam
-  , queryParams
   , locationState
   , locationKey
-  , SearchParams
-  , useSearchParams
-  , setSearchParams
-  , setSearchParamsWith
   , useIsRouting
   , useMatch
   , LinkState
@@ -60,7 +54,6 @@ import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
-import Foreign.Object (Object)
 import Prim.Row as Row
 import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive, runSetup)
 import Solid.Internal.View (class LazyName, JSX, Realized, lazyName, loadModule, realize)
@@ -247,15 +240,6 @@ foreign import search :: Location -> Accessor String
 
 foreign import hash :: Location -> Accessor String
 
--- | The first value if repeated.
-queryParam :: String -> Location -> Accessor (Maybe String)
-queryParam name location = toMaybe <$> queryParamImpl name location
-
-foreign import queryParamImpl :: String -> Location -> Accessor (Nullable String)
-
--- | Every value of a repeated param.
-foreign import queryParams :: String -> Location -> Accessor (Array String)
-
 -- | The `state` the navigation passed, if any.
 locationState :: Location -> Accessor (Maybe Json)
 locationState location = toMaybe <$> locationStateImpl location
@@ -265,39 +249,20 @@ foreign import locationStateImpl :: Location -> Accessor (Nullable Json)
 -- | Identifies the history entry.
 foreign import locationKey :: Location -> Accessor String
 
--- | Updates query params in place; read them with `queryParam`.
-foreign import data SearchParams :: Type
-
-useSearchParams :: Setup SearchParams
-useSearchParams = Setup useSearchParamsImpl
-
-foreign import useSearchParamsImpl :: Effect SearchParams
-
--- | `Nothing` removes a param; params not named stay.
-setSearchParams :: Object (Maybe String) -> SearchParams -> Effect Unit
-setSearchParams = setSearchParamsWith {}
-
-setSearchParamsWith
-  :: forall given missing
-   . Row.Union given missing NavigateOptions
-  => { | given }
-  -> Object (Maybe String)
-  -> SearchParams
-  -> Effect Unit
-setSearchParamsWith options params setter = runEffectFn3 setSearchParamsImpl setter (toNullable <$> params) options
-
-foreign import setSearchParamsImpl :: forall options. EffectFn3 SearchParams (Object (Nullable String)) { | options } Unit
-
 -- | `true` while a navigation (and the next route's data) is in progress.
 useIsRouting :: Setup (Accessor Boolean)
 useIsRouting = Setup useIsRoutingImpl
 
 foreign import useIsRoutingImpl :: Effect (Accessor Boolean)
 
-useMatch :: String -> Setup (Accessor Boolean)
-useMatch pattern = Setup (runEffectFn1 useMatchImpl pattern)
+-- | The params of `path` while the location matches it:
+-- | `useMatch @"/users/:id<int>"` is an `Accessor (Maybe { id :: Int })`.
+useMatch :: forall @path params. IsSymbol path => PathParams path params => Setup (Accessor (Maybe { | params }))
+useMatch = Setup (runEffectFn1 useMatchImpl { pattern: routePattern (reflectSymbol (Proxy :: Proxy path)), just: Just, nothing: Nothing })
 
-foreign import useMatchImpl :: EffectFn1 String (Accessor Boolean)
+foreign import useMatchImpl
+  :: forall params
+   . EffectFn1 { pattern :: RoutePattern, just :: forall a. a -> Maybe a, nothing :: forall a. Maybe a } (Accessor (Maybe { | params }))
 
 -- | A link's state: `active` when the location is at or under it, `current`
 -- | when it's exactly there, `pending` while navigating to it.
