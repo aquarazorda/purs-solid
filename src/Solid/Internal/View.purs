@@ -67,7 +67,7 @@ import Data.Nullable (Nullable)
 import Effect (Effect)
 import Effect.Exception (Error)
 import Effect.Uncurried (EffectFn1)
-import Solid.Internal.Tracked (class Tracked, Accessor, Async, toAccessor)
+import Solid.Internal.Tracked (Accessor, Async)
 import Unsafe.Coerce (unsafeCoerce)
 import Data.String as String
 import Data.Symbol (class IsSymbol, reflectSymbol)
@@ -230,8 +230,8 @@ class LazyName name where
 instance (Symbol.Append "purs-solid:lazy:" name tagged, IsSymbol tagged) => LazyName name where
   lazyName _ = String.drop 16 (reflectSymbol (Proxy :: Proxy tagged))
 
-foreign import lazyImpl :: forall props. Fn2 String (Effect (Promise LazyModule)) (ComponentRep props)
+foreign import lazyImpl :: forall props. Fn3 String String (Effect (Promise LazyModule)) (ComponentRep props)
 
-foreign import clientOnlyImpl :: forall props. Fn2 String (Effect (Promise LazyModule)) (ComponentRep props)
+foreign import clientOnlyImpl :: forall props. Fn3 String String (Effect (Promise LazyModule)) (ComponentRep props)
 
 foreign import preloadImpl :: forall props. EffectFn1 (ComponentRep props) Unit

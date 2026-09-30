@@ -16,7 +16,7 @@ module Solid.Component
 import Prelude
 
 import Control.Promise (Promise)
-import Data.Function.Uncurried (Fn2, runFn2)
+import Data.Function.Uncurried (Fn3, runFn2, runFn3)
 import Data.Maybe (fromMaybe)
 import Data.String as String
 import Effect (Effect)
@@ -71,12 +71,13 @@ clientOnly = withQualified @name clientOnlyImpl
 withQualified
   :: forall @name component
    . LazyName name
-  => Fn2 String (Effect (Promise LazyModule)) component
+  => Fn3 String String (Effect (Promise LazyModule)) component
   -> component
-withQualified load = runFn2 load (String.drop (dot + 1) name) (loadModule (String.take dot name))
+withQualified load = runFn3 load moduleName (String.drop (dot + 1) name) (loadModule moduleName)
   where
   name = lazyName (Proxy :: Proxy name)
   dot = fromMaybe 0 (String.lastIndexOf (String.Pattern ".") name)
+  moduleName = String.take dot name
 
 -- | Starts loading a `lazy` component early (e.g. on hover). Does nothing for
 -- | other components.

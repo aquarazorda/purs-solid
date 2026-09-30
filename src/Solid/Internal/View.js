@@ -172,7 +172,11 @@ const propsObject = (namespace, tag, props, children) => {
 export const elementImpl = (namespace, tag, props, children) => () =>
   createComponent(staticComponent(tag), propsObject(namespace, tag, props, children));
 
-export const componentRep = (render) => (props) => realize(render(props)());
+// Marks the values `lazy` may load: a loaded export without it isn't a component.
+const componentTag = Symbol.for("purs-solid/component");
+const tagged = (component) => Object.assign(component, { [componentTag]: true });
+
+export const componentRep = (render) => tagged((props) => realize(render(props)()));
 
 export const componentElement = (component, props) => () => createComponent(component, props);
 
@@ -377,17 +381,27 @@ const importCompiled = (name) => {
 
 export const loadModule = (name) => () => (lazyModules.get(name) ?? importCompiled)(name);
 
-export const lazyImpl = (exportName, load) => solidLazy(() => load(), { export: exportName });
+const loadComponent = (moduleName, exportName, load) => () =>
+  load().then((module) => {
+    if (module[exportName]?.[componentTag] !== true) {
+      throw new Error(`purs-solid: ${moduleName}.${exportName} is loaded lazily, but it isn't a component`);
+    }
+    return module;
+  });
 
-export const clientOnlyImpl = (exportName, load) => {
-  const component = solidClientOnly(() => load(), { export: exportName, lazy: true });
-  return (props) =>
+export const lazyImpl = (moduleName, exportName, load) =>
+  tagged(solidLazy(loadComponent(moduleName, exportName, load), { export: exportName }));
+
+export const clientOnlyImpl = (moduleName, exportName, load) => {
+  const component = solidClientOnly(loadComponent(moduleName, exportName, load), { export: exportName, lazy: true });
+  return tagged((props) =>
     component({
       ...props,
       get fallback() {
         return realize(props.fallback);
       },
-    });
+    })
+  );
 };
 
 export const preloadImpl = (component) => {

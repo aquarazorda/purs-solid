@@ -57,11 +57,17 @@ export const routeImpl = (spec) => {
     };
   }
 
-  // An array of child routes, or an Effect that imports a module exporting `routes`.
+  // An array of child routes, or `{ name, load }` for a module exporting `routes`.
   const { children } = spec;
   if (Array.isArray(children)) {
     if (children.length > 0) definition.children = children;
-  } else definition.children = () => children();
+  } else {
+    definition.children = () =>
+      children.load().then((module) => {
+        if (!Array.isArray(module.routes)) throw new Error(`purs-solid: ${children.name} is loaded lazily as a layout's routes, but it exports no routes`);
+        return module;
+      });
+  }
   return definition;
 };
 

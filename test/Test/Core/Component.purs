@@ -11,6 +11,7 @@ import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
+import Effect.Exception (message)
 import Effect.Ref as Ref
 import Solid.Component as Component
 import Solid.Component.JS (JsComponent, jsElement)
@@ -90,6 +91,14 @@ spec = describe "Solid.Component" do
     html mounted >>= shouldEqual "loading"
     delay (Milliseconds 20.0)
     html mounted >>= shouldEqual "hello lin"
+    liftEffect mounted.dispose
+
+  solidIt "lazy fails clearly when the export isn't a component" do
+    let notComponent = Component.lazy @"Test.Core.Component.Greeting.answer" :: Component.Component {}
+    mounted <- mount $ Control.errored (\err _ -> pure (JSX.text (message <$> err)))
+      (Control.loading (JSX.text "loading") (Component.element notComponent {}))
+    delay (Milliseconds 20.0)
+    html mounted >>= shouldEqual "purs-solid: Test.Core.Component.Greeting.answer is loaded lazily, but it isn't a component"
     liftEffect mounted.dispose
 
   solidIt "preload starts loading before first use" do

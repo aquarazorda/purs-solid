@@ -132,7 +132,9 @@ layoutLazy
   => PathParams path params
   => (RouteProps params -> Setup JSX)
   -> Route
-layoutLazy render = defineRoute @path {} render (unsafeCoerce (loadModule (lazyName (Proxy :: Proxy name))))
+layoutLazy render = defineRoute @path {} render (unsafeCoerce { name, load: loadModule name })
+  where
+  name = lazyName (Proxy :: Proxy name)
 
 defineRoute
   :: forall @path params options
@@ -153,7 +155,7 @@ defineRoute options render children =
     , realize
     }
 
--- | `Array Route`, or an `Effect (Promise LazyModule)` for lazy children.
+-- | `Array Route`, or `{ name, load }` for lazy children.
 foreign import data RouteChildren :: Type
 
 foreign import routeImpl
