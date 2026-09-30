@@ -3,10 +3,7 @@ module Examples.HackerNews.Api
   , parseFeed
   , feedPath
   , feedLabel
-  , Story
-  , Comment
-  , StoryPage
-  , User
+  , module Exports
   , stories
   , story
   , user
@@ -17,8 +14,10 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
 import Effect.Aff (Aff)
+import Examples.HackerNews.Server (Story, StoryPage, User)
+import Examples.HackerNews.Server (Comment, Story, StoryPage, User) as Exports
+import Examples.HackerNews.Server as Server
 import Solid.Router.Query (Query, queryServer, runQuery)
-import Solid.Start.ServerFunction (ServerFunction)
 
 data Feed = Top | New | ShowHN | Ask | Jobs
 
@@ -56,40 +55,14 @@ apiFeed = case _ of
   Ask -> "askstories"
   Jobs -> "jobstories"
 
-type Story =
-  { id :: Int
-  , title :: String
-  , url :: Nullable String
-  , points :: Int
-  , by :: Nullable String
-  , time :: Int
-  , comments :: Int
-  }
-
-type Comment =
-  { id :: Int
-  , parent :: Int
-  , by :: Nullable String
-  , html :: String
-  , time :: Int
-  }
-
-type StoryPage = { story :: Story, comments :: Array Comment }
-
-type User = { id :: String, created :: Int, karma :: Int, about :: Nullable String }
-
-foreign import storiesOnServer :: ServerFunction { feed :: String, page :: Int } (Array Story)
-foreign import storyOnServer :: ServerFunction Int (Nullable StoryPage)
-foreign import userOnServer :: ServerFunction String (Nullable User)
-
 storiesQuery :: Query { feed :: String, page :: Int } (Array Story)
-storiesQuery = queryServer "hn.stories" storiesOnServer
+storiesQuery = queryServer "hn.stories" Server.stories
 
 storyQuery :: Query Int (Nullable StoryPage)
-storyQuery = queryServer "hn.story" storyOnServer
+storyQuery = queryServer "hn.story" Server.story
 
 userQuery :: Query String (Nullable User)
-userQuery = queryServer "hn.user" userOnServer
+userQuery = queryServer "hn.user" Server.user
 
 stories :: Feed -> Int -> Aff (Array Story)
 stories feed page = runQuery storiesQuery { feed: apiFeed feed, page }

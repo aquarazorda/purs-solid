@@ -8,6 +8,7 @@ import DOM.HTML.Indexed.ButtonType (ButtonType(..))
 import Data.Tuple.Nested ((/\))
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
+import Examples.StartMode.Api as Api
 import Solid.Async (createAsyncWith, serialized)
 import Solid.Component as Component
 import Solid.Control as Control
@@ -15,12 +16,10 @@ import Solid.DOM.HTML as H
 import Solid.DOM.Props as P
 import Solid.JSX (text)
 import Solid.Signal (createSignal, set)
-import Solid.Start.ServerFunction (ServerFunction, call)
-
-foreign import greetOnServer :: ServerFunction String String
+import Solid.Start.ServerFunction (call)
 
 greet :: String -> Aff String
-greet = call greetOnServer
+greet = call Api.greet
 
 app :: Component.Component {}
 app = Component.component \_ -> do

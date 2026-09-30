@@ -33,6 +33,7 @@ Elements go through `dynamic(() => tag, { static: true })`, so Solid itself does
 ## Solid 2 behaviour this relies on
 
 - A store keeps an element's proxy (and so its row) across `reconcile` only while something reads that element's fields.
-- `@solidjs/vite-plugin` transforms `"use server"` functions only under `src/**` by default. Compiled FFI lives in `output/**/foreign.js`, which must be added to `serverFunctions.filter.include`, or server functions ship to the client. `call` and `queryServer` refuse to run an untransformed function in the browser.
+- `purs` can't emit a `"use server"` directive, so `purs-solid/vite` wraps `@solidjs/vite-plugin`: a compiled module that re-exports `useServer` gets a module-level `"use server"`, and Solid's compiler turns it into references on the client, dropping all of its imports. It keeps only the module's public exports: purs-backend-es exports every top-level binding, so those come from its CoreFn. `call` and `queryServer` refuse to run an untransformed function in the browser.
+- Solid's `start.app` and `start.middleware` must be files inside the Vite root with a default export, so the wrapper writes one-line re-exports to `node_modules/.purs-solid/`.
 - With `renderToStringWithHead`, Solid delivers the title as a script that sets `document.title`, not as a `<title>` tag.
 - Pin exact versions: several of these packages' `latest` npm tags point at old releases.

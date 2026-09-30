@@ -12,7 +12,8 @@ run("vite", ["build", "--config", join(host, "vite.config.mjs"), "--logLevel", "
 const assets = join(dist, "client", "assets");
 const clientFiles = (await readdir(assets)).filter((f) => f.endsWith(".js"));
 const clientCode = (await Promise.all(clientFiles.map((f) => readFile(join(assets, f), "utf8")))).join("\n");
-expect("server function body is not in the client bundle", clientCode.includes("from ${"), false);
+expect("server module code is not in the client bundle", clientCode.includes("nowhere"), false);
+expect("middleware is not in the client bundle", clientCode.includes("x-middleware"), false);
 
 const port = 4000 + Math.floor(Math.random() * 1000);
 const server = spawn("node", [join(dist, "server", "node.js")], { env: { ...env, PORT: String(port) }, stdio: "ignore" });
@@ -28,7 +29,9 @@ for (let i = 0; i < 50; i += 1) {
 
 const browser = await launch();
 try {
-  const html = await (await fetch(origin)).text();
+  const page = await fetch(origin);
+  expect("middleware header", page.headers.get("x-middleware"), "purs-solid");
+  const html = await page.text();
   expect("server-rendered greeting", html.includes("hello page, from the server"), true);
 
   const tab = await browser.newPage();

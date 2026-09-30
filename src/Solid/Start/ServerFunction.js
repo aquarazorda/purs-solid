@@ -1,5 +1,9 @@
 import { invoke, SERVER_FUNCTION_INVOKE } from "@solidjs/web/server-functions";
 
+const serverFunctionTag = Symbol.for("purs-solid/server-function");
+
+export const serverFunctionImpl = (run) => Object.assign((argument) => run(argument)(), { [serverFunctionTag]: true });
+
 const toError = (error) => (error instanceof Error ? error : new Error(String(error)));
 
 // Transformed references take per-call options through `invoke`; on the

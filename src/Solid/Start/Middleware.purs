@@ -1,6 +1,5 @@
--- | Start-mode middleware. Point `start.middleware` at a JS module that
--- | default-exports one:
--- | `export { auth as default } from "../output/App.Middleware/index.js";`
+-- | Start-mode middleware. Set `start.middleware` to a module that exports
+-- | `middleware :: MiddlewareFn`.
 module Solid.Start.Middleware
   ( Middleware
   , MiddlewareFn

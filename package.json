@@ -4,6 +4,9 @@
   "private": true,
   "description": "PureScript bindings for Solid 2.0",
   "type": "module",
+  "exports": {
+    "./vite": "./vite/index.mjs"
+  },
   "scripts": {
     "test": "npm run test:client && npm run test:server",
     "test:client": "NODE_OPTIONS='--conditions=browser --conditions=development --import=./test/setup-dom.mjs' spago test -p purs-solid",
@@ -38,5 +41,17 @@
     "purs-tidy": "0.11.1",
     "spago": "1.0.4",
     "vite": "8.3.1"
+  },
+  "peerDependencies": {
+    "@solidjs/vite-plugin": "3.0.0-next.47",
+    "vite": "8.3.1"
+  },
+  "peerDependenciesMeta": {
+    "@solidjs/vite-plugin": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
   }
 }

@@ -1,21 +1,8 @@
--- | A `"use server"` function written in an FFI file. Argument and result must
--- | be `Serializable`; use a record for several arguments.
--- |
--- | ```js
--- | export async function saveTodo(todo) {
--- |   "use server";
--- |   return db.insert(todo);
--- | }
--- | ```
--- | ```purescript
--- | foreign import saveTodo :: ServerFunction NewTodo { id :: Int }
--- | ```
--- |
--- | **Vite config:** compiled FFI lives in `output/`, outside the plugin's
--- | default `src/**` filter. Add `output/**/foreign.js` to
--- | `serverFunctions.filter.include`, or server functions ship to the browser.
+-- | Server functions are defined with `serverFunction` in a server module
+-- | (see `Solid.Start.UseServer`) and called with `call` from anywhere.
 module Solid.Start.ServerFunction
-  ( call
+  ( serverFunction
+  , call
   , CallOptions
   , callWith
   , module Exports
@@ -23,6 +10,7 @@ module Solid.Start.ServerFunction
 
 import Prelude
 
+import Control.Promise (Promise, fromAff)
 import Data.Either (Either(..))
 import Effect (Effect)
 import Effect.Aff (Aff, effectCanceler, makeAff)
@@ -33,6 +21,10 @@ import Solid.Internal.Serializable (class Serializable)
 import Solid.Internal.Serializable (class Serializable) as Exports
 import Solid.Internal.ServerFunction (ServerFunction, checked)
 import Solid.Internal.ServerFunction (ServerFunction) as Exports
+
+-- | Use a record for several arguments.
+serverFunction :: forall a b. Serializable a => Serializable b => (a -> Aff b) -> ServerFunction a b
+serverFunction run = serverFunctionImpl (fromAff <<< run)
 
 -- | Runs directly on the server and over the network from the client.
 -- | Killing the fiber aborts the request.
@@ -59,6 +51,8 @@ callWith options fn argument = makeAff \done -> do
     (mkEffectFn1 (done <<< Right))
     (mkEffectFn1 (done <<< Left))
   pure (effectCanceler cancel)
+
+foreign import serverFunctionImpl :: forall a b. (a -> Effect (Promise b)) -> ServerFunction a b
 
 foreign import callImpl
   :: forall options a b

@@ -3,17 +3,21 @@ package:
   dependencies:
     - aff
     - aff-promise
+    - argonaut-codecs
     - arrays
     - console
     - dom-indexed
     - effect
     - either
     - exceptions
+    - fetch
     - foldable-traversable
     - integers
+    - js-uri
     - maybe
     - nullable
     - ordered-collections
+    - parallel
     - prelude
     - purs-solid
     - refs

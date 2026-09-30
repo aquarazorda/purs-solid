@@ -66,7 +66,7 @@ main = requireBody >>= case _ of
   - `Solid.Router.Action` (mutations the router tracks: forms, submissions, revalidation);
   - `Solid.Meta`.
 - **Testing:** `Solid.Testing` (mount into a DOM, settle, query, click, type, collect Solid's diagnostics).
-- **Start mode:** `Solid.Start.ServerFunction`, `Solid.Start.RequestEvent`, `Solid.Start.Response` (status, headers, and the `Reply` of an action: redirect, reload, respond), `Solid.Start.Middleware`.
+- **Start mode:** `Solid.Start.ServerFunction`, `Solid.Start.UseServer`, `Solid.Start.RequestEvent`, `Solid.Start.Response` (status, headers, and the `Reply` of an action: redirect, reload, respond), `Solid.Start.Middleware`.
 
 ## Installing
 
@@ -88,17 +88,27 @@ The router and meta packages are needed only for `Solid.Router` and `Solid.Meta`
 
 ## Start mode
 
-A start-mode app is a `Component` exported from the plugin's `app` module. Server functions are `"use server"` functions in FFI files, declared as `foreign import save :: ServerFunction NewTodo Todo` and called with `call`. Their arguments and results must be `Serializable`.
-
-Compiled FFI lives in `output/`, outside the plugin's default `src/**` filter, so include it explicitly. Otherwise server functions ship to the browser:
+A start-mode app is a `Component`. Use `purs-solid/vite` in place of `@solidjs/vite-plugin`. It takes the same options, with `start.app` and `start.middleware` given as module names. `app` defaults to the module `App` exporting `app`, and a middleware module exports `middleware`.
 
 ```js
-solid({
-  start: { app: "./app.js", node: true },
-  ssr: true,
-  serverFunctions: { filter: { include: ["output/**/foreign.js"] } },
-})
+import solid from "purs-solid/vite";
+
+export default defineConfig({ plugins: [solid({ start: true, ssr: true })] });
 ```
+
+Server functions are written in PureScript in a server module, which re-exports `Solid.Start.UseServer`. None of its code reaches the browser. Every value it exports must be a `serverFunction`, and arguments and results must be `Serializable`:
+
+```purescript
+module App.Api (module Solid.Start.UseServer, save) where
+
+import Solid.Start.ServerFunction (ServerFunction, serverFunction)
+import Solid.Start.UseServer (useServer)
+
+save :: ServerFunction NewTodo Todo
+save = serverFunction \todo -> Db.insert todo
+```
+
+Call them from anywhere with `call`, `queryServer` or `serverAction`.
 
 See `examples/src/StartMode/Host` and `examples/src/HackerNews/Host`.
 
