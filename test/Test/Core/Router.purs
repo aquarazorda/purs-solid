@@ -4,9 +4,11 @@ module Test.Core.Router
 
 import Prelude
 
+import Data.Array as Array
+import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Tuple.Nested ((/\))
-import Effect.Aff (Aff, Milliseconds(..), delay, throwError)
+import Effect.Aff (Aff, Milliseconds(..), delay, launchAff_, throwError)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Solid.Async (createAsync)
@@ -17,7 +19,9 @@ import Solid.DOM.Props as P
 import Solid.JSX (JSX, text)
 import Solid.Router (href)
 import Solid.Router as Router
+import Solid.Router.Action (routerAction, useAction, useSubmissions)
 import Solid.Router.Query (Query, revalidate, runQuery)
+import Solid.Start.Response (redirect, reply)
 import Solid.Router.Query as Query
 import Solid.Setup (liftSetup)
 import Test.Solid (Mounted, click, html, mount, query, settle, solidIt)
@@ -176,3 +180,27 @@ spec = describe "Solid.Router" do
       liftEffect (Ref.read q.loads) >>= shouldEqual 2
       html r.mounted >>= shouldEqual "<main><p>item 1</p></main>"
       liftEffect r.mounted.dispose
+
+  describe "actions" do
+    solidIt "useAction returns the result, redirects navigate, submissions are listed" do
+      results <- liftEffect (Ref.new [])
+      let
+        rename = routerAction "rename" \name -> pure (if name == "" then redirect "/done" else reply ("renamed " <> name))
+        page = Component.component \_ -> do
+          run <- useAction rename
+          submissions <- useSubmissions rename
+          let submit name = launchAff_ (run name >>= \result -> liftEffect (Ref.modify_ (_ <> [ result ]) results))
+          pure $ H.div_
+            [ H.button [ P.id "go", P.onClick \_ -> submit "ada" ] [ text "go" ]
+            , H.button [ P.id "leave", P.onClick \_ -> submit "" ] [ text "leave" ]
+            , text (submissions <#> \list -> show (Array.length list) <> " " <> show (_.result <$> list))
+            ]
+      r <- withRouter "/" [ Router.route @"/" \_ -> pure (Component.element page {}), Router.route @"/done" \_ -> pure (text "done") ]
+      query "#go" r.mounted >>= traverse_ (liftEffect <<< click)
+      waitLoad
+      liftEffect (Ref.read results) >>= shouldEqual [ Just "renamed ada" ]
+      html r.mounted >>= shouldEqual """<main><div><button id="go">go</button><button id="leave">leave</button>1 [(Just "renamed ada")]</div></main>"""
+      query "#leave" r.mounted >>= traverse_ (liftEffect <<< click)
+      waitLoad
+      liftEffect (Ref.read results) >>= shouldEqual [ Just "renamed ada", Nothing ]
+      html r.mounted >>= shouldEqual "<main>done</main>"

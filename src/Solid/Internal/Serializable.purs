@@ -10,6 +10,7 @@ import Prelude (Unit, unit)
 import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Prim.TypeError (class Fail, Above, Beside, Quote, Text)
+import Solid.Start.Response (Reply)
 import Type.Proxy (Proxy)
 
 -- | Types that survive Solid's serialization unchanged: primitives, `Unit`,
@@ -31,6 +32,8 @@ else instance Serializable Unit where
 else instance Serializable a => Serializable (Nullable a) where
   serializableProof _ = unit
 else instance Serializable a => Serializable (Array a) where
+  serializableProof _ = unit
+else instance Serializable a => Serializable (Reply a) where
   serializableProof _ = unit
 else instance (RowToList r rl, SerializableFields rl) => Serializable (Record r) where
   serializableProof _ = unit

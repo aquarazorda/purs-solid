@@ -16,7 +16,7 @@ import Solid.Component as Component
 import Solid.JSX (text)
 import Solid.Start.Middleware (MiddlewareFn, middleware)
 import Solid.Start.RequestEvent as Request
-import Solid.Start.Response (httpHeader, httpStatus)
+import Solid.Start.Response (Reply, httpHeader, httpStatus, redirectWith, reloadWith, reply, respondWith)
 import Solid.Start.ServerFunction (ServerFunction, call)
 import Solid.Web.SSR as SSR
 import Test.Solid (solidIt)
@@ -33,7 +33,12 @@ foreign import responseHeader :: String -> Response -> Effect String
 foreign import runMiddleware :: MiddlewareFn -> Request -> Effect (Promise Response)
 
 foreign import withRequestEventImpl
-  :: forall a. Request -> Effect a -> Effect { result :: a, status :: Int, headers :: Array String }
+  :: forall a. Request -> Effect a -> Effect { result :: a, status :: Int, headers :: Array String, trace :: String }
+
+foreign import responseText :: Response -> Effect (Promise String)
+
+foreign import replyInfo
+  :: forall a. Reply a -> { status :: Int, location :: String, revalidate :: String, value :: Nullable a }
 
 spec :: Spec Unit
 spec = describe "Solid.Start" do
@@ -46,12 +51,39 @@ spec = describe "Solid.Start" do
   solidIt "middleware wraps the rest of the chain" do
     request <- liftEffect (newRequest "https://app.test/" "")
     let
-      addHeader = middleware \_ next -> do
-        response <- next
+      addHeader = middleware \forwarded next -> do
+        response <- next forwarded
         liftEffect (setHeader "x-app" "purs-solid" response)
         pure response
     response <- toAffE (runMiddleware addHeader request)
     liftEffect (responseHeader "x-app" response) >>= shouldEqual "purs-solid"
+
+  solidIt "middleware can pass a rewritten request on" do
+    request <- liftEffect (newRequest "https://app.test/old" "")
+    let
+      rewrite = middleware \_ next -> do
+        moved <- liftEffect (newRequest "https://app.test/new" "")
+        next moved
+    response <- toAffE (runMiddleware rewrite request)
+    toAffE (responseText response) >>= shouldEqual "ok https://app.test/new"
+
+  solidIt "server functions and middleware set the response status and headers" do
+    request <- liftEffect (newRequest "https://app.test/" "")
+    scoped <- liftEffect $ withRequestEventImpl request do
+      event <- Request.getRequestEvent >>= maybe' (throw "no request event")
+      Request.setResponseStatus 201 event
+      Request.setResponseHeader "x-trace" "a" event
+      Request.appendResponseHeader "x-trace" "b" event
+      Request.deleteCookie "session" {} event
+    scoped.status `shouldEqual` 201
+    scoped.trace `shouldEqual` "a, b"
+    scoped.headers `shouldEqual` [ "session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT" ]
+
+  solidIt "replies carry redirects, reloads and values" do
+    replyInfo (redirectWith { status: 303 } "/done" :: Reply Int) `shouldEqual` { status: 303, location: "/done", revalidate: "", value: null }
+    replyInfo (reloadWith { revalidate: [ "todos" ] } :: Reply Int) `shouldEqual` { status: 200, location: "", revalidate: "todos", value: null }
+    replyInfo (respondWith { revalidate: [] } 7) `shouldEqual` { status: 0, location: "", revalidate: "", value: notNull 7 }
+    replyInfo (reply 7) `shouldEqual` { status: 0, location: "", revalidate: "", value: notNull 7 }
 
   solidIt "the request event exposes cookies, locals and sets cookies" do
     request <- liftEffect (newRequest "https://app.test/" "session=abc%20123; theme=dark")

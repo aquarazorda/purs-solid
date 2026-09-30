@@ -32,7 +32,8 @@
             "web-pointerevents",
             "web-streams",
             "web-touchevents",
-            "web-uievents"
+            "web-uievents",
+            "web-xhr"
           ]
         },
         "test": {
@@ -1960,6 +1961,30 @@
         "prelude",
         "unsafe-coerce",
         "web-events",
+        "web-html"
+      ]
+    },
+    "web-xhr": {
+      "type": "registry",
+      "version": "5.0.1",
+      "integrity": "sha256-gxQgeGwvF/NyGdw0FJ9IzXI3gqIMNb8oQO8X+p5jDyw=",
+      "dependencies": [
+        "arraybuffer-types",
+        "datetime",
+        "effect",
+        "either",
+        "enums",
+        "foreign",
+        "http-methods",
+        "maybe",
+        "media-types",
+        "newtype",
+        "nullable",
+        "prelude",
+        "unsafe-coerce",
+        "web-dom",
+        "web-events",
+        "web-file",
         "web-html"
       ]
     }

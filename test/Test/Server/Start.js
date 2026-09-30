@@ -19,7 +19,25 @@ export const setHeader = (name) => (value) => (response) => () => {
 };
 
 export const runMiddleware = (middleware) => (request) => () =>
-  middleware(request, async () => new Response("ok"));
+  middleware(request, async (forwarded) => new Response(`ok ${(forwarded ?? request).url}`));
+
+export const responseText = (response) => () => response.text();
+
+// A Reply is a Response (redirect, reload), a ResponseEnvelope, or the plain value.
+export const replyInfo = (value) => {
+  if (value instanceof Response) {
+    return {
+      status: value.status,
+      location: value.headers.get("location") ?? "",
+      revalidate: value.headers.get("x-revalidate") ?? "",
+      value: null,
+    };
+  }
+  if (value != null && typeof value === "object" && "response" in value && "value" in value) {
+    return { status: 0, location: "", revalidate: value.response?.headers.get("x-revalidate") ?? "", value: value.value };
+  }
+  return { status: 0, location: "", revalidate: "", value };
+};
 
 export const withRequestEventImpl = (request) => (action) => () => {
   const event = createRequestEvent(request);
@@ -28,5 +46,6 @@ export const withRequestEventImpl = (request) => (action) => () => {
     result,
     status: event.response.status ?? 200,
     headers: event.response.headers.getSetCookie(),
+    trace: event.response.headers.get("x-trace") ?? "",
   };
 };

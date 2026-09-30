@@ -12,6 +12,10 @@ module Solid.Start.RequestEvent
   , strict
   , none
   , setCookie
+  , deleteCookie
+  , setResponseStatus
+  , setResponseHeader
+  , appendResponseHeader
   , LocalKey
   , localKey
   , getLocal
@@ -65,6 +69,7 @@ type CookieOptions =
   , httpOnly :: Boolean
   , secure :: Boolean
   , sameSite :: SameSite
+  , partitioned :: Boolean
   )
 
 -- | Takes any subset of `CookieOptions`. Unset fields default to path `/`,
@@ -80,6 +85,33 @@ setCookie
 setCookie name value options event = runEffectFn4 setCookieImpl event name value options
 
 foreign import setCookieImpl :: forall options. EffectFn4 RequestEvent String String { | options } Unit
+
+-- | Expires the cookie. Pass the `path` and `domain` it was set with.
+deleteCookie
+  :: forall given missing
+   . Row.Union given missing CookieOptions
+  => String
+  -> { | given }
+  -> RequestEvent
+  -> Effect Unit
+deleteCookie name options event = runEffectFn3 deleteCookieImpl event name options
+
+foreign import deleteCookieImpl :: forall options. EffectFn3 RequestEvent String { | options } Unit
+
+-- | For middleware and server functions; while rendering, use
+-- | `Solid.Start.Response.httpStatus`.
+setResponseStatus :: Int -> RequestEvent -> Effect Unit
+setResponseStatus status event = runEffectFn2 setResponseStatusImpl event status
+
+foreign import setResponseStatusImpl :: EffectFn2 RequestEvent Int Unit
+
+setResponseHeader :: String -> String -> RequestEvent -> Effect Unit
+setResponseHeader name value event = runEffectFn4 responseHeaderImpl event name value false
+
+appendResponseHeader :: String -> String -> RequestEvent -> Effect Unit
+appendResponseHeader name value event = runEffectFn4 responseHeaderImpl event name value true
+
+foreign import responseHeaderImpl :: EffectFn4 RequestEvent String String Boolean Unit
 
 -- | A typed slot in the request's `locals`. Define each key once and share it:
 -- | two keys with the same name refer to the same slot.

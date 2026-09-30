@@ -63,8 +63,9 @@ main = requireBody >>= case _ of
   - `Solid.Router` (`route @"/users/:id"` gives the component `{ id :: String }`);
   - `Solid.Router.Path` (`href`);
   - `Solid.Router.Query` (cached route data);
+  - `Solid.Router.Action` (mutations the router tracks: forms, submissions, revalidation);
   - `Solid.Meta`.
-- **Start mode:** `Solid.Start.ServerFunction`, `Solid.Start.RequestEvent`, `Solid.Start.Response`, `Solid.Start.Middleware`.
+- **Start mode:** `Solid.Start.ServerFunction`, `Solid.Start.RequestEvent`, `Solid.Start.Response` (status, headers, and the `Reply` of an action: redirect, reload, respond), `Solid.Start.Middleware`.
 
 ## Installing
 

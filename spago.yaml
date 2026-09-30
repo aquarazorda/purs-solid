@@ -29,6 +29,7 @@ package:
     - web-streams
     - web-touchevents
     - web-uievents
+    - web-xhr
   test:
     main: Test.Main
     dependencies:

@@ -88,11 +88,11 @@ Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6
 - [x] Test support: `expectDiagnostic` acknowledges the code, so the enclosing `solidIt` doesn't report it.
 
 ### Phase 4 — Mutations and server responses
-- [ ] Router `action`, `useAction`, `useSubmissions`, and their relation to `Solid.Action` (open question 2).
-- [ ] `redirect`, `reload`, `respond`.
-- [ ] `call` through `invoke`, with an `AbortSignal` aborted when the `Aff` fiber is killed.
-- [ ] `Middleware`: `next` accepts a rewritten `Request`.
-- [ ] `RequestEvent`: response status and headers, cookie `expires` / `partitioned`, cookie deletion. `httpStatus` status text.
+- [x] `Solid.Router.Action`: `routerAction`, `serverAction`, `formAction`, `useAction`, `useSubmissions`. Open question 2: two APIs. `Solid.Action` is Solid's transactional `action` (steps, optimistic values); router actions wrap it for form posts, submissions and revalidation.
+- [x] `Reply` with `reply`, `redirect(With)`, `reload(With)`, `respond(With)`. `useAction` gives `Maybe b` because a redirect or reload has no value.
+- [x] `call` / `callWith { keepalive }` go through `invoke`, with an `AbortSignal` aborted when the `Aff` fiber is killed.
+- [x] `Middleware`: `next` takes the request, so a rewritten one can be passed on.
+- [x] `RequestEvent`: `setResponseStatus`, `setResponseHeader`, `appendResponseHeader`, `deleteCookie`, cookie `partitioned`. `httpStatusText`.
 
 ### Phase 5 — Router data and navigation
 - [ ] Route `preload`, and `Loading`'s `on` for route-change skeletons.
@@ -101,6 +101,7 @@ Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6
 - [ ] `useBeforeLeave`, `useLinkState`, `usePreloadRoute`, `useResolvedPath`.
 - [ ] Remaining `RouterConfig` options: `preload`, `singleFlight`, `actionBase`, `explicitLinks`, `preloadLinks`, `scrollRestoration`, `transformUrl`.
 - [ ] Lazy route children; `revalidate` with `force` and several keys.
+- [ ] Router action `onSubmit` / `onSettled` hooks (optimistic UI for form posts).
 
 ### Phase 6 — Async, store and option completeness
 - [ ] Computation options, which become row fields after Phase 1:
