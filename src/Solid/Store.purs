@@ -13,6 +13,8 @@ module Solid.Store
   , Path
   , key
   , focus
+  , focusKey
+  , atKey
   , value
   , items
   , snapshot
@@ -106,6 +108,14 @@ focus :: forall s a. Path s a -> Store s -> Store a
 focus (Path keys) store = focusImpl keys store
 
 foreign import focusImpl :: forall s a. Array String -> Store s -> Store a
+
+-- | `focusKey @"todos" store` is `focus (key @"todos") store`.
+focusKey :: forall @l r a tail. IsSymbol l => Row.Cons l a tail r => Store (Record r) -> Store a
+focusKey = focus (key @l)
+
+-- | `atKey @"todos" change` is `at (key @"todos") change`.
+atKey :: forall @l r a tail. IsSymbol l => Row.Cons l a tail r => Update a -> Update (Record r)
+atKey = at (key @l)
 
 -- | Tracks the whole focused part; `focus` first to track less.
 foreign import value :: forall a. Store a -> Accessor a

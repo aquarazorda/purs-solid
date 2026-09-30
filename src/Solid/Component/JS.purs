@@ -13,13 +13,14 @@
 -- |        , children :: JSX
 -- |        )
 -- |
--- | picker = jsElement datePicker { value: date, onChange: set setDate, placeholder: Nothing, children: text "Pick" }
+-- | picker = jsElement datePicker { value: date, onChange: set setDate, children: text "Pick" }
 -- | ```
 -- |
 -- | Fields are converted (top level only):
 -- | - `Accessor a`, `JSX`, `Array JSX`: getters, read reactively
 -- | - `a -> Effect b`: one-argument callback; `a -> JSX`: render callback
 -- | - `Maybe a`: value or `undefined` (the component's default applies)
+-- | Any prop can be left out, as if it were `Nothing`.
 -- | - anything else as is (use `EffectFn2`.. for more arguments, `Nullable` for `null`)
 module Solid.Component.JS
   ( JsComponent
@@ -52,7 +53,14 @@ import Unsafe.Coerce (unsafeCoerce)
 
 foreign import data JsComponent :: Row Type -> Type
 
-jsElement :: forall props rl. RowToList props rl => ToJsProps rl props => JsComponent props -> { | props } -> JSX
+jsElement
+  :: forall props given missing rl
+   . Row.Union given missing props
+  => RowToList given rl
+  => ToJsProps rl given
+  => JsComponent props
+  -> { | given }
+  -> JSX
 jsElement component props = runFn2 jsPropsComponentElement component (jsPropEntries (Proxy :: Proxy rl) props)
 
 foreign import data JsValue :: Type

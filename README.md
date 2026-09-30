@@ -65,6 +65,7 @@ main = requireBody >>= case _ of
   - `Solid.Router.Query` (cached route data);
   - `Solid.Router.Action` (mutations the router tracks: forms, submissions, revalidation);
   - `Solid.Meta`.
+- **Testing:** `Solid.Testing` (mount into a DOM, settle, query, click, type, collect Solid's diagnostics).
 - **Start mode:** `Solid.Start.ServerFunction`, `Solid.Start.RequestEvent`, `Solid.Start.Response` (status, headers, and the `Reply` of an action: redirect, reload, respond), `Solid.Start.Middleware`.
 
 ## Installing

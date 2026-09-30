@@ -9,9 +9,13 @@ module Solid.DOM
   , dataAttr
   , ariaAttr
   , classWhen
+  , styleProp
   , innerHTML
+  , textContent
   , ref
   , on
+  , targetValue
+  , targetChecked
   ) where
 
 import Prelude
@@ -44,6 +48,15 @@ ariaAttr name = attr ("aria-" <> name)
 classWhen :: forall r v. ToBinding v Boolean => String -> v -> Prop (class :: String | r)
 classWhen name = bindingProp "class" (Object.singleton name)
 
+-- | One CSS property (`styleProp "color" colour`); combines with other
+-- | `styleProp`s and with `P.style` on the same element.
+styleProp :: forall r v. ToBinding v String => String -> v -> Prop (style :: String | r)
+styleProp name = bindingProp "style" (Object.singleton name)
+
+-- | Replaces the element's children with the text.
+textContent :: forall r v. ToBinding v String => v -> Prop r
+textContent = bindingProp "textContent" identity
+
 -- | The string is **not** escaped: only pass trusted or sanitized HTML.
 innerHTML :: forall r v. ToBinding v String => v -> Prop r
 innerHTML = bindingProp "innerHTML" identity
@@ -55,3 +68,10 @@ ref = refProp
 -- | it's one of the events Solid delegates.
 on :: forall r. String -> (Event -> Effect Unit) -> Prop r
 on name = eventProp ("on" <> name)
+
+-- | The `value` of the element the handler is on (an input, select or
+-- | textarea): `P.onInput \event -> targetValue event >>= set setDraft`.
+foreign import targetValue :: Event -> Effect String
+
+-- | The `checked` state of the checkbox or radio the handler is on.
+foreign import targetChecked :: Event -> Effect Boolean

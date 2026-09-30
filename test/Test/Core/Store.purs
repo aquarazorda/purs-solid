@@ -251,6 +251,13 @@ spec = describe "Solid.Store" do
     _ <- refreshAff parts.refreshStore
     liftEffect (Ref.read loads) >>= shouldEqual 2
 
+  solidIt "focusKey and atKey shorten one-key paths" do
+    result <- liftEffect do
+      state /\ setState <- createStore { profile: { name: "ada" } }
+      withFlush (Store.update setState (Store.atKey @"profile" (Store.atKey @"name" (Store.set "grace"))))
+      get (value (Store.focusKey @"name" (Store.focusKey @"profile" state)))
+    result `shouldEqual` "grace"
+
   where
   traverseGet = traverse get
   for_' xs f = void (traverse f xs)

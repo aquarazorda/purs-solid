@@ -66,6 +66,12 @@ spec = describe "Solid.Component" do
       liftEffect (Ref.read picked) >>= shouldEqual "grace"
       liftEffect mounted.dispose
 
+    solidIt "props can be left out" do
+      label /\ _ <- liftEffect (createSignal "ada")
+      mounted <- mount (jsElement badge { label, onPick: \_ -> pure unit, renderItem: \_ -> JSX.empty, children: [] })
+      html mounted >>= shouldEqual "<span>ada!</span><i></i><b></b>"
+      liftEffect mounted.dispose
+
   solidIt "element renders a component with its props" do
     rendered <- liftEffect do
       view <- createRoot \_ -> pure (Component.element greeting { name: "ada" })

@@ -4,6 +4,8 @@ module Test.Core.View
 
 import Prelude
 
+import DOM.HTML.Indexed.InputType (InputType(..))
+
 import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import Effect.Aff (Aff, Milliseconds(..), delay, throwError)
@@ -15,7 +17,7 @@ import Solid.Async (createAsync)
 import Solid.Component as Component
 import Solid.Context (createContext, provide, useContext)
 import Solid.Control as Control
-import Solid.DOM (classWhen, dataAttr, ref)
+import Solid.DOM (classWhen, dataAttr, ref, styleProp, targetChecked, targetValue, textContent)
 import Solid.DOM.HTML as H
 import Solid.DOM.Props as P
 import Solid.DOM.SVG as S
@@ -34,7 +36,6 @@ import Web.DOM.Element (Element, getAttribute, namespaceURI)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Effect (Effect)
-import Web.Event.Event (Event)
 
 signal :: forall a. a -> Aff { get :: Accessor a, set :: Setter a }
 signal initial = liftEffect do
@@ -106,6 +107,29 @@ spec = describe "views" do
       input <- expectElement "input" mounted
       liftEffect (inputText "hi" input)
       html mounted >>= shouldEqual "<div><input>hi</div>"
+      liftEffect mounted.dispose
+
+    solidIt "targetChecked reads the checkbox the handler is on" do
+      checked <- signal false
+      mounted <- mount $ H.div_
+        [ H.input [ P.type_ InputCheckbox, P.onChange \event -> targetChecked event >>= set checked.set ]
+        , text (show <$> checked.get)
+        ]
+      input <- expectElement "input" mounted
+      liftEffect (click input)
+      html mounted >>= shouldEqual """<div><input type="checkbox">true</div>"""
+      liftEffect mounted.dispose
+
+    solidIt "styleProp entries merge with each other and with style" do
+      colour <- signal "red"
+      mounted <- mount $ H.div_
+        [ H.p [ styleProp "color" colour.get, styleProp "margin" "0" ] [ text "a" ]
+        , H.p [ P.style "padding: 1px", styleProp "color" "blue" ] [ text "b" ]
+        , H.p [ textContent "replaced" ] []
+        ]
+      html mounted >>= shouldEqual """<div><p style="color: red; margin: 0px;">a</p><p style="padding: 1px; color: blue;">b</p><p>replaced</p></div>"""
+      write colour "green"
+      html mounted >>= shouldEqual """<div><p style="color: green; margin: 0px;">a</p><p style="padding: 1px; color: blue;">b</p><p>replaced</p></div>"""
       liftEffect mounted.dispose
 
     solidIt "refs receive the element" do
@@ -333,6 +357,5 @@ spec = describe "views" do
       liftEffect mounted.dispose
 
 foreign import inputValue :: Element -> Effect String
-foreign import targetValue :: Event -> Effect String
 foreign import tagName :: Element -> Effect String
 foreign import documentTitle :: Effect String

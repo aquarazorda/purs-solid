@@ -5,29 +5,22 @@ import Prelude
 import DOM.HTML.Indexed.InputType (InputType(..))
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.Foldable (all, traverse_)
+import Data.Foldable (all)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Class.Console (log)
 import Solid.Component as Component
 import Solid.Control as Control
-import Solid.DOM (classWhen)
+import Solid.DOM (classWhen, targetChecked, targetValue)
 import Solid.DOM.HTML as H
 import Solid.DOM.Props as P
 import Solid.JSX (text)
 import Solid.Reactivity (createMemo)
 import Solid.Signal (createSignal, get, set)
-import Solid.Store (focus, key, value)
+import Solid.Store (focusKey, value)
 import Solid.Store as Store
 import Solid.Web (render, requireBody)
-import Data.Maybe (Maybe)
-import Web.Event.Event (Event, target)
-import Web.HTML.HTMLInputElement (HTMLInputElement, checked, fromEventTarget)
-import Web.HTML.HTMLInputElement as Input
 import Web.UIEvent.KeyboardEvent as KeyboardEvent
-
-inputOf :: Event -> Maybe HTMLInputElement
-inputOf event = target event >>= fromEventTarget
 
 data Visibility
   = ShowAll
@@ -55,9 +48,9 @@ todoApp = Component.component \_ -> do
   visibility /\ setVisibility <- createSignal ShowAll
 
   let
-    todos = value (focus (key @"todos") state)
-    rows = Store.items (focus (key @"todos") state)
-    atTodos = Store.at (key @"todos")
+    todos = value (focusKey @"todos" state)
+    rows = Store.items (focusKey @"todos" state)
+    atTodos = Store.atKey @"todos"
     whereId id = atTodos <<< Store.eachWhere (\todo -> todo.id == id)
 
   activeCount <- createMemo (Array.length <<< Array.filter (not <<< _.completed) <$> todos)
@@ -70,20 +63,20 @@ todoApp = Component.component \_ -> do
     addDraftTodo :: Effect Unit
     addDraftTodo = do
       title <- get draft
-      nextId <- Store.snapshot (focus (key @"nextId") state)
+      nextId <- Store.snapshot (focusKey @"nextId" state)
       when (title /= "") do
         Store.update setState $
           atTodos (Store.push { id: nextId, title, completed: false })
-            <> Store.at (key @"nextId") (Store.set (nextId + 1))
+            <> Store.atKey @"nextId" (Store.set (nextId + 1))
         set setDraft ""
 
     removeTodo id = Store.update setState $ atTodos (Store.filter \todo -> todo.id /= id)
 
     setCompleted id checked = Store.update setState $
-      whereId id (Store.at (key @"completed") (Store.set checked))
+      whereId id (Store.atKey @"completed" (Store.set checked))
 
     setAllCompleted checked = Store.update setState $
-      atTodos (Store.each (Store.at (key @"completed") (Store.set checked)))
+      atTodos (Store.each (Store.atKey @"completed" (Store.set checked)))
 
     clearCompleted = Store.update setState $ atTodos (Store.filter (not <<< _.completed))
 
@@ -98,7 +91,7 @@ todoApp = Component.component \_ -> do
     renderTodo row _ = do
       let
         todo = value row
-        completed = value (focus (key @"completed") row)
+        completed = value (focusKey @"completed" row)
         visible = visibleIn <$> visibility <*> todo
       pure $ Control.when visible $
         H.li [ P.class_ "todo", classWhen "completed" completed ]
@@ -108,9 +101,9 @@ todoApp = Component.component \_ -> do
               , P.checked completed
               , P.onChange \event -> do
                   id <- _.id <$> get todo
-                  traverse_ (checked >=> setCompleted id) (inputOf event)
+                  targetChecked event >>= setCompleted id
               ]
-          , H.span [ P.class_ "todo-title" ] [ text (value (focus (key @"title") row)) ]
+          , H.span [ P.class_ "todo-title" ] [ text (value (focusKey @"title" row)) ]
           , H.button
               [ P.class_ "destroy"
               , P.onClick \_ -> get todo >>= removeTodo <<< _.id
@@ -127,7 +120,7 @@ todoApp = Component.component \_ -> do
                 , P.placeholder "What needs to be done?"
                 , P.value draft
                 , P.autofocus true
-                , P.onInput \event -> traverse_ (Input.value >=> set setDraft) (inputOf event)
+                , P.onInput \event -> targetValue event >>= set setDraft
                 , P.onKeyDown \event -> case KeyboardEvent.key event of
                     "Enter" -> addDraftTodo
                     "Escape" -> set setDraft ""
@@ -141,7 +134,7 @@ todoApp = Component.component \_ -> do
                   , P.class_ "toggle-all"
                   , P.type_ InputCheckbox
                   , P.checked allCompleted
-                  , P.onChange \event -> traverse_ (checked >=> setAllCompleted) (inputOf event)
+                  , P.onChange \event -> targetChecked event >>= setAllCompleted
                   ]
               , H.label [ P.for "toggle-all", P.class_ "toggle-all-label" ] [ text "Mark all as complete" ]
               , H.ul [ P.class_ "todo-list" ] [ Control.forEach rows renderTodo ]

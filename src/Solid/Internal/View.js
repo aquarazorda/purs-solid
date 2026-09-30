@@ -95,11 +95,27 @@ export const refProp = (callback) => ({ k: "ref", m: REF, v: (element) => callba
 
 const readProp = (prop) => (prop.m === REACTIVE ? prop.v() : prop.v);
 
-const mergeClasses = (classes) =>
-  classes.length === 1 ? classes[0] : { k: "class", m: classes.some((c) => c.m === REACTIVE) ? REACTIVE : STATIC, v: null, classes };
+// Several `class` (or `style`) props on one element become one value.
+const mergeEntries = (k, entries) =>
+  entries.length === 1 ? entries[0] : { k, m: entries.some((e) => e.m === REACTIVE) ? REACTIVE : STATIC, v: null, entries };
 
 const classValue = (entry) =>
-  entry.classes === undefined ? readProp(entry) : entry.classes.map(readProp);
+  entry.entries === undefined ? readProp(entry) : entry.entries.map(readProp);
+
+const cssText = (value) =>
+  typeof value === "string" ? value : Object.entries(value).map(([k, v]) => `${k}: ${v}`).join("; ");
+
+const styleValue = (entry) => {
+  if (entry.entries === undefined) return readProp(entry);
+  const values = entry.entries.map(readProp);
+  return values.every((v) => typeof v === "object") ? Object.assign({}, ...values) : values.map(cssText).join("; ");
+};
+
+const defineMerged = (object, k, entries, read) => {
+  const entry = mergeEntries(k, entries);
+  if (entry.m === REACTIVE) Object.defineProperty(object, k, { get: () => read(entry), enumerable: true });
+  else object[k] = read(entry);
+};
 
 const staticComponents = new Map();
 
@@ -118,22 +134,21 @@ const propsObject = (namespace, tag, props, children) => {
   if (namespace === 1 && !SVGElements.has(tag)) object.xmlns = Namespaces.svg;
   else if (namespace === 2 && !MathMLElements.has(tag)) object.xmlns = Namespaces.mathml;
   let classes;
+  let styles;
   let refs;
 
   for (let i = 0; i < props.length; i += 1) {
     const prop = props[i];
     if (prop.m === REF) (refs ??= []).push(prop.v);
     else if (prop.k === "class") (classes ??= []).push(prop);
+    else if (prop.k === "style") (styles ??= []).push(prop);
     else if (prop.m === REACTIVE) Object.defineProperty(object, prop.k, { get: prop.v, enumerable: true });
     else if (prop.m === EVENT && isServer) continue;
     else object[prop.k] = prop.v;
   }
 
-  if (classes !== undefined) {
-    const entry = mergeClasses(classes);
-    if (entry.m === REACTIVE) Object.defineProperty(object, "class", { get: () => classValue(entry), enumerable: true });
-    else object.class = classValue(entry);
-  }
+  if (classes !== undefined) defineMerged(object, "class", classes, classValue);
+  if (styles !== undefined) defineMerged(object, "style", styles, styleValue);
 
   if (refs !== undefined && !isServer) object.ref = refs.length === 1 ? refs[0] : refs;
 

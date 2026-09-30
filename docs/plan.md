@@ -112,12 +112,12 @@ Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6
 - Not bound: `ssrSource` on sync memos, `"hybrid"` (needs async-iterable sources), `mapArray` `fallback` / `name` (the `*Else` control functions cover fallbacks), serializer `plugins`, asset `manifest`.
 
 ### Phase 7 — PureScript developer experience
-- [ ] `Serializable`: drop the catch-all so newtypes can derive it. Keep `Fail` instances only for the common mistakes (`Maybe`, `Either`, functions, `Effect`), which don't overlap with user types. No PureScript codecs.
-- [ ] Event helpers as one-line FFI (`inputValue`, `inputChecked`, …) to replace `target event >>= fromEventTarget` + `traverse_`.
-- [ ] `jsElement`: optional props can be left out (`Row.Union`, or separate required and optional rows).
-- [ ] Store path shortcuts, e.g. `Store.field @"x"` for `at (key @"x")` / `focus (key @"x")`, and a one-call read at a path.
-- [ ] `style` that merges like `classWhen` (object form); `textContent` prop.
-- [ ] `Solid.Testing` from `test/Test/Solid.purs`: `mount`, `settle`, `click`, `inputText`, diagnostics collection (open question 4).
+- [x] `Serializable` has no catch-all: newtypes derive it, and `Json` / `Object` are included. `Fail` instances give clear errors for `Maybe`, `Either`, functions and `Effect`. No PureScript codecs.
+- [x] `Solid.DOM.targetValue` / `targetChecked` (one-line FFI on `currentTarget`); TodoMVC uses them.
+- [x] `jsElement`: any prop can be left out (`Row.Union`).
+- [x] `Store.focusKey @"x"` / `Store.atKey @"x"`.
+- [x] `Solid.DOM.styleProp` merges like `classWhen` (with other `styleProp`s and `P.style`); `textContent`.
+- [x] `Solid.Testing` in the library (open question 4), with no test-framework dependency: `mount`, `mountUsing`, `settle`, `html`, `query`, `click`, `inputText`, `collectDiagnostics`, `ignoreDiagnostic`. `Test.Solid` keeps only the spec wrappers.
 
 ### Phase 8 — Packaging and CI
 - [ ] CI workflow running `test:all` and `test:purescript:es`.
@@ -138,8 +138,8 @@ Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6
 ## Open questions
 
 1. ~~**Cookie defaults.**~~ Kept as a secure default, merged in the FFI (Phase 1).
-2. **Mutations.** One `Action` API over core `action` and the router's form-bound `action`, or two?
-3. **Typed params.** Where do filters go: a filters record next to `route @"/users/:id"`, or syntax in the path (`@"/users/:id<int>"`) parsed at the type level?
-4. **Testing helpers.** In the library, or a separate package?
+2. ~~**Mutations.**~~ Two APIs (Phase 4).
+3. ~~**Typed params.**~~ Syntax in the path, `:id<int>` (Phase 5).
+4. ~~**Testing helpers.**~~ In the library, as `Solid.Testing` (Phase 7).
 5. ~~**Control fallbacks.**~~ `*Else` variants everywhere (Phase 1).
 6. ~~**Eager children.**~~ Kept (Phase 2).

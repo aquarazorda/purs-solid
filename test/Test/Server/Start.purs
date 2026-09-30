@@ -18,7 +18,7 @@ import Solid.Start.Middleware (MiddlewareFn, middleware)
 import Solid.Router.Query as Query
 import Solid.Start.RequestEvent as Request
 import Solid.Start.Response (Reply, httpHeader, httpStatus, redirectWith, reloadWith, reply, respondWith)
-import Solid.Start.ServerFunction (ServerFunction, call)
+import Solid.Start.ServerFunction (class Serializable, ServerFunction, call)
 import Solid.Web.SSR as SSR
 import Test.Solid (solidIt)
 import Test.Spec (Spec, describe)
@@ -27,6 +27,14 @@ import Web.Fetch.Request (Request)
 import Web.Fetch.Response (Response)
 
 foreign import echo :: ServerFunction { name :: String, tag :: Nullable String } { greeting :: String }
+
+newtype UserId = UserId String
+
+derive newtype instance Serializable UserId
+derive newtype instance Eq UserId
+derive newtype instance Show UserId
+
+foreign import echoId :: ServerFunction UserId UserId
 
 foreign import newRequest :: String -> String -> Effect Request
 foreign import textResponse :: String -> Effect Response
@@ -48,6 +56,7 @@ spec = describe "Solid.Start" do
     result `shouldEqual` { greeting: "hello ada (x)" }
     result' <- call echo { name: "bob", tag: null }
     result' `shouldEqual` { greeting: "hello bob" }
+    call echoId (UserId "7") >>= shouldEqual (UserId "7")
 
   solidIt "middleware wraps the rest of the chain" do
     request <- liftEffect (newRequest "https://app.test/" "")

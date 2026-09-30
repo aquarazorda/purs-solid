@@ -7,6 +7,11 @@ export async function echo({ name, tag }) {
   return { greeting: tag == null ? `hello ${name}` : `hello ${name} (${tag})` };
 }
 
+export async function echoId(id) {
+  "use server";
+  return id;
+}
+
 export const newRequest = (url) => (cookie) => () =>
   new Request(url, cookie === "" ? {} : { headers: { cookie } });
 
