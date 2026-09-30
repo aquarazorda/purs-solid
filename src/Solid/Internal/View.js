@@ -15,6 +15,7 @@ import {
   Switch,
 } from "solid-js";
 import {
+  clientOnly as solidClientOnly,
   dynamic,
   isServer,
   MathMLElements,
@@ -331,6 +332,17 @@ export const childrenImpl = (resolve) => {
 };
 
 export const lazyImpl = (exportName, load) => solidLazy(() => load(), { export: exportName });
+
+export const clientOnlyImpl = (exportName, load) => {
+  const component = solidClientOnly(() => load(), { export: exportName });
+  return (props) =>
+    component({
+      ...props,
+      get fallback() {
+        return realize(props.fallback);
+      },
+    });
+};
 
 export const preloadImpl = (component) => {
   component.preload?.().catch(() => {});

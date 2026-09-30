@@ -1,4 +1,8 @@
-import { action as solidAction, createOptimistic as solidCreateOptimistic } from "solid-js";
+import { action as solidAction, affects as solidAffects, createOptimistic as solidCreateOptimistic } from "solid-js";
+
+export const affectsImpl = (target) => {
+  solidAffects(target);
+};
 
 export const actionImpl = (eliminate) => (toPromise) => (steps) => {
   const done = (value) => ({ tag: "done", value });

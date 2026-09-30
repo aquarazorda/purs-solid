@@ -11,7 +11,8 @@ import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import Solid.Action (action, createOptimistic, createOptimisticFrom, liftAff, setOptimistic)
 import Solid.Action as Action
-import Solid.Reactivity (createEffect_, flush)
+import Solid.Async (createAsync, isPending, resolve)
+import Solid.Reactivity (createEffect_, createMemo, flush)
 import Solid.Root (createRoot)
 import Solid.Signal (createSignal, get)
 import Solid.Signal as Signal
@@ -111,5 +112,45 @@ spec = describe "Solid.Action" do
     afterPending <- liftEffect (get (value (focus (key @"items") parts.pending)))
     afterSaved <- liftEffect (get (value (focus (key @"items") parts.saved)))
     { during, afterPending, afterSaved } `shouldEqual` { during: [ "b" ], afterPending: [], afterSaved: [ "a", "b" ] }
+
+  solidIt "affects marks an async value pending while the action runs" do
+    parts <- liftEffect $ createRoot \_ -> do
+      user /\ refreshUser <- createAsync (pure (delay (Milliseconds 5.0) $> "ada"))
+      pending <- createMemo (isPending user)
+      createEffect_ pending \_ -> pure unit
+      pure { user, refreshUser, pending }
+    _ <- resolve parts.user
+    let
+      reload = action \_ -> do
+        Action.affects parts.refreshUser
+        liftAff (delay (Milliseconds 20.0))
+    running <- forkAff (reload unit)
+    delay (Milliseconds 5.0)
+    liftEffect flush
+    during <- liftEffect (get parts.pending)
+    joinFiber running
+    liftEffect flush
+    after <- liftEffect (get parts.pending)
+    { during, after } `shouldEqual` { during: true, after: false }
+
+  solidIt "Store.affects marks part of a store pending while the action runs" do
+    parts <- liftEffect $ createRoot \_ -> do
+      state /\ _ <- createStore { profile: { name: "ada" } }
+      let profile = focus (key @"profile") state
+      pending <- createMemo (isPending (value profile))
+      createEffect_ pending \_ -> pure unit
+      pure { profile, pending }
+    let
+      save = action \_ -> do
+        Store.affects parts.profile
+        liftAff (delay (Milliseconds 20.0))
+    running <- forkAff (save unit)
+    delay (Milliseconds 5.0)
+    liftEffect flush
+    during <- liftEffect (get parts.pending)
+    joinFiber running
+    liftEffect flush
+    after <- liftEffect (get parts.pending)
+    { during, after } `shouldEqual` { during: true, after: false }
 
 data Tuple' a b = Tuple' a b

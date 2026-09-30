@@ -26,7 +26,9 @@ import Solid.JSX as JSX
 import Solid.Setup (liftSetup)
 import Solid.Signal (Accessor, Setter, createSignal, set)
 import Solid.Signal as Signal
-import Test.Solid (Mounted, click, html, inputText, mount, query, settle, solidIt)
+import Solid.Errors (isSafeError, markSafeError)
+import Solid.Web as Web
+import Test.Solid (Mounted, click, html, inputText, mount, mountUsing, query, settle, solidIt)
 import Unsafe.Reference (unsafeRefEq)
 import Web.DOM.Element (Element, getAttribute, namespaceURI)
 import Test.Spec (Spec, describe)
@@ -238,6 +240,20 @@ spec = describe "views" do
         (Component.element broken {})
       html mounted >>= shouldEqual "boom"
       liftEffect mounted.dispose
+
+    solidIt "renderWith's onError sees what an errored boundary catches" do
+      seen <- liftEffect (Ref.new [])
+      let broken = Component.component \_ -> unsafeCrashWith "boom"
+      mounted <- mountUsing (Web.renderWith { onError: \e -> Ref.modify_ (_ <> [ message e ]) seen })
+        (Control.errored (\_ _ -> pure (text "fallback")) (Component.element broken {}))
+      html mounted >>= shouldEqual "fallback"
+      liftEffect (Ref.read seen) >>= shouldEqual [ "boom" ]
+      liftEffect mounted.dispose
+
+    solidIt "markSafeError brands an error" do
+      plain <- liftEffect (isSafeError (error "plain"))
+      marked <- liftEffect (markSafeError (error "safe") >>= isSafeError)
+      { plain, marked } `shouldEqual` { plain: false, marked: true }
 
     solidIt "loading shows the fallback until async content is ready" do
       let

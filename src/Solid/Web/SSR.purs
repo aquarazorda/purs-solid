@@ -12,6 +12,8 @@ module Solid.Web.SSR
   , hydrationScriptWith
   ) where
 
+import Prelude
+
 import Control.Promise as Promise
 import Data.ArrayBuffer.Types (Uint8Array)
 import Data.Either (Either)
@@ -31,6 +33,9 @@ type RenderOptions =
   , renderId :: String
   -- | Omit hydration scripts (static HTML that won't be hydrated).
   , noScripts :: Boolean
+  -- | Sees every error the render handles (an `errored` fallback, a rejected
+  -- | `loading` boundary), once per error.
+  , onError :: Error -> Effect Unit
   )
 
 renderToString :: JSX -> Effect (Either Error String)
@@ -58,7 +63,7 @@ renderToStringWithHead options view =
   try (runEffectFn3 renderToStringWithHeadImpl realize options view)
 
 -- | Waits for all async work. `Left` only for errors thrown while starting the
--- | render; later render errors don't reach it.
+-- | render; later render errors go to `onError`.
 renderToStringAsync :: JSX -> Aff (Either Error String)
 renderToStringAsync = renderToStringAsyncWith {}
 
@@ -72,7 +77,8 @@ renderToStringAsyncWith options view =
   Aff.try (Promise.toAffE (runEffectFn3 renderToStringAsyncImpl realize options view))
 
 -- | Streams the HTML: the shell first, then each boundary as it resolves.
--- | `Left` only for errors thrown while starting the render.
+-- | `Left` only for errors thrown while starting the render; later render
+-- | errors go to `onError`.
 renderToReadableStream
   :: forall given missing
    . Row.Union given missing RenderOptions

@@ -5,7 +5,10 @@ import {
   onCleanup,
   refresh as solidRefresh,
   resolve as solidResolve,
+  until as solidUntil,
 } from "solid-js";
+
+const toError = (error) => (error instanceof Error ? error : new Error(String(error)));
 
 const onClient = { source: "client", encode: null, decode: null };
 
@@ -68,3 +71,11 @@ export const isPending = (accessor) => () => solidIsPending(accessor);
 export const latest = (accessor) => () => solidLatest(accessor);
 
 export const resolveImpl = (accessor) => solidResolve(accessor);
+
+export const untilImpl = (options, predicate, onValue, onError) => {
+  const controller = new AbortController();
+  solidUntil(predicate, { ...options, signal: controller.signal }).then(onValue, (error) => {
+    if (!controller.signal.aborted) onError(toError(error));
+  });
+  return () => controller.abort();
+};

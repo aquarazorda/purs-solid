@@ -34,6 +34,7 @@ module Solid.Store
   , createOptimisticStore
   , createOptimisticProjection
   , updateOptimistic
+  , affects
   ) where
 
 import Prelude
@@ -41,7 +42,7 @@ import Prelude
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
-import Effect.Uncurried (EffectFn2, EffectFn3, runEffectFn2, runEffectFn3)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
 import Prim.Row as Row
 import Prim.TypeError (class Fail, Text)
 import Solid.Internal.Optimistic (class MonadOptimistic, liftOptimistic)
@@ -241,3 +242,9 @@ updateOptimistic :: forall m s. MonadOptimistic m => OptimisticStore s -> Update
 updateOptimistic setter change = liftOptimistic (runEffectFn2 updateOptimisticImpl setter change)
 
 foreign import updateOptimisticImpl :: forall s. EffectFn2 (OptimisticStore s) (Update s) Unit
+
+-- | Marks the focused part of a store as pending until the action settles.
+affects :: forall m s. MonadOptimistic m => StoreObject s => Store s -> m Unit
+affects store = liftOptimistic (runEffectFn1 affectsImpl store)
+
+foreign import affectsImpl :: forall s. EffectFn1 (Store s) Unit

@@ -13,7 +13,10 @@ import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay, throwError)
 import Effect.Class (liftEffect)
-import Effect.Exception (Error)
+import Effect.Exception (Error, message)
+import Effect.Ref as Ref
+import Partial.Unsafe (unsafeCrashWith)
+import Solid.Component (LazyModule)
 import Solid.Async (createAsync, createAsyncWith, serialized, withCodec)
 import Solid.Component as Component
 import Solid.Control as Control
@@ -25,7 +28,7 @@ import Solid.DOM.SVG.Props as SP
 import Solid.JSX (JSX, text)
 import Solid.Signal (createSignal)
 import Solid.Web.SSR as SSR
-import Test.Solid (solidIt)
+import Test.Solid (expectDiagnostic, solidIt)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual, shouldSatisfy)
 import Web.Streams.ReadableStream (ReadableStream)
@@ -136,3 +139,19 @@ spec = describe "Solid.Web.SSR" do
     script `shouldSatisfy` has "abc123"
     html <- liftEffect (SSR.renderToStringWith { noScripts: true } (H.p_ [ text "static" ])) >>= orFail
     (has "<script" html) `shouldEqual` false
+
+  solidIt "onError sees errors the render handles" do
+    seen <- liftEffect (Ref.new [])
+    let broken = Component.component \_ -> unsafeCrashWith "boom"
+    expectDiagnostic "SSR_RENDER_ERROR_CONTAINED" do
+      html <- liftEffect (SSR.renderToStringWith { onError: \e -> Ref.modify_ (_ <> [ message e ]) seen }
+        (Control.errored (\_ _ -> pure (text "fallback")) (Component.element broken {}))) >>= orFail
+      html `shouldSatisfy` has "fallback"
+    liftEffect (Ref.read seen) >>= shouldEqual [ "boom" ]
+
+  solidIt "clientOnly components render only their fallback on the server" do
+    let chart = Component.clientOnly "chart" loadNever :: Component.Component { fallback :: JSX, points :: Int }
+    html <- render (H.div_ [ Component.element chart { fallback: text "chart soon", points: 3 } ])
+    html `shouldSatisfy` has "chart soon"
+
+foreign import loadNever :: Effect (Promise LazyModule)

@@ -58,7 +58,7 @@ main = requireBody >>= case _ of
   - `Solid.Component.JS` (use JavaScript Solid components);
   - `Solid.Control` (conditionals, lists, `loading`, `errored`, portals);
   - `Solid.DOM`, `Solid.DOM.HTML` / `Solid.DOM.Props`, `Solid.DOM.SVG` / `Solid.DOM.SVG.Props`. The HTML and SVG modules are generated from `dom-indexed` by `npm run gen:dom`.
-- **Rendering:** `Solid.Web` (render, hydrate), `Solid.Web.SSR` (string, async and streamed server rendering).
+- **Rendering:** `Solid.Web` (render, hydrate), `Solid.Web.SSR` (string, async and streamed server rendering), `Solid.Errors` (client and server error hooks, safe errors).
 - **Routing and head tags:**
   - `Solid.Router` (`route @"/users/:id"` gives the component `{ id :: String }`);
   - `Solid.Router.Path` (`href`);

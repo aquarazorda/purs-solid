@@ -1,8 +1,11 @@
 -- | Mounting views in the browser.
 module Solid.Web
   ( isServer
+  , ClientRenderOptions
   , render
+  , renderWith
   , hydrate
+  , hydrateWith
   , requireBody
   , requireElementById
   ) where
@@ -13,7 +16,9 @@ import Data.Either (Either(..))
 import Data.Maybe (maybe)
 import Effect (Effect)
 import Effect.Exception (Error, error, throw, try)
-import Effect.Uncurried (EffectFn3, runEffectFn3)
+import Effect.Uncurried (EffectFn4, runEffectFn4)
+import Prim.Row as Row
+import Solid.Owner (Owner)
 import Solid.Internal.View (JSX, Realized, realize)
 import Web.DOM.Element (Element)
 import Web.DOM.NonElementParentNode (getElementById)
@@ -24,12 +29,41 @@ import Web.HTML.Window (document)
 
 foreign import isServer :: Boolean
 
+type ClientRenderOptions =
+  ( -- | Sees every error an `errored` boundary under this root renders a
+    -- | fallback for, once per error.
+    onError :: Error -> Effect Unit
+  -- | Distinguishes several independently hydrated roots on one page.
+  , renderId :: String
+  -- | Parent the root under an existing owner.
+  , owner :: Owner
+  )
+
 -- | Appends the view to `mount`'s children. The result disposes it.
 render :: JSX -> Element -> Effect (Either Error (Effect Unit))
-render view mount = clientOnly (runEffectFn3 renderImpl realize view mount)
+render = renderWith {}
+
+-- | Takes any subset of `ClientRenderOptions`.
+renderWith
+  :: forall given missing
+   . Row.Union given missing ClientRenderOptions
+  => { | given }
+  -> JSX
+  -> Element
+  -> Effect (Either Error (Effect Unit))
+renderWith options view mount = clientOnly (runEffectFn4 renderImpl realize options view mount)
 
 hydrate :: JSX -> Element -> Effect (Either Error (Effect Unit))
-hydrate view mount = clientOnly (runEffectFn3 hydrateImpl realize view mount)
+hydrate = hydrateWith {}
+
+hydrateWith
+  :: forall given missing
+   . Row.Union given missing ClientRenderOptions
+  => { | given }
+  -> JSX
+  -> Element
+  -> Effect (Either Error (Effect Unit))
+hydrateWith options view mount = clientOnly (runEffectFn4 hydrateImpl realize options view mount)
 
 requireBody :: Effect (Either Error Element)
 requireBody = clientOnly do
@@ -46,5 +80,5 @@ clientOnly action
   | isServer = pure (Left (error "Solid.Web: client-only API called on the server"))
   | otherwise = try action
 
-foreign import renderImpl :: EffectFn3 (JSX -> Realized) JSX Element (Effect Unit)
-foreign import hydrateImpl :: EffectFn3 (JSX -> Realized) JSX Element (Effect Unit)
+foreign import renderImpl :: forall options. EffectFn4 (JSX -> Realized) { | options } JSX Element (Effect Unit)
+foreign import hydrateImpl :: forall options. EffectFn4 (JSX -> Realized) { | options } JSX Element (Effect Unit)

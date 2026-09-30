@@ -5,6 +5,7 @@ module Test.Solid
   , jsxValue
   , Mounted
   , mount
+  , mountUsing
   , html
   , query
   , click
@@ -15,14 +16,14 @@ import Prelude
 
 import Control.Monad.Error.Class (throwError, try)
 import Data.Array as Array
-import Data.Either (either)
+import Data.Either (Either, either)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (joinWith)
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay)
 import Effect.Class (liftEffect)
-import Effect.Exception (throw)
+import Effect.Exception (Error, throw)
 import Solid.JSX (JSX)
 import Solid.Reactivity (flush)
 import Solid.Web as Web
@@ -61,6 +62,9 @@ expectDiagnostic code body = do
   diagnostics <- liftEffect stop
   unless (Array.any (\d -> d.code == code) diagnostics) do
     liftEffect $ throw $ "Expected diagnostic " <> code <> ", got: " <> joinWith ", " (_.code <$> diagnostics)
+  liftEffect (acknowledgeImpl code)
+
+foreign import acknowledgeImpl :: String -> Effect Unit
 
 settle :: Aff Unit
 settle = do
@@ -73,14 +77,17 @@ foreign import jsxValue :: JSX -> Effect String
 type Mounted = { root :: Element, dispose :: Effect Unit }
 
 mount :: JSX -> Aff Mounted
-mount view = do
+mount = mountUsing Web.render
+
+mountUsing :: (JSX -> Element -> Effect (Either Error (Effect Unit))) -> JSX -> Aff Mounted
+mountUsing render view = do
   container <- liftEffect do
     doc <- document =<< window
     container <- createElement "div" (HTMLDocument.toDocument doc)
     body <- HTMLDocument.body doc
     for_ body \b -> appendChild (toNode container) (HTMLElement.toNode b)
     pure container
-  dispose <- liftEffect (Web.render view container) >>= either throwError pure
+  dispose <- liftEffect (render view container) >>= either throwError pure
   settle
   pure { root: container, dispose: dispose *> remove (toChildNode container) }
 

@@ -81,10 +81,11 @@ Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6
 - [x] Re-profiled after Phase 1. Per clear + create 1k cycle, purs-solid now takes ~1.0 ms (was ~1.9) and `@solidjs/signals` ~1.7 ms (was ~2.5). What's left is Solid's `spread` / `assign` and native DOM work.
 
 ### Phase 3 — Errors and async correctness
-- [ ] `onError` on `render`, `hydrate` and the SSR functions. Then decide what `Either Error` still means there (finding 6).
-- [ ] `configureClientErrors` / `resetErrorHalt`; `markSafeError` / `isSafeError`.
-- [ ] `affects`; `until` as `Aff`.
-- [ ] `clientOnly`. (`lazy` was done in Phase 0.)
+- [x] `onError` on `renderWith` / `hydrateWith` (with `renderId`, `owner`) and in the SSR `RenderOptions`. `Either Error` still means a failure while starting the render; later render errors go to `onError`.
+- [x] `Solid.Errors`: `configureClientErrors`, `configureServerErrors`, `resetErrorHalt`, `markSafeError`, `isSafeError`.
+- [x] `affects` as an `Action` step, on a `Refresh a` (Solid only marks real memos, not derived accessors) and on a `Store` (`Store.affects`). `until` / `untilWith { timeout }` as an `Aff`; killing the fiber aborts it.
+- [x] `clientOnly "name" load` (`lazy` was done in Phase 0).
+- [x] Test support: `expectDiagnostic` acknowledges the code, so the enclosing `solidIt` doesn't report it.
 
 ### Phase 4 — Mutations and server responses
 - [ ] Router `action`, `useAction`, `useSubmissions`, and their relation to `Solid.Action` (open question 2).

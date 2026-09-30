@@ -1,5 +1,6 @@
 import {
   $PROXY,
+  affects as solidAffects,
   createOptimisticStore as solidCreateOptimisticStore,
   createProjection as solidCreateProjection,
   createStore as solidCreateStore,
@@ -188,3 +189,7 @@ export const createOptimisticProjectionImpl = (prepare, compute, seed) => {
 };
 
 export const updateOptimisticImpl = updateImpl;
+
+export const affectsImpl = (cursor) => {
+  solidAffects(cursor());
+};

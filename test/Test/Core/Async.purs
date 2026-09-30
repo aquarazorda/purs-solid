@@ -5,12 +5,12 @@ module Test.Core.Async
 import Prelude
 
 import Data.Either (isLeft)
+import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
-import Effect.Aff (Aff, Milliseconds(..), delay, throwError, try)
+import Effect.Aff (Aff, Milliseconds(..), delay, error, forkAff, joinFiber, killFiber, throwError, try)
 import Effect.Class (liftEffect)
-import Effect.Exception (error)
 import Effect.Ref as Ref
-import Solid.Async (createAsync, isPending, refreshAff, resolve)
+import Solid.Async (createAsync, isPending, refreshAff, resolve, until, untilWith)
 import Solid.Root (createRoot)
 import Solid.Signal (createSignal, get, set)
 import Test.Solid (settle, solidIt)
@@ -78,4 +78,25 @@ spec = describe "Solid.Async" do
       user /\ _ <- createAsync (trigger $> (throwError (error "offline") :: Aff String))
       pure user
     result <- try (resolve user)
+    isLeft result `shouldEqual` true
+
+  solidIt "until waits for the predicate to hold" do
+    count /\ setCount <- liftEffect (createSignal 0)
+    waiting <- forkAff (until ((\n -> if n > 2 then Just n else Nothing) <$> count))
+    liftEffect (set setCount 1)
+    settle
+    liftEffect (set setCount 3)
+    joinFiber waiting >>= shouldEqual 3
+
+  solidIt "until fails after its timeout" do
+    result <- try (untilWith { timeout: Milliseconds 10.0 } (pure (Nothing :: Maybe Int)))
+    isLeft result `shouldEqual` true
+
+  solidIt "killing an until fiber stops waiting" do
+    count /\ setCount <- liftEffect (createSignal 0)
+    waiting <- forkAff (until ((\n -> if n > 0 then Just n else Nothing) <$> count))
+    killFiber (error "no longer needed") waiting
+    liftEffect (set setCount 1)
+    settle
+    result <- try (joinFiber waiting)
     isLeft result `shouldEqual` true

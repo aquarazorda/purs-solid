@@ -50,6 +50,7 @@ module Solid.Internal.View
   , childrenImpl
   , LazyModule
   , lazyImpl
+  , clientOnlyImpl
   , preloadImpl
   ) where
 
@@ -203,5 +204,7 @@ foreign import childrenImpl :: EffectFn1 (Effect JSX) (Accessor JSX)
 foreign import data LazyModule :: Type
 
 foreign import lazyImpl :: forall props. Fn2 String (Effect (Promise LazyModule)) (ComponentRep props)
+
+foreign import clientOnlyImpl :: forall props. Fn2 String (Effect (Promise LazyModule)) (ComponentRep props)
 
 foreign import preloadImpl :: forall props. EffectFn1 (ComponentRep props) Unit

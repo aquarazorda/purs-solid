@@ -102,3 +102,11 @@ spec = describe "Solid.Component" do
       b <- Component.createUniqueId
       pure { a, b }
     (ids.a /= ids.b && String.length ids.a > 0) `shouldEqual` true
+
+  solidIt "clientOnly shows the fallback until the component has loaded" do
+    chart <- liftEffect (Ref.new unit) <#> \_ -> Component.clientOnly "greeting" (loadLater greeting)
+    mounted <- mount (Component.element chart { fallback: JSX.text "…", name: "lin" })
+    html mounted >>= shouldEqual "…"
+    delay (Milliseconds 20.0)
+    html mounted >>= shouldEqual "hello lin"
+    liftEffect mounted.dispose

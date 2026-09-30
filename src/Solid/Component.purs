@@ -8,6 +8,7 @@ module Solid.Component
   , createUniqueId
   , module Exports
   , lazy
+  , clientOnly
   , preload
   ) where
 
@@ -18,7 +19,7 @@ import Data.Function.Uncurried (runFn2)
 import Effect (Effect)
 import Effect.Uncurried (runEffectFn1)
 import Solid.Internal.Setup (Setup(..), runSetup)
-import Solid.Internal.View (ComponentRep, JSX, LazyModule, childrenImpl, componentElement, componentRep, lazyImpl, preloadImpl)
+import Solid.Internal.View (ComponentRep, JSX, LazyModule, childrenImpl, clientOnlyImpl, componentElement, componentRep, lazyImpl, preloadImpl)
 import Solid.Internal.View (LazyModule) as Exports
 import Solid.Signal (Accessor)
 
@@ -52,6 +53,12 @@ foreign import createUniqueIdImpl :: Effect String
 -- | ```
 lazy :: forall props. String -> Effect (Promise LazyModule) -> Component { | props }
 lazy = runFn2 lazyImpl
+
+-- | Like `lazy`, but never runs on the server: the server, and hydration,
+-- | render `fallback`; the component replaces it once loaded and hydrated.
+-- | For browser-only code (`window`, DOM measurement). Loading starts at once.
+clientOnly :: forall props. String -> Effect (Promise LazyModule) -> Component { fallback :: JSX | props }
+clientOnly = runFn2 clientOnlyImpl
 
 -- | Starts loading a `lazy` component early (e.g. on hover). Does nothing for
 -- | other components.

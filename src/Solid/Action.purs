@@ -8,6 +8,7 @@ module Solid.Action
   , createOptimisticFrom
   , setOptimistic
   , modifyOptimistic
+  , affects
   , module Exports
   ) where
 
@@ -23,6 +24,7 @@ import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Solid.Internal.Action (Action(..), liftActionEffect)
 import Solid.Internal.Action (Action) as Exports
 import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
+import Solid.Async (Refresh)
 import Solid.Signal (Accessor)
 
 -- | Runs each call as one transaction. Call it from event handlers or other
@@ -79,3 +81,10 @@ modifyOptimistic setter f = liftActionEffect (modifyOptimisticImpl setter f)
 
 foreign import setOptimisticImpl :: forall a. Optimistic a -> a -> Effect Unit
 foreign import modifyOptimisticImpl :: forall a. Optimistic a -> (a -> a) -> Effect Unit
+
+-- | Marks an async value as pending until the action settles, e.g. before a
+-- | `refresh` (which alone doesn't set `isPending`).
+affects :: forall a. Refresh a -> Action Unit
+affects target = liftActionEffect (runEffectFn1 affectsImpl target)
+
+foreign import affectsImpl :: forall a. EffectFn1 (Refresh a) Unit

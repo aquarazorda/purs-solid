@@ -17,23 +17,27 @@ module Solid.Async
   , isPending
   , latest
   , resolve
+  , UntilOptions
+  , until
+  , untilWith
   ) where
 
 import Prelude
 
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut.Core (Json)
-import Data.Either (Either, either)
-import Data.Nullable (Nullable, notNull, null)
-import Solid.Internal.Serializable (class Serializable)
-import Solid.Internal.Serializable (class Serializable) as Exports
+import Data.Either (Either(..), either)
+import Data.Maybe (Maybe)
+import Data.Nullable (Nullable, notNull, null, toNullable)
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
-import Effect.Aff (Aff, killFiber, launchAff_, runAff)
+import Effect.Aff (Aff, Milliseconds, effectCanceler, killFiber, launchAff_, makeAff, runAff)
 import Effect.Exception (Error, error)
-import Effect.Uncurried (EffectFn1, EffectFn4, runEffectFn1, runEffectFn4)
+import Effect.Uncurried (EffectFn1, EffectFn4, mkEffectFn1, runEffectFn1, runEffectFn4)
 import Prim.Row as Row
 import Solid.Internal.Equality (Equality)
+import Solid.Internal.Serializable (class Serializable)
+import Solid.Internal.Serializable (class Serializable) as Exports
 import Solid.Internal.Setup (Setup(..))
 import Solid.Signal (Accessor)
 
@@ -121,3 +125,31 @@ resolve :: forall a. Accessor a -> Aff a
 resolve accessor = toAffE (runEffectFn1 resolveImpl accessor)
 
 foreign import resolveImpl :: forall a. EffectFn1 (Accessor a) (Promise a)
+
+type UntilOptions =
+  ( -- | Fail with a `TimeoutError` if the value doesn't arrive in time.
+    timeout :: Milliseconds
+  )
+
+-- | Waits until `predicate` is `Just`, re-checking as its sources change. Reads
+-- | see settled state, so an optimistic write can't satisfy it. Killing the
+-- | fiber stops waiting.
+until :: forall a. Accessor (Maybe a) -> Aff a
+until = untilWith {}
+
+-- | Takes any subset of `UntilOptions`.
+untilWith
+  :: forall a given missing
+   . Row.Union given missing UntilOptions
+  => { | given }
+  -> Accessor (Maybe a)
+  -> Aff a
+untilWith options predicate = makeAff \done -> do
+  cancel <- runEffectFn4 untilImpl options (toNullable <<< map { value: _ } <$> predicate)
+    (mkEffectFn1 (done <<< Right <<< _.value))
+    (mkEffectFn1 (done <<< Left))
+  pure (effectCanceler cancel)
+
+foreign import untilImpl
+  :: forall options a
+   . EffectFn4 { | options } (Accessor (Nullable { value :: a })) (EffectFn1 { value :: a } Unit) (EffectFn1 Error Unit) (Effect Unit)
