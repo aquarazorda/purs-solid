@@ -86,7 +86,7 @@ spec = describe "Solid.Start" do
   solidIt "middleware and server functions get the request event" do
     request <- liftEffect (newRequest "https://app.test/" "session=abc")
     let
-      check = middleware \event forwarded next -> do
+      check = middleware \event _ next -> do
         found <- call session "session"
         let seen = fromMaybe "" (toMaybe found) <> "-" <> fromMaybe "" (Request.cookie "session" event)
         next =<< liftEffect (newRequest ("https://app.test/" <> seen) "")

@@ -2,7 +2,7 @@ import { query as solidQuery, revalidate } from "@solidjs/router";
 
 export const queryImpl = (name, load) => solidQuery((argument) => load(argument)(), name);
 
-export const queryServerImpl = (name, fn) => solidQuery(fn, name);
+export const queryServerImpl = (fn) => solidQuery(fn, fn.id);
 
 export const runQueryImpl = (q, argument) => Promise.resolve(q(argument));
 

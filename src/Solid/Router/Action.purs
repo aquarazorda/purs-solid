@@ -40,9 +40,10 @@ foreign import data RouterAction :: Type -> Type -> Type
 routerAction :: forall a b. String -> (a -> Aff (Reply b)) -> RouterAction a b
 routerAction name run = runFn2 routerActionImpl name (fromAff <<< run)
 
--- | A server function as a router action; its `Reply` travels in the response.
-serverAction :: forall a b. Serializable a => Serializable b => String -> ServerFunction a (Reply b) -> RouterAction a b
-serverAction name fn = runFn2 serverActionImpl name (checked fn)
+-- | A server function as a router action, identified by the server function;
+-- | its `Reply` travels in the response.
+serverAction :: forall a b. Serializable a => Serializable b => ServerFunction a (Reply b) -> RouterAction a b
+serverAction fn = serverActionImpl (checked fn)
 
 -- | The URL a `<form method="post">` posts to. The router submits the form's
 -- | `FormData`.
@@ -107,7 +108,7 @@ type SubmissionRep a b =
 
 foreign import routerActionImpl :: forall a b. Fn2 String (a -> Effect (Promise (Reply b))) (RouterAction a b)
 
-foreign import serverActionImpl :: forall a b. Fn2 String (ServerFunction a (Reply b)) (RouterAction a b)
+foreign import serverActionImpl :: forall a b. ServerFunction a (Reply b) -> RouterAction a b
 
 foreign import useActionImpl :: forall a b. RouterAction a b -> Effect (a -> Effect (Promise (Nullable b)))
 

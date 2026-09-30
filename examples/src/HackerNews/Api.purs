@@ -56,13 +56,13 @@ apiFeed = case _ of
   Jobs -> "jobstories"
 
 storiesQuery :: Query { feed :: String, page :: Int } (Array Story)
-storiesQuery = queryServer "hn.stories" Server.stories
+storiesQuery = queryServer Server.stories
 
 storyQuery :: Query Int (Nullable StoryPage)
-storyQuery = queryServer "hn.story" Server.story
+storyQuery = queryServer Server.story
 
 userQuery :: Query String (Nullable User)
-userQuery = queryServer "hn.user" Server.user
+userQuery = queryServer Server.user
 
 stories :: Feed -> Int -> Aff (Array Story)
 stories feed page = runQuery storiesQuery { feed: apiFeed feed, page }

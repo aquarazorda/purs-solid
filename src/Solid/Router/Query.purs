@@ -37,10 +37,9 @@ foreign import data Query :: Type -> Type -> Type
 query :: forall a b. Serializable a => Serializable b => String -> (a -> Aff b) -> Query a b
 query name load = runFn2 queryImpl name (fromAff <<< load)
 
--- | The client calls it with a `GET`. As with `call`, `output/**/foreign.js` must be
--- | in the Vite plugin's `serverFunctions.filter.include`.
-queryServer :: forall a b. Serializable a => Serializable b => String -> ServerFunction a b -> Query a b
-queryServer name fn = runFn2 queryServerImpl name (checked fn)
+-- | Named by the server function; the client calls it with a `GET`.
+queryServer :: forall a b. Serializable a => Serializable b => ServerFunction a b -> Query a b
+queryServer fn = queryServerImpl (checked fn)
 
 -- | From the cache when it's fresh, loading it otherwise.
 runQuery :: forall a b. Query a b -> a -> Aff b
@@ -75,7 +74,7 @@ foreign import revalidateKeys :: Array QueryKey -> Effect Unit
 foreign import revalidateAll :: Effect Unit
 
 foreign import queryImpl :: forall a b. Fn2 String (a -> Effect (Promise b)) (Query a b)
-foreign import queryServerImpl :: forall a b. Fn2 String (ServerFunction a b) (Query a b)
+foreign import queryServerImpl :: forall a b. ServerFunction a b -> Query a b
 foreign import runQueryImpl :: forall a b. EffectFn2 (Query a b) a (Promise b)
 foreign import prefetchImpl :: forall a b. EffectFn2 (Query a b) a Unit
 foreign import queryKeyForImpl :: forall a b. Fn2 (Query a b) a QueryKey
