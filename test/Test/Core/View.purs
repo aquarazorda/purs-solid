@@ -6,6 +6,7 @@ import Prelude
 
 import DOM.HTML.Indexed.InputType (InputType(..))
 
+import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
 import Data.Tuple.Nested ((/\))
 import Effect.Aff (Aff, Milliseconds(..), delay, throwError)
@@ -38,6 +39,10 @@ import Data.Traversable (traverse)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Effect (Effect)
+
+data Page = Home | Profile Int
+
+derive instance Generic Page _
 
 signal :: forall a. a -> Aff { get :: Accessor a, set :: Setter a }
 signal initial = liftEffect do
@@ -267,6 +272,26 @@ spec = describe "views" do
         , Control.reveal { order: Control.together, collapsed: true } [ text "b" ]
         ]
       html mounted >>= shouldEqual "<div>ab</div>"
+      liftEffect mounted.dispose
+
+    solidIt "caseOn rebuilds a branch only when its key changes" do
+      page <- signal (Profile 1)
+      built <- liftEffect (Ref.new 0)
+      mounted <- mount $ Control.caseOn Control.constructorName page.get \current latest -> do
+        liftSetup (Ref.modify_ (_ + 1) built)
+        pure case current of
+          Home -> text "home"
+          Profile _ -> text
+            ( latest <#> case _ of
+                Profile id -> "profile " <> show id
+                Home -> ""
+            )
+      html mounted >>= shouldEqual "profile 1"
+      write page (Profile 2)
+      html mounted >>= shouldEqual "profile 2"
+      write page Home
+      html mounted >>= shouldEqual "home"
+      liftEffect (Ref.read built) >>= shouldEqual 2
       liftEffect mounted.dispose
 
     solidIt "switch renders the first matching case" do

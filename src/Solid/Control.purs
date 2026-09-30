@@ -22,6 +22,10 @@ module Solid.Control
   , matchMaybe
   , switch
   , switch_
+  , caseOn
+  , constructorName
+  , class ConstructorName
+  , constructorNameOf
   , loading
   , loadingOn
   , errored
@@ -42,18 +46,24 @@ module Solid.Control
 import Prelude hiding (when)
 
 import Data.Function.Uncurried (runFn2, runFn3, runFn4)
+import Data.Generic.Rep (class Generic, Constructor, Sum(..), from)
+import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable, notNull, null, toNullable)
 import Effect (Effect)
 import Effect.Exception (Error)
 import Solid.Component (Component)
+import Solid.Component as Component
+import Solid.Internal.Equality (eqEquality)
+import Solid.Reactivity (createMemoWith)
 import Solid.Internal.Identity (class StableIdentity)
 import Solid.Internal.Identity (class StableIdentity) as Exports
 import Solid.Internal.Setup (Setup, runSetup)
 import Prim.Row as Row
 import Solid.Internal.View (JSX, WhenValue, empty, erroredImpl, forImpl, hydrationImpl, keyedBy, keyedByIdentity, keyedByPosition, loadingImpl, matchImpl, matchMaybeImpl, noHydrationImpl, portalImpl, repeatImpl, revealImpl, showImpl, showMaybeImpl, switchImpl, whenValue)
 import Solid.Internal.View as View
-import Solid.Signal (Accessor)
+import Solid.Signal (Accessor, sample)
+import Type.Proxy (Proxy(..))
 import Web.DOM.Element (Element)
 
 when :: Accessor Boolean -> JSX -> JSX
@@ -133,6 +143,36 @@ switch cases fallback = runFn2 switchImpl (caseJsx <$> cases) fallback
 
 switch_ :: Array Case -> JSX
 switch_ cases = switch cases empty
+
+-- | Renders a branch per key of `value`, rebuilding it only when the key
+-- | changes (by `Eq`). The branch gets the value it was built for, to pattern
+-- | match on, and the accessor for later changes under the same key:
+-- |
+-- | ```purescript
+-- | caseOn constructorName page \current latest -> case current of
+-- |   Home -> homeView
+-- |   Profile _ -> profileView latest
+-- | ```
+caseOn :: forall a k. Eq k => (a -> k) -> Accessor a -> (a -> Accessor a -> Setup JSX) -> JSX
+caseOn toKey value render = Component.element branches {}
+  where
+  branches = Component.component \_ -> do
+    key <- createMemoWith { equals: eqEquality } (toKey <$> value)
+    pure $ showMaybeKeyed (Just <$> key) \_ -> sample value >>= \current -> render current value
+
+-- | The name of a value's constructor, e.g. to key `caseOn` by constructor.
+constructorName :: forall a rep. Generic a rep => ConstructorName rep => a -> String
+constructorName = constructorNameOf <<< from
+
+class ConstructorName rep where
+  constructorNameOf :: rep -> String
+
+instance (ConstructorName a, ConstructorName b) => ConstructorName (Sum a b) where
+  constructorNameOf (Inl a) = constructorNameOf a
+  constructorNameOf (Inr b) = constructorNameOf b
+
+instance IsSymbol name => ConstructorName (Constructor name arguments) where
+  constructorNameOf _ = reflectSymbol (Proxy :: Proxy name)
 
 -- | Shows `fallback` only on the first load; later updates keep the current
 -- | content visible (use `Solid.Async.isPending` to show them).
