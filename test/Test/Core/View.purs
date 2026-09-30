@@ -17,7 +17,7 @@ import Solid.Async (createAsync)
 import Solid.Component as Component
 import Solid.Context (createContext, provide, useContext)
 import Solid.Control as Control
-import Solid.DOM (classWhen, dataAttr, ref, styleProp, targetChecked, targetValue, textContent)
+import Solid.DOM (bindChecked, bindValue, classWhen, dataAttr, ref, styleProp, targetChecked, targetValue, textContent)
 import Solid.DOM.HTML as H
 import Solid.DOM.Props as P
 import Solid.DOM.SVG as S
@@ -33,6 +33,8 @@ import Solid.Web as Web
 import Test.Solid (Mounted, click, html, inputText, mount, mountUsing, query, settle, solidIt)
 import Unsafe.Reference (unsafeRefEq)
 import Web.DOM.Element (Element, getAttribute, namespaceURI)
+import Web.HTML.HTMLInputElement as HTMLInputElement
+import Data.Traversable (traverse)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Effect (Effect)
@@ -118,6 +120,31 @@ spec = describe "views" do
       input <- expectElement "input" mounted
       liftEffect (click input)
       html mounted >>= shouldEqual """<div><input type="checkbox">true</div>"""
+      liftEffect mounted.dispose
+
+    solidIt "bindValue and bindChecked bind both ways" do
+      name <- signal "ada"
+      done <- signal false
+      mounted <- mount $ H.div_
+        [ H.input [ P.id "name", bindValue (name.get /\ name.set) ]
+        , H.input [ P.id "done", P.type_ InputCheckbox, bindChecked (done.get /\ done.set) ]
+        , text name.get
+        , text (show <$> done.get)
+        ]
+      nameInput <- expectElement "#name" mounted
+      doneInput <- expectElement "#done" mounted
+      let
+        inputState element = liftEffect $ traverse
+          (\input -> { value: _, checked: _ } <$> HTMLInputElement.value input <*> HTMLInputElement.checked input)
+          (HTMLInputElement.fromElement element)
+      inputState nameInput >>= shouldEqual (Just { value: "ada", checked: false })
+      liftEffect (inputText "grace" nameInput *> click doneInput)
+      settle
+      html mounted >>= shouldEqual """<div><input id="name"><input id="done" type="checkbox">gracetrue</div>"""
+      write name "lin"
+      write done false
+      inputState nameInput >>= shouldEqual (Just { value: "lin", checked: false })
+      inputState doneInput >>= shouldEqual (Just { value: "on", checked: false })
       liftEffect mounted.dispose
 
     solidIt "styleProp entries merge with each other and with style" do

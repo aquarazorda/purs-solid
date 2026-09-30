@@ -54,7 +54,7 @@ renderWith
   -> JSX
   -> Element
   -> Effect (Either Error (Effect Unit))
-renderWith options view mount = clientOnly (runEffectFn4 renderImpl realize options view mount)
+renderWith options view container = clientOnly (runEffectFn4 renderImpl realize options view container)
 
 hydrate :: JSX -> Element -> Effect (Either Error (Effect Unit))
 hydrate = hydrateWith {}
@@ -66,7 +66,7 @@ hydrateWith
   -> JSX
   -> Element
   -> Effect (Either Error (Effect Unit))
-hydrateWith options view mount = clientOnly (runEffectFn4 hydrateImpl realize options view mount)
+hydrateWith options view container = clientOnly (runEffectFn4 hydrateImpl realize options view container)
 
 requireBody :: Effect (Either Error Element)
 requireBody = clientOnly do

@@ -9,7 +9,7 @@ import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Solid.Component as Component
 import Solid.Control as Control
-import Solid.DOM (classWhen, targetChecked, targetValue)
+import Solid.DOM (bindValue, classWhen, targetChecked)
 import Solid.DOM.HTML as H
 import Solid.DOM.Props as P
 import Solid.JSX (text)
@@ -116,9 +116,8 @@ todoApp = Component.component \_ -> do
             , H.input
                 [ P.class_ "new-todo"
                 , P.placeholder "What needs to be done?"
-                , P.value draft
+                , bindValue (draft /\ setDraft)
                 , P.autofocus true
-                , P.onInput \event -> targetValue event >>= set setDraft
                 , P.onKeyDown \event -> case KeyboardEvent.key event of
                     "Enter" -> addDraftTodo
                     "Escape" -> set setDraft ""

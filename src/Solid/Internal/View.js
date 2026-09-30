@@ -83,6 +83,7 @@ const STATIC = 0;
 const REACTIVE = 1;
 const REF = 2;
 const EVENT = 3;
+const PROPS = 4;
 
 export const staticPropImpl = (k, v) => ({ k, m: STATIC, v });
 
@@ -92,6 +93,8 @@ export const bindingPropImpl = (k, convert, v) =>
 export const eventPropImpl = (k, handler) => ({ k, m: EVENT, v: (event) => handler(event)() });
 
 export const refProp = (callback) => ({ k: "ref", m: REF, v: (element) => callback(element)() });
+
+export const propsProp = (props) => ({ k: "", m: PROPS, v: props });
 
 const readProp = (prop) => (prop.m === REACTIVE ? prop.v() : prop.v);
 
@@ -137,15 +140,19 @@ const propsObject = (namespace, tag, props, children) => {
   let styles;
   let refs;
 
-  for (let i = 0; i < props.length; i += 1) {
-    const prop = props[i];
-    if (prop.m === REF) (refs ??= []).push(prop.v);
-    else if (prop.k === "class") (classes ??= []).push(prop);
-    else if (prop.k === "style") (styles ??= []).push(prop);
-    else if (prop.m === REACTIVE) Object.defineProperty(object, prop.k, { get: prop.v, enumerable: true });
-    else if (prop.m === EVENT && isServer) continue;
-    else object[prop.k] = prop.v;
-  }
+  const add = (props) => {
+    for (let i = 0; i < props.length; i += 1) {
+      const prop = props[i];
+      if (prop.m === PROPS) add(prop.v);
+      else if (prop.m === REF) (refs ??= []).push(prop.v);
+      else if (prop.k === "class") (classes ??= []).push(prop);
+      else if (prop.k === "style") (styles ??= []).push(prop);
+      else if (prop.m === REACTIVE) Object.defineProperty(object, prop.k, { get: prop.v, enumerable: true });
+      else if (prop.m === EVENT && isServer) continue;
+      else object[prop.k] = prop.v;
+    }
+  };
+  add(props);
 
   if (classes !== undefined) defineMerged(object, "class", classes, classValue);
   if (styles !== undefined) defineMerged(object, "style", styles, styleValue);

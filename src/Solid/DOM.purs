@@ -16,12 +16,16 @@ module Solid.DOM
   , on
   , targetValue
   , targetChecked
+  , bindValue
+  , bindChecked
   ) where
 
 import Prelude
 
 import Effect (Effect)
-import Solid.Internal.View (class ToBinding, JSX, Prop, bindingProp, elementWith, eventProp, htmlNamespace, refProp)
+import Data.Tuple.Nested ((/\))
+import Solid.Internal.View (class ToBinding, JSX, Prop, bindingProp, elementWith, eventProp, htmlNamespace, propsProp, refProp)
+import Solid.Signal (Signal, set)
 import Solid.Internal.View (class ToBinding, JSX, Prop) as Exports
 import Web.DOM.Element (Element)
 import Web.Event.Event (Event)
@@ -75,3 +79,13 @@ foreign import targetValue :: Event -> Effect String
 
 -- | The `checked` state of the checkbox or radio the handler is on.
 foreign import targetChecked :: Event -> Effect Boolean
+
+-- | Binds a text field's (or select's) value to a signal both ways.
+bindValue :: forall r. Signal String -> Prop (value :: String, onInput :: Event | r)
+bindValue (value /\ setter) = propsProp
+  [ bindingProp "value" identity value, eventProp "onInput" \event -> targetValue event >>= set setter ]
+
+-- | Binds a checkbox's checked state to a signal both ways.
+bindChecked :: forall r. Signal Boolean -> Prop (checked :: Boolean, onChange :: Event | r)
+bindChecked (checked /\ setter) = propsProp
+  [ bindingProp "checked" identity checked, eventProp "onChange" \event -> targetChecked event >>= set setter ]

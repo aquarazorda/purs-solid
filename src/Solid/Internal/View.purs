@@ -18,6 +18,7 @@ module Solid.Internal.View
   , bindingProp
   , eventProp
   , refProp
+  , propsProp
   , Realized
   , realize
   , ComponentRep
@@ -137,6 +138,9 @@ eventProp = runFn2 eventPropImpl
 -- | Runs with the element before it's attached, without an owner, so it
 -- | can't create reactive primitives.
 foreign import refProp :: forall r. (Element -> Effect Unit) -> Prop r
+
+-- | Several props as one.
+foreign import propsProp :: forall r. Array (Prop r) -> Prop r
 
 foreign import data Realized :: Type
 
