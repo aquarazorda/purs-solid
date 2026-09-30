@@ -48,6 +48,7 @@ module Solid.Internal.View
   , hydrationImpl
   , provideImpl
   , childrenImpl
+  , childrenArrayImpl
   , LazyModule
   , lazyImpl
   , clientOnlyImpl
@@ -199,6 +200,8 @@ foreign import hydrationImpl :: JSX -> JSX
 foreign import provideImpl :: forall context a. Fn3 context a (Effect JSX) JSX
 
 foreign import childrenImpl :: EffectFn1 (Effect JSX) (Accessor JSX)
+
+foreign import childrenArrayImpl :: EffectFn1 (Effect JSX) (Accessor (Array JSX))
 
 -- | A module namespace from a dynamic `import()`.
 foreign import data LazyModule :: Type

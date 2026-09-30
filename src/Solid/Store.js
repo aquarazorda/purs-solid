@@ -1,6 +1,7 @@
 import {
   $PROXY,
   affects as solidAffects,
+  onCleanup,
   createOptimisticStore as solidCreateOptimisticStore,
   createProjection as solidCreateProjection,
   createStore as solidCreateStore,
@@ -152,6 +153,8 @@ const reconcileWith = (prepare, next, key) => (ref) => {
 
 export const reconcileImpl = (prepare) => (next) => reconcileWith(prepare, next, undefined);
 
+export const reconcileByPositionImpl = (prepare) => (next) => reconcileWith(prepare, next, null);
+
 export const reconcileByImpl = (prepare) => (toKey) => (next) =>
   reconcileWith(prepare, next, (item) => toKey(item));
 
@@ -192,4 +195,40 @@ export const updateOptimisticImpl = updateImpl;
 
 export const affectsImpl = (cursor) => {
   solidAffects(cursor());
+};
+
+export const createDerivedStoreImpl = (prepare, compute, seed) => {
+  runPreparer(prepare, seed);
+  const [store, setter] = solidCreateStore((draft) => {
+    compute()(rootRef(draft));
+  }, seed);
+  return { store: () => store, setter };
+};
+
+// The derive function resolves after the Aff's update is applied to the draft.
+export const createProjectionAsyncImpl = (start, prepare, compute, seed) => {
+  runPreparer(prepare, seed);
+  const store = solidCreateProjection((draft) => {
+    const aff = compute();
+    return new Promise((resolve, reject) => {
+      let done = false;
+      const cancel = start(aff)((change) => () => {
+        if (done) return;
+        done = true;
+        change(rootRef(draft));
+        resolve();
+      })((error) => () => {
+        if (done) return;
+        done = true;
+        reject(error);
+      })();
+      onCleanup(() => {
+        if (!done) {
+          done = true;
+          cancel();
+        }
+      });
+    });
+  }, seed);
+  return { store: () => store, refresh: store };
 };

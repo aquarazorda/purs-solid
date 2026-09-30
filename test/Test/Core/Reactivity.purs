@@ -11,9 +11,9 @@ import Effect.Class (liftEffect)
 import Effect.Exception (message)
 import Effect.Ref as Ref
 import Partial.Unsafe (unsafeCrashWith)
-import Solid.Reactivity (createEffect, createEffectWith, createEffect_, createMemo, createReaction, createRenderEffect_, createWritableMemo, flush, track, withFlush)
+import Solid.Reactivity (createEffect, createEffectWith, createEffect_, createMemo, createReaction, createRenderEffect_, createWritableMemo, createWritableMemoWith, flush, track, withFlush)
 import Solid.Root (createRoot)
-import Solid.Signal (createSignal, get, set)
+import Solid.Signal (createSignal, createSignalWith, eqEquality, get, set)
 import Test.Solid (settle, solidIt)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -149,3 +149,26 @@ spec = describe "Solid.Reactivity" do
       flush
       get value
     result `shouldEqual` "new"
+
+  solidIt "unobserved runs when a signal loses its last reader" do
+    calls <- liftEffect (Ref.new 0)
+    dispose <- liftEffect $ createRoot \disposeRoot -> do
+      value /\ _ <- createSignalWith { unobserved: Ref.modify_ (_ + 1) calls } 1
+      createEffect_ value \_ -> pure unit
+      pure disposeRoot
+    settle
+    liftEffect dispose
+    settle
+    liftEffect (Ref.read calls) >>= shouldEqual 1
+
+  solidIt "createWritableMemoWith takes an equality" do
+    runs <- liftEffect (Ref.new 0)
+    setValue <- liftEffect $ createRoot \_ -> do
+      source /\ setSource <- createSignal { n: 1 }
+      derived /\ _ <- createWritableMemoWith { equals: eqEquality } source
+      createEffect_ derived \_ -> Ref.modify_ (_ + 1) runs
+      pure setSource
+    settle
+    liftEffect (set setValue { n: 1 })
+    settle
+    liftEffect (Ref.read runs) >>= shouldEqual 1

@@ -5,6 +5,7 @@ module Test.Core.Component
 import Prelude
 
 import Control.Promise (Promise)
+import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.Tuple.Nested ((/\))
@@ -94,6 +95,15 @@ spec = describe "Solid.Component" do
     delay (Milliseconds 20.0)
     mounted <- mount (Control.loading (JSX.text "loading") (Component.element lazyGreeting { name: "lin" }))
     html mounted >>= shouldEqual "hello lin"
+    liftEffect mounted.dispose
+
+  solidIt "childrenArray lists the resolved children" do
+    let
+      counter = Component.component \props -> do
+        list <- Component.childrenArray (pure props.child)
+        pure (JSX.text (show <<< Array.length <$> list))
+    mounted <- mount (Component.element counter { child: JSX.fragment [ JSX.text "a", JSX.text "b", JSX.text "c" ] })
+    html mounted >>= shouldEqual "3"
     liftEffect mounted.dispose
 
   solidIt "createUniqueId returns distinct ids" do

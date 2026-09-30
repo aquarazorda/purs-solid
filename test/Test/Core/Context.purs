@@ -5,7 +5,7 @@ module Test.Core.Context
 import Prelude
 
 import Effect.Class (liftEffect)
-import Solid.Context (createContext, provide, useContext)
+import Solid.Context (createContext, createNamedContext, provide, useContext)
 import Solid.JSX as JSX
 import Solid.Root (createRoot)
 import Test.Solid (jsxValue, solidIt)
@@ -42,3 +42,9 @@ spec = describe "Solid.Context" do
       context <- createContext unit
       createRoot \_ -> useContext context
     value `shouldEqual` unit
+
+  solidIt "a named context works like any other" do
+    value <- liftEffect do
+      context <- createNamedContext "theme" "light"
+      createRoot \_ -> useContext context
+    value `shouldEqual` "light"

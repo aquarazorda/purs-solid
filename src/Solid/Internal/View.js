@@ -334,6 +334,11 @@ export const childrenImpl = (resolve) => {
   return () => new Prerealized(resolved());
 };
 
+export const childrenArrayImpl = (resolve) => {
+  const resolved = solidChildren(() => realize(resolve()));
+  return () => resolved.toArray().map((child) => new Prerealized(child));
+};
+
 export const lazyImpl = (exportName, load) => solidLazy(() => load(), { export: exportName });
 
 export const clientOnlyImpl = (exportName, load) => {

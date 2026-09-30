@@ -12,7 +12,7 @@ import Solid.Reactivity (withFlush)
 import Solid.Root (createRoot)
 import Solid.Setup (liftSetup)
 import Solid.Signal (createSignal, get, set)
-import Solid.Utility (mapArray, mapArrayBy, mapArrayUnkeyed, repeat)
+import Solid.Utility (mapArray, mapArrayBy, mapArrayUnkeyed, repeat, repeatFrom)
 import Test.Solid (solidIt)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -71,5 +71,19 @@ spec = describe "Solid.Utility" do
         repeat count (pure <<< (_ * 2))
       get mapped
     result `shouldEqual` [ 0, 2, 4 ]
+
+  solidIt "repeatFrom maps a moving window of indices" do
+    result <- liftEffect do
+      parts <- createRoot \_ -> do
+        from /\ setFrom <- createSignal 10
+        count /\ _ <- createSignal 3
+        mapped <- repeatFrom from count (pure <<< show)
+        pure { mapped, setFrom }
+      before <- get parts.mapped
+      withFlush (set parts.setFrom 20)
+      after <- get parts.mapped
+      pure { before, after }
+    result `shouldEqual` { before: [ "10", "11", "12" ], after: [ "20", "21", "22" ] }
+
   where
   traverseGet = traverse get

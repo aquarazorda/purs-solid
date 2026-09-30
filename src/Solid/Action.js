@@ -25,13 +25,21 @@ export const actionImpl = (eliminate) => (toPromise) => (steps) => {
 // Boxed so Solid doesn't treat function values as compute/updater functions.
 const box = (value) => ({ value });
 
-export const createOptimisticImpl = (initial) => {
-  const [get, set] = solidCreateOptimistic(box(initial), { equals: (a, b) => a.value === b.value });
+const boxedOptions = (options) => {
+  const { equals } = options;
+  return {
+    ...options,
+    equals: equals === false ? false : equals === undefined ? (a, b) => a.value === b.value : (a, b) => equals(a.value, b.value),
+  };
+};
+
+export const createOptimisticImpl = (options, initial) => {
+  const [get, set] = solidCreateOptimistic(box(initial), boxedOptions(options));
   return { get: () => get().value, set };
 };
 
-export const createOptimisticFromImpl = (source) => {
-  const [get, set] = solidCreateOptimistic(() => box(source()), { equals: (a, b) => a.value === b.value });
+export const createOptimisticFromImpl = (options, source) => {
+  const [get, set] = solidCreateOptimistic(() => box(source()), boxedOptions(options));
   return { get: () => get().value, set };
 };
 

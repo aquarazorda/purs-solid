@@ -5,7 +5,9 @@ module Solid.Action
   ( action
   , Optimistic
   , createOptimistic
+  , createOptimisticWith
   , createOptimisticFrom
+  , createOptimisticFromWith
   , setOptimistic
   , modifyOptimistic
   , affects
@@ -20,13 +22,15 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (liftAff) as Exports
 import Effect.Class (liftEffect) as Exports
-import Effect.Uncurried (EffectFn1, runEffectFn1)
+import Effect.Uncurried (EffectFn1, EffectFn2, runEffectFn1, runEffectFn2)
+import Prim.Row as Row
+import Solid.Reactivity (MemoOptions)
 import Solid.Internal.Action (Action(..), liftActionEffect)
 import Solid.Internal.Action (Action) as Exports
 import Solid.Internal.Optimistic (class MonadOptimistic, liftOptimistic)
 import Solid.Internal.Setup (class MonadReactive, Setup(..), liftReactive)
 import Solid.Async (Refresh)
-import Solid.Signal (Accessor)
+import Solid.Signal (Accessor, SignalOptions)
 
 -- | Runs each call as one transaction. Call it from event handlers or other
 -- | `Aff` code; Solid rejects actions started in owned scopes.
@@ -59,20 +63,39 @@ foreign import data Optimistic :: Type -> Type
 -- | A value that can be overridden tentatively during an action and reverts
 -- | to `initial` when the action settles.
 createOptimistic :: forall m a. MonadReactive m => a -> m (Accessor a /\ Optimistic a)
-createOptimistic initial = liftReactive do
-  parts <- runEffectFn1 createOptimisticImpl initial
+createOptimistic = createOptimisticWith {}
+
+-- | Takes any subset of `SignalOptions`.
+createOptimisticWith
+  :: forall m a given missing
+   . MonadReactive m
+  => Row.Union given missing (SignalOptions a)
+  => { | given }
+  -> a
+  -> m (Accessor a /\ Optimistic a)
+createOptimisticWith options initial = liftReactive do
+  parts <- runEffectFn2 createOptimisticImpl options initial
   pure (parts.get /\ parts.set)
 
-foreign import createOptimisticImpl :: forall a. EffectFn1 a { get :: Accessor a, set :: Optimistic a }
+foreign import createOptimisticImpl :: forall options a. EffectFn2 { | options } a { get :: Accessor a, set :: Optimistic a }
 
 -- | An optimistic view of `source`: tentative writes during an action, then
 -- | back to following `source`.
 createOptimisticFrom :: forall a. Accessor a -> Setup (Accessor a /\ Optimistic a)
-createOptimisticFrom source = Setup do
-  parts <- runEffectFn1 createOptimisticFromImpl source
+createOptimisticFrom = createOptimisticFromWith {}
+
+-- | Takes any subset of `MemoOptions`.
+createOptimisticFromWith
+  :: forall a given missing
+   . Row.Union given missing (MemoOptions a)
+  => { | given }
+  -> Accessor a
+  -> Setup (Accessor a /\ Optimistic a)
+createOptimisticFromWith options source = Setup do
+  parts <- runEffectFn2 createOptimisticFromImpl options source
   pure (parts.get /\ parts.set)
 
-foreign import createOptimisticFromImpl :: forall a. EffectFn1 (Accessor a) { get :: Accessor a, set :: Optimistic a }
+foreign import createOptimisticFromImpl :: forall options a. EffectFn2 { | options } (Accessor a) { get :: Accessor a, set :: Optimistic a }
 
 -- | A tentative write: in an `Action`, or in a router action's `onSubmit`.
 setOptimistic :: forall m a. MonadOptimistic m => Optimistic a -> a -> m Unit

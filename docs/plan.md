@@ -104,15 +104,12 @@ Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6
 - [x] Router action `onSubmit` (optimistic writes in `Submitting`) and `onSettled`. `setOptimistic` / `modifyOptimistic` work in any `MonadOptimistic`.
 
 ### Phase 6 — Async, store and option completeness
-- [ ] Computation options, which become row fields after Phase 1:
-  - `ownedWrite`, `unobserved`, `schedule`, `transparent`;
-  - `ssrSource` (`"client"` / `"hybrid"`), `loadingValue`, `deferStream`, `lazy`;
-  - `createRoot` `id`.
-- [ ] Function-form `createStore(fn, seed)` with a `Refresh`; async `createProjection` with `seedLoadingValue`.
-- [ ] `reconcile`: positional (`key: null`) and string keys.
-- [ ] Options for `createWritableMemo`, `createOptimistic(From)`, `mapArray*` (`fallback`, `name`), `repeat` (`from`) and `createContext` (`name`).
-- [ ] `children` `toArray`.
-- [ ] Stream options: `onCompleteShell`, `onCompleteAll`, `signal`; hydration script `eventNames`; serialization `plugins`, `manifest`.
+- [x] Option rows: signals `ownedWrite`, `unobserved`; memos `unobserved`, `id`, `transparent`; effects `schedule`, `transparent`; async values `loadingValue` (encoded with a codec), `lazy`, `unobserved`; `createRootWith { id, transparent }`.
+- [x] `createDerivedStore` (function-form `createStore`) and `createProjectionAsync` with a `Refresh` (the `Aff` is killed when its inputs change).
+- [x] `reconcileByPosition` (`key: null`). String keys are covered by `reconcileBy`.
+- [x] `createWritableMemoWith`, `createOptimisticWith`, `createOptimisticFromWith`, `Utility.repeatFrom`, `createNamedContext`, `Component.childrenArray`.
+- [x] `StreamOptions` (`onCompleteShell`, `onCompleteAll`, `signal`) for the async and streamed renders; hydration script `eventNames`.
+- Not bound: `ssrSource` on sync memos, `"hybrid"` (needs async-iterable sources), `mapArray` `fallback` / `name` (the `*Else` control functions cover fallbacks), serializer `plugins`, asset `manifest`.
 
 ### Phase 7 — PureScript developer experience
 - [ ] `Serializable`: drop the catch-all so newtypes can derive it. Keep `Fail` instances only for the common mistakes (`Maybe`, `Either`, functions, `Effect`), which don't overlap with user types. No PureScript codecs.

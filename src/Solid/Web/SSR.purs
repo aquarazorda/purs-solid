@@ -2,6 +2,7 @@
 -- | select Solid's server build.
 module Solid.Web.SSR
   ( RenderOptions
+  , StreamOptions
   , renderToString
   , renderToStringWith
   , renderToStringWithHead
@@ -24,6 +25,7 @@ import Effect.Exception (Error, try)
 import Effect.Uncurried (EffectFn1, EffectFn3, runEffectFn1, runEffectFn3)
 import Prim.Row as Row
 import Solid.Internal.View (JSX, Realized, realize)
+import Web.Fetch.AbortController (AbortSignal)
 import Web.Streams.ReadableStream (ReadableStream)
 
 type RenderOptions =
@@ -36,6 +38,20 @@ type RenderOptions =
   -- | Sees every error the render handles (an `errored` fallback, a rejected
   -- | `loading` boundary), once per error.
   , onError :: Error -> Effect Unit
+  )
+
+-- | `RenderOptions` plus what only streaming renders take.
+type StreamOptions =
+  ( nonce :: String
+  , renderId :: String
+  , noScripts :: Boolean
+  , onError :: Error -> Effect Unit
+  -- | Runs once the shell is ready; the function writes extra HTML after it.
+  , onCompleteShell :: (String -> Effect Unit) -> Effect Unit
+  -- | Runs once everything has streamed; the function writes extra HTML at the end.
+  , onCompleteAll :: (String -> Effect Unit) -> Effect Unit
+  -- | Aborting stops the render.
+  , signal :: AbortSignal
   )
 
 renderToString :: JSX -> Effect (Either Error String)
@@ -69,7 +85,7 @@ renderToStringAsync = renderToStringAsyncWith {}
 
 renderToStringAsyncWith
   :: forall given missing
-   . Row.Union given missing RenderOptions
+   . Row.Union given missing StreamOptions
   => { | given }
   -> JSX
   -> Aff (Either Error String)
@@ -81,7 +97,7 @@ renderToStringAsyncWith options view =
 -- | errors go to `onError`.
 renderToReadableStream
   :: forall given missing
-   . Row.Union given missing RenderOptions
+   . Row.Union given missing StreamOptions
   => { | given }
   -> JSX
   -> Effect (Either Error (ReadableStream Uint8Array))
@@ -92,9 +108,10 @@ renderToReadableStream options view =
 hydrationScript :: Effect (Either Error String)
 hydrationScript = hydrationScriptWith {}
 
+-- | `eventNames`: the events captured before hydration (Solid's default set when left out).
 hydrationScriptWith
   :: forall given missing
-   . Row.Union given missing (nonce :: String)
+   . Row.Union given missing (nonce :: String, eventNames :: Array String)
   => { | given }
   -> Effect (Either Error String)
 hydrationScriptWith options =

@@ -5,11 +5,12 @@ module Solid.Utility
   , mapArrayUnkeyed
   , mapArrayBy
   , repeat
+  , repeatFrom
   ) where
 
 import Prelude
 
-import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, mkEffectFn1, mkEffectFn2, runEffectFn2, runEffectFn3)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, mkEffectFn1, mkEffectFn2, runEffectFn3)
 import Solid.Internal.Setup (Setup(..), runSetup)
 import Solid.Internal.View (Keyed, keyedBy, keyedByIdentity, keyedByPosition)
 import Solid.Signal (Accessor)
@@ -58,6 +59,12 @@ foreign import mapArrayImpl
 -- | Maps the indices `0 .. count - 1`; results are reused as `count` changes.
 repeat :: forall b. Accessor Int -> (Int -> Setup b) -> Setup (Accessor (Array b))
 repeat count mapIndex =
-  Setup (runEffectFn2 repeatImpl count (mkEffectFn1 (runSetup <<< mapIndex)))
+  Setup (runEffectFn3 repeatImpl count (mkEffectFn1 (runSetup <<< mapIndex)) {})
 
-foreign import repeatImpl :: forall b. EffectFn2 (Accessor Int) (EffectFn1 Int b) (Accessor (Array b))
+-- | Maps the indices `from .. from + count - 1`, e.g. a virtualized window;
+-- | results are reused as the window moves.
+repeatFrom :: forall b. Accessor Int -> Accessor Int -> (Int -> Setup b) -> Setup (Accessor (Array b))
+repeatFrom from count mapIndex =
+  Setup (runEffectFn3 repeatImpl count (mkEffectFn1 (runSetup <<< mapIndex)) { from })
+
+foreign import repeatImpl :: forall b options. EffectFn3 (Accessor Int) (EffectFn1 Int b) { | options } (Accessor (Array b))

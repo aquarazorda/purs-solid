@@ -6,6 +6,7 @@ module Solid.Reactivity
   , createMemo
   , createMemoWith
   , createWritableMemo
+  , createWritableMemoWith
   , EffectOptions
   , createEffect
   , createEffect_
@@ -35,6 +36,12 @@ type MemoOptions a =
   , equals :: Equality a
   -- | Defer the first computation until read; dispose when nothing observes it.
   , lazy :: Boolean
+  -- | Runs when the last reader stops observing.
+  , unobserved :: Effect Unit
+  -- | A stable hydration id instead of one from its position.
+  , id :: String
+  -- | Don't count as an owner level for hydration ids.
+  , transparent :: Boolean
   )
 
 -- | Caches a derived accessor: it recomputes only when its dependencies change,
@@ -56,13 +63,22 @@ foreign import createMemoImpl :: forall options a. EffectFn2 { | options } (Acce
 -- | A signal derived from `compute` that can also be written locally. A write
 -- | wins until a dependency of `compute` changes, which re-derives it.
 createWritableMemo :: forall a. Accessor a -> Setup (Signal a)
-createWritableMemo compute = Setup do
-  parts <- runEffectFn1 createWritableMemoImpl compute
+createWritableMemo = createWritableMemoWith {}
+
+-- | Takes any subset of `MemoOptions`.
+createWritableMemoWith
+  :: forall a given missing
+   . Row.Union given missing (MemoOptions a)
+  => { | given }
+  -> Accessor a
+  -> Setup (Signal a)
+createWritableMemoWith options compute = Setup do
+  parts <- runEffectFn2 createWritableMemoImpl options compute
   pure (parts.get /\ parts.set)
 
 foreign import createWritableMemoImpl
-  :: forall a
-   . EffectFn1 (Accessor a) { get :: Accessor a, set :: Setter a }
+  :: forall options a
+   . EffectFn2 { | options } (Accessor a) { get :: Accessor a, set :: Setter a }
 
 type EffectOptions =
   ( name :: String
@@ -70,6 +86,9 @@ type EffectOptions =
   , defer :: Boolean
   -- | Handles compute-phase errors; without it Solid logs them and skips the run.
   , onError :: Error -> Effect Unit
+  -- | Queue the first apply like later ones instead of running it during setup.
+  , schedule :: Boolean
+  , transparent :: Boolean
   )
 
 -- | Runs `apply` with the value of `compute` now (after the current flush) and

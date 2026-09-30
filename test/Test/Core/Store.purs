@@ -9,7 +9,9 @@ import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence, traverse)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
+import Effect.Aff (Milliseconds(..), delay)
 import Effect.Class (liftEffect)
+import Solid.Async (refreshAff, resolve)
 import Effect.Ref as Ref
 import Solid.Reactivity (createEffect_, flush, withFlush)
 import Solid.Root (createRoot)
@@ -205,6 +207,50 @@ spec = describe "Solid.Store" do
     settle
     entries <- liftEffect (Ref.read log)
     Array.sort entries `shouldEqual` [ "1=false", "2=true" ]
+
+  solidIt "reconcileByPosition keeps each position's element" do
+    result <- liftEffect do
+      state /\ setState <- createStore { rows: [ { label: "a" }, { label: "b" } ] }
+      let rows = focus (key @"rows") state
+      before <- get (Store.items rows)
+      withFlush (Store.update setState (Store.at (key @"rows") (Store.reconcileByPosition [ { label: "x" }, { label: "b" } ])))
+      after <- get (Store.items rows)
+      labels <- get (value rows)
+      pure { same: map (const true) before == map (const true) after, labels: _.label <$> labels }
+    result `shouldEqual` { same: true, labels: [ "x", "b" ] }
+
+  solidIt "createDerivedStore can be updated locally until its source changes" do
+    result <- liftEffect do
+      parts <- createRoot \_ -> do
+        source /\ setSource <- createSignal "a"
+        store /\ setStore <- Store.createDerivedStore (source <#> \s -> Store.at (key @"label") (Store.set s)) { label: "" }
+        pure { store, setStore, setSource }
+      flush
+      let label = get (value (focus (key @"label") parts.store))
+      derived <- label
+      withFlush (Store.update parts.setStore (Store.at (key @"label") (Store.set "local")))
+      local <- label
+      withFlush (Signal.set parts.setSource "b")
+      rederived <- label
+      pure { derived, local, rederived }
+    result `shouldEqual` { derived: "a", local: "local", rederived: "b" }
+
+  solidIt "createProjectionAsync applies the update when the Aff finishes" do
+    loads <- liftEffect (Ref.new 0)
+    parts <- liftEffect $ createRoot \_ -> do
+      id /\ _ <- createSignal 1
+      store /\ refreshStore <- Store.createProjectionAsync
+        ( id <#> \n -> do
+            liftEffect (Ref.modify_ (_ + 1) loads)
+            delay (Milliseconds 5.0)
+            pure (Store.at (key @"label") (Store.set ("item " <> show n)))
+        )
+        { label: "" }
+      pure { label: value (focus (key @"label") store), refreshStore }
+    resolve parts.label >>= shouldEqual "item 1"
+    _ <- refreshAff parts.refreshStore
+    liftEffect (Ref.read loads) >>= shouldEqual 2
+
   where
   traverseGet = traverse get
   for_' xs f = void (traverse f xs)

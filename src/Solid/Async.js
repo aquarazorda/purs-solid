@@ -18,6 +18,7 @@ export const createAsyncImpl = (start, either, options, compute) => {
   const { ssr = onClient, equals, ...rest } = options;
   const { encode, decode } = ssr;
   const sourceOptions = { ...rest, ssrSource: ssr.source };
+  if ("loadingValue" in options && encode != null) sourceOptions.loadingValue = encode(options.loadingValue);
   if (encode == null && equals !== undefined) sourceOptions.equals = equals;
 
   const source = createMemo(() => {

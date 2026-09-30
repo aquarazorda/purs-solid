@@ -28,7 +28,10 @@ module Solid.Store
   , eachWhere
   , reconcile
   , reconcileBy
+  , reconcileByPosition
   , createProjection
+  , createProjectionAsync
+  , createDerivedStore
   , createSelector
   , OptimisticStore
   , createOptimisticStore
@@ -42,7 +45,11 @@ import Prelude
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple.Nested ((/\), type (/\))
 import Effect (Effect)
-import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
+import Data.Either (either)
+import Effect.Aff (Aff, killFiber, launchAff_, runAff)
+import Effect.Exception (Error, error)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, EffectFn4, runEffectFn1, runEffectFn2, runEffectFn3, runEffectFn4)
+import Solid.Async (Refresh)
 import Prim.Row as Row
 import Prim.TypeError (class Fail, Text)
 import Solid.Internal.Optimistic (class MonadOptimistic, liftOptimistic)
@@ -173,7 +180,12 @@ reconcile next = reconcileImpl (preparer :: Preparer a) next
 reconcileBy :: forall a k. StoreValue a => (a -> k) -> Array a -> Update (Array a)
 reconcileBy toKey next = reconcileByImpl (preparer :: Preparer (Array a)) toKey next
 
+-- | `reconcile` for an array, matching elements by position.
+reconcileByPosition :: forall a. StoreValue a => Array a -> Update (Array a)
+reconcileByPosition next = reconcileByPositionImpl (preparer :: Preparer (Array a)) next
+
 foreign import reconcileImpl :: forall a. Preparer a -> a -> Update a
+foreign import reconcileByPositionImpl :: forall a. Preparer (Array a) -> Array a -> Update (Array a)
 foreign import reconcileByImpl :: forall a k. Preparer (Array a) -> (a -> k) -> Array a -> Update (Array a)
 
 -- | A read-only store derived from reactive sources: `compute` is tracked and
@@ -191,6 +203,51 @@ createProjection compute seed =
 foreign import createProjectionImpl
   :: forall s
    . EffectFn3 (Preparer s) (Accessor (Update s)) s (Store s)
+
+-- | Like `createProjection`, but the update comes from async work: readers
+-- | suspend (show `loading` fallbacks) until the first update, and a change of
+-- | `compute`'s dependencies kills the running `Aff`. `Refresh` re-runs it.
+createProjectionAsync
+  :: forall s
+   . StoreObject s
+  => StoreValue s
+  => Accessor (Aff (Update s))
+  -> s
+  -> Setup (Store s /\ Refresh s)
+createProjectionAsync compute seed = Setup do
+  parts <- runEffectFn4 createProjectionAsyncImpl startAff (preparer :: Preparer s) compute seed
+  pure (parts.store /\ parts.refresh)
+
+startAff :: forall a. Aff a -> (a -> Effect Unit) -> (Error -> Effect Unit) -> Effect (Effect Unit)
+startAff aff onValue onError = do
+  fiber <- runAff (either onError onValue) aff
+  pure (launchAff_ (killFiber (error "purs-solid: superseded store update") fiber))
+
+foreign import createProjectionAsyncImpl
+  :: forall s
+   . EffectFn4
+       (forall a. Aff a -> (a -> Effect Unit) -> (Error -> Effect Unit) -> Effect (Effect Unit))
+       (Preparer s)
+       (Accessor (Aff (Update s)))
+       s
+       { store :: Store s, refresh :: Refresh s }
+
+-- | A store derived like `createProjection` that can also be updated locally;
+-- | a local update holds until `compute`'s dependencies change.
+createDerivedStore
+  :: forall s
+   . StoreObject s
+  => StoreValue s
+  => Accessor (Update s)
+  -> s
+  -> Setup (Store s /\ StoreSetter s)
+createDerivedStore compute seed = Setup do
+  parts <- runEffectFn3 createDerivedStoreImpl (preparer :: Preparer s) compute seed
+  pure (parts.store /\ parts.setter)
+
+foreign import createDerivedStoreImpl
+  :: forall s
+   . EffectFn3 (Preparer s) (Accessor (Update s)) s { store :: Store s, setter :: StoreSetter s }
 
 -- | `isSelected x` is true when `source` equals `x` (compared by `toKey`). A
 -- | selection change notifies only the two affected readers.

@@ -10,9 +10,11 @@ import {
 export const createMemoImpl = (options, compute) => solidCreateMemo(() => compute(), options);
 
 // Boxed so Solid doesn't misread a function result as an updater.
-export const createWritableMemoImpl = (compute) => {
+export const createWritableMemoImpl = (options, compute) => {
+  const { equals } = options;
   const [getBox, setBox] = solidCreateSignal(() => ({ value: compute() }), {
-    equals: (a, b) => a.value === b.value,
+    ...options,
+    equals: equals === false ? false : equals === undefined ? (a, b) => a.value === b.value : (a, b) => equals(a.value, b.value),
   });
 
   return {

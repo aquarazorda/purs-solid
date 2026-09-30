@@ -48,6 +48,11 @@ type AsyncOptions a =
   , ssr :: AsyncSsr a
   -- | Hold the streamed shell until this value is ready.
   , deferStream :: Boolean
+  -- | Shown during the first load instead of suspending to a `loading`
+  -- | fallback. It's also what the server renders for an `onClient` value.
+  , loadingValue :: a
+  , lazy :: Boolean
+  , unobserved :: Effect Unit
   )
 
 -- | Where an async value loads when the page is server-rendered.

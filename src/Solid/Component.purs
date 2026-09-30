@@ -5,6 +5,7 @@ module Solid.Component
   , component
   , element
   , children
+  , childrenArray
   , createUniqueId
   , module Exports
   , lazy
@@ -19,7 +20,7 @@ import Data.Function.Uncurried (runFn2)
 import Effect (Effect)
 import Effect.Uncurried (runEffectFn1)
 import Solid.Internal.Setup (Setup(..), runSetup)
-import Solid.Internal.View (ComponentRep, JSX, LazyModule, childrenImpl, clientOnlyImpl, componentElement, componentRep, lazyImpl, preloadImpl)
+import Solid.Internal.View (ComponentRep, JSX, LazyModule, childrenArrayImpl, childrenImpl, clientOnlyImpl, componentElement, componentRep, lazyImpl, preloadImpl)
 import Solid.Internal.View (LazyModule) as Exports
 import Solid.Signal (Accessor)
 
@@ -35,6 +36,10 @@ element = runFn2 componentElement
 -- | re-creating them.
 children :: Setup JSX -> Setup (Accessor JSX)
 children resolve = Setup (runEffectFn1 childrenImpl (runSetup resolve))
+
+-- | Like `children`, as the list of resolved children (a fragment is flattened).
+childrenArray :: Setup JSX -> Setup (Accessor (Array JSX))
+childrenArray resolve = Setup (runEffectFn1 childrenArrayImpl (runSetup resolve))
 
 -- | A unique id, stable between server render and hydration.
 createUniqueId :: Setup String

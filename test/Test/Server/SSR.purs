@@ -154,4 +154,15 @@ spec = describe "Solid.Web.SSR" do
     html <- render (H.div_ [ Component.element chart { fallback: text "chart soon", points: 3 } ])
     html `shouldSatisfy` has "chart soon"
 
+  solidIt "streamed renders can write after the shell and at the end" do
+    html <- SSR.renderToStringAsyncWith
+      { onCompleteShell: \write -> write "<!--shell-->", onCompleteAll: \write -> write "<!--all-->" }
+      (H.p_ [ text "body" ]) >>= orFail
+    html `shouldSatisfy` has "<!--shell-->"
+    html `shouldSatisfy` has "<!--all-->"
+
+  solidIt "the hydration script captures the given events" do
+    script <- liftEffect (SSR.hydrationScriptWith { eventNames: [ "pointerdown" ] }) >>= orFail
+    script `shouldSatisfy` has "pointerdown"
+
 foreign import loadNever :: Effect (Promise LazyModule)

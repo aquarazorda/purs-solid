@@ -74,6 +74,10 @@ instance BooleanAlgebra a => BooleanAlgebra (Accessor a)
 type SignalOptions a =
   ( name :: String
   , equals :: Equality a
+  -- | Allow writes from owned scopes (only reachable through `liftSetup`).
+  , ownedWrite :: Boolean
+  -- | Runs when the last reader stops observing.
+  , unobserved :: Effect Unit
   )
 
 -- | Works in `Effect` or `Setup`; signals need no disposal.

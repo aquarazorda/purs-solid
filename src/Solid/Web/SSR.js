@@ -7,15 +7,21 @@ import {
 const toError = (error) => (error instanceof Error ? error : new Error(String(error)));
 
 // The hook only reports; returning nothing keeps Solid's default client-facing value.
-const toSolid = ({ onError, ...rest }) =>
-  onError === undefined
-    ? rest
-    : {
-        ...rest,
-        onError: (error) => {
-          onError(toError(error))();
-        },
-      };
+const writer = (hook) => (info) => {
+  hook((html) => () => info.write(html))();
+};
+
+const toSolid = ({ onError, onCompleteShell, onCompleteAll, ...rest }) => {
+  const options = { ...rest };
+  if (onError !== undefined) {
+    options.onError = (error) => {
+      onError(toError(error))();
+    };
+  }
+  if (onCompleteShell !== undefined) options.onCompleteShell = writer(onCompleteShell);
+  if (onCompleteAll !== undefined) options.onCompleteAll = writer(onCompleteAll);
+  return options;
+};
 
 export const renderToStringImpl = (realize, options, view) =>
   solidRenderToString(() => realize(view), toSolid(options));

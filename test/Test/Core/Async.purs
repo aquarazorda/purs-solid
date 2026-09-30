@@ -10,8 +10,8 @@ import Data.Tuple.Nested ((/\))
 import Effect.Aff (Aff, Milliseconds(..), delay, error, forkAff, joinFiber, killFiber, throwError, try)
 import Effect.Class (liftEffect)
 import Effect.Ref as Ref
-import Solid.Async (createAsync, isPending, refreshAff, resolve, until, untilWith)
-import Solid.Root (createRoot)
+import Solid.Async (createAsync, createAsyncWith, isPending, refreshAff, resolve, until, untilWith)
+import Solid.Root (createRoot, createRootWith)
 import Solid.Signal (createSignal, get, set)
 import Test.Solid (settle, solidIt)
 import Test.Spec (Spec, describe)
@@ -100,3 +100,13 @@ spec = describe "Solid.Async" do
     settle
     result <- try (joinFiber waiting)
     isLeft result `shouldEqual` true
+
+  solidIt "loadingValue shows until the first value arrives" do
+    parts <- liftEffect $ createRootWith { id: "async" } \_ -> do
+      user /\ _ <- createAsyncWith { loadingValue: "…" } (pure (delay (Milliseconds 10.0) $> "ada"))
+      pure user
+    first <- liftEffect (get parts)
+    delay (Milliseconds 20.0)
+    settle
+    later <- liftEffect (get parts)
+    { first, later } `shouldEqual` { first: "…", later: "ada" }
