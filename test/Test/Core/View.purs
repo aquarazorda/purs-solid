@@ -348,7 +348,7 @@ spec = describe "views" do
       liftEffect mounted.dispose
 
     solidIt "provided context reaches nested components" do
-      theme <- liftEffect (createContext "light")
+      let theme = createContext "test.theme" "light"
       let
         label = Component.component \_ -> do
           current <- useContext theme

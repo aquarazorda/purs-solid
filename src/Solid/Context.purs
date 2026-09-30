@@ -3,31 +3,27 @@
 module Solid.Context
   ( Context
   , createContext
-  , createNamedContext
   , useContext
   , provide
   ) where
 
-import Effect (Effect)
-import Effect.Uncurried (EffectFn1, EffectFn2, runEffectFn1, runEffectFn2)
+import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Solid.Internal.Setup (Setup(..), runSetup)
-import Data.Function.Uncurried (runFn3)
+import Data.Function.Uncurried (Fn2, runFn2, runFn3)
 import Solid.Internal.View (JSX, provideImpl)
 
 foreign import data Context :: Type -> Type
 
 type role Context nominal
 
--- | Each call creates a distinct context; for a module-level one, create it
--- | once (e.g. with `unsafePerformEffect`) and share it.
-createContext :: forall a. a -> Effect (Context a)
-createContext = createNamedContext ""
+-- | The name identifies the context: every `createContext` with the same name
+-- | is the same context (the first default wins), so define it once at the
+-- | top level under a qualified name, e.g. `createContext "App.theme" Light`.
+-- | It also shows in Solid's dev diagnostics.
+createContext :: forall a. String -> a -> Context a
+createContext = runFn2 createContextImpl
 
--- | The name shows in Solid's dev diagnostics.
-createNamedContext :: forall a. String -> a -> Effect (Context a)
-createNamedContext name defaultValue = runEffectFn2 createContextImpl name defaultValue
-
-foreign import createContextImpl :: forall a. EffectFn2 String a (Context a)
+foreign import createContextImpl :: forall a. Fn2 String a (Context a)
 
 -- | The nearest provided value, or the context's default.
 useContext :: forall a. Context a -> Setup a

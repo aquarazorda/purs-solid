@@ -5,7 +5,7 @@ module Test.Core.Context
 import Prelude
 
 import Effect.Class (liftEffect)
-import Solid.Context (createContext, createNamedContext, provide, useContext)
+import Solid.Context (createContext, provide, useContext)
 import Solid.JSX as JSX
 import Solid.Root (createRoot)
 import Test.Solid (jsxValue, solidIt)
@@ -15,14 +15,12 @@ import Test.Spec.Assertions (shouldEqual)
 spec :: Spec Unit
 spec = describe "Solid.Context" do
   solidIt "useContext returns the default outside any provider" do
-    value <- liftEffect do
-      context <- createContext "default"
-      createRoot \_ -> useContext context
+    value <- liftEffect $ createRoot \_ -> useContext (createContext "test.outside" "default")
     value `shouldEqual` "default"
 
   solidIt "provide makes the value visible to its children" do
     rendered <- liftEffect do
-      context <- createContext "default"
+      let context = createContext "test.provided" "default"
       view <- createRoot \_ -> pure $
         provide context "provided" (JSX.text <$> useContext context)
       jsxValue view
@@ -30,7 +28,7 @@ spec = describe "Solid.Context" do
 
   solidIt "the nearest provider wins" do
     rendered <- liftEffect do
-      context <- createContext 0
+      let context = createContext "test.nearest" 0
       view <- createRoot \_ -> pure
         $ provide context 1
         $ pure
@@ -40,13 +38,12 @@ spec = describe "Solid.Context" do
     rendered `shouldEqual` "2"
 
   solidIt "a context can hold unit" do
-    value <- liftEffect do
-      context <- createContext unit
-      createRoot \_ -> useContext context
+    value <- liftEffect $ createRoot \_ -> useContext (createContext "test.unit" unit)
     value `shouldEqual` unit
 
-  solidIt "a named context works like any other" do
-    value <- liftEffect do
-      context <- createNamedContext "theme" "light"
-      createRoot \_ -> useContext context
-    value `shouldEqual` "light"
+  solidIt "contexts with the same name are the same context" do
+    rendered <- liftEffect do
+      view <- createRoot \_ -> pure $
+        provide (createContext "test.shared" "a") "b" (JSX.text <$> useContext (createContext "test.shared" "c"))
+      jsxValue view
+    rendered `shouldEqual` "b"
