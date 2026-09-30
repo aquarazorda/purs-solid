@@ -136,8 +136,11 @@ const propsObject = (namespace, tag, props, children) => {
 
   if (refs !== undefined && !isServer) object.ref = refs.length === 1 ? refs[0] : refs;
 
+  // Static children as a plain value let `spread` insert them without an effect.
   if (children.length > 0) {
-    Object.defineProperty(object, "children", { get: () => realizeChildren(children), enumerable: true });
+    if (children.some((child) => child instanceof Reactive)) {
+      Object.defineProperty(object, "children", { get: () => realizeChildren(children), enumerable: true });
+    } else object.children = realizeChildren(children);
   }
 
   return object;

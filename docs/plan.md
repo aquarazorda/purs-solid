@@ -77,8 +77,8 @@ Every phase ends with `npm test`, `npm run test:purescript:es` and `npm run test
 Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6 ms, bundle 99.6 → 97.3 kB.
 
 ### Phase 2 — Measured performance experiments
-- [ ] Eager static children (finding 2). Keep it only if `test:hydration` and the SSR specs pass.
-- [ ] Re-profile after Phase 1. Look for remaining per-element PureScript overhead (identity `toAttrValue` maps, closure layers in `realize`).
+- [x] Eager static children (finding 2): kept (open question 6). Hydration, SSR and every suite pass. Create 10k went 204.2 → 183.5–190.7 ms; 1k operations are within noise.
+- [x] Re-profiled after Phase 1. Per clear + create 1k cycle, purs-solid now takes ~1.0 ms (was ~1.9) and `@solidjs/signals` ~1.7 ms (was ~2.5). What's left is Solid's `spread` / `assign` and native DOM work.
 
 ### Phase 3 — Errors and async correctness
 - [ ] `onError` on `render`, `hydrate` and the SSR functions. Then decide what `Either Error` still means there (finding 6).
@@ -143,4 +143,4 @@ Result: create 1k 19.8 → 19.1 ms, append 20.6 → 19.1 ms, 10k 214.5 → 203.6
 3. **Typed params.** Where do filters go: a filters record next to `route @"/users/:id"`, or syntax in the path (`@"/users/:id<int>"`) parsed at the type level?
 4. **Testing helpers.** In the library, or a separate package?
 5. ~~**Control fallbacks.**~~ `*Else` variants everywhere (Phase 1).
-6. **Eager children.** If it passes hydration, is ~5% on creation worth the changed realization order?
+6. ~~**Eager children.**~~ Kept (Phase 2).
