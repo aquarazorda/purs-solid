@@ -14,7 +14,7 @@ import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM.HTML as H
 import Solid.DOM.Props as P
-import Solid.JSX (text)
+import Solid.JSX (empty, text)
 import Solid.Signal (createSignal, set)
 import Solid.Start.ServerFunction (call)
 
@@ -35,4 +35,8 @@ app = Component.component \_ -> do
         ]
         [ text "ask the server" ]
     , H.p [ P.id "reply" ] [ text reply ]
+    , Control.loading empty (Component.element footer {})
     ]
+
+footer :: Component.Component {}
+footer = Component.lazy @"Examples.StartMode.Footer.footer"

@@ -19,12 +19,9 @@ import Solid.DOM.Props as P
 import Solid.JSX (JSX, text)
 import Solid.Router (href)
 import Solid.Router as Router
-import Control.Promise (Promise)
 import Data.Argonaut.Core (fromString, toString)
-import Effect (Effect)
 import Foreign.Object as Object
 import Solid.Action (createOptimistic, setOptimistic)
-import Solid.Component (LazyModule)
 import Solid.Router.Action (onSettled, onSubmit, routerAction, useAction, useSubmissions)
 import Solid.Signal (get)
 import Solid.Router.Query (Query, revalidate, runQuery)
@@ -239,8 +236,7 @@ spec = describe "Solid.Router" do
     solidIt "lazy layouts load their child routes on first match" do
       r <- withRouter "/"
         [ Router.route @"/" \_ -> pure (text "home")
-        , Router.layoutLazy @"/admin" (\props -> pure (H.section_ [ props.children ]))
-            (loadRoutes [ Router.route @"/users" \_ -> pure (text "admin users") ])
+        , Router.layoutLazy @"/admin" @"Test.Core.Router.Admin" \props -> pure (H.section_ [ props.children ])
         ]
       go r.navigate "/admin/users"
       waitLoad
@@ -311,4 +307,3 @@ spec = describe "Solid.Router" do
     liftEffect (Ref.read settled) >>= shouldEqual [ Just 42 ]
     liftEffect r.mounted.dispose
 
-foreign import loadRoutes :: Array Router.Route -> Effect (Promise LazyModule)

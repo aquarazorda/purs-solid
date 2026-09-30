@@ -50,6 +50,9 @@ module Solid.Internal.View
   , childrenImpl
   , childrenArrayImpl
   , LazyModule
+  , loadModule
+  , class LazyName
+  , lazyName
   , lazyImpl
   , clientOnlyImpl
   , preloadImpl
@@ -65,6 +68,10 @@ import Effect.Exception (Error)
 import Effect.Uncurried (EffectFn1)
 import Solid.Signal (Accessor)
 import Unsafe.Coerce (unsafeCoerce)
+import Data.String as String
+import Data.Symbol (class IsSymbol, reflectSymbol)
+import Prim.Symbol as Symbol
+import Type.Proxy (Proxy(..))
 import Web.DOM.Element (Element)
 
 foreign import data JSX :: Type
@@ -205,6 +212,18 @@ foreign import childrenArrayImpl :: EffectFn1 (Effect JSX) (Accessor (Array JSX)
 
 -- | A module namespace from a dynamic `import()`.
 foreign import data LazyModule :: Type
+
+foreign import loadModule :: String -> Effect (Promise LazyModule)
+
+-- | The name of a lazily loaded module or value. It reaches the compiled call
+-- | site as a `"purs-solid:lazy:<name>"` literal, which is how
+-- | `purs-solid/vite` finds what to split into chunks.
+class LazyName :: Symbol -> Constraint
+class LazyName name where
+  lazyName :: Proxy name -> String
+
+instance (Symbol.Append "purs-solid:lazy:" name tagged, IsSymbol tagged) => LazyName name where
+  lazyName _ = String.drop 16 (reflectSymbol (Proxy :: Proxy tagged))
 
 foreign import lazyImpl :: forall props. Fn2 String (Effect (Promise LazyModule)) (ComponentRep props)
 

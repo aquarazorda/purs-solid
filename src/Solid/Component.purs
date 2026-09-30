@@ -16,13 +16,16 @@ module Solid.Component
 import Prelude
 
 import Control.Promise (Promise)
-import Data.Function.Uncurried (runFn2)
+import Data.Function.Uncurried (Fn2, runFn2)
+import Data.Maybe (fromMaybe)
+import Data.String as String
 import Effect (Effect)
 import Effect.Uncurried (runEffectFn1)
 import Solid.Internal.Setup (Setup(..), runSetup)
-import Solid.Internal.View (ComponentRep, JSX, LazyModule, childrenArrayImpl, childrenImpl, clientOnlyImpl, componentElement, componentRep, lazyImpl, preloadImpl)
+import Solid.Internal.View (class LazyName, ComponentRep, JSX, LazyModule, childrenArrayImpl, childrenImpl, clientOnlyImpl, componentElement, componentRep, lazyImpl, lazyName, loadModule, preloadImpl)
 import Solid.Internal.View (LazyModule) as Exports
 import Solid.Signal (Accessor)
+import Type.Proxy (Proxy(..))
 
 type Component props = ComponentRep props
 
@@ -47,23 +50,33 @@ createUniqueId = Setup createUniqueIdImpl
 
 foreign import createUniqueIdImpl :: Effect String
 
--- | Loaded on first use, suspending the nearest `loading` boundary. `load` is
--- | a dynamic `import()` in an FFI file, and the name is the component's export:
+-- | Loaded on first use, suspending the nearest `loading` boundary. Named by
+-- | the component's qualified name; `purs-solid/vite` bundles its module as a
+-- | separate chunk:
 -- |
--- | ```js
--- | export const loadSettings = () => import("../Settings/index.js");
--- | ```
 -- | ```purescript
--- | settings = lazy "settings" loadSettings
+-- | settings :: Component { user :: User }
+-- | settings = lazy @"App.Settings.settings"
 -- | ```
-lazy :: forall props. String -> Effect (Promise LazyModule) -> Component { | props }
-lazy = runFn2 lazyImpl
+lazy :: forall @name props. LazyName name => Component { | props }
+lazy = withQualified @name lazyImpl
 
 -- | Like `lazy`, but never runs on the server: the server, and hydration,
 -- | render `fallback`; the component replaces it once loaded and hydrated.
--- | For browser-only code (`window`, DOM measurement). Loading starts at once.
-clientOnly :: forall props. String -> Effect (Promise LazyModule) -> Component { fallback :: JSX | props }
-clientOnly = runFn2 clientOnlyImpl
+-- | For browser-only code (`window`, DOM measurement). Loading starts on first
+-- | render.
+clientOnly :: forall @name props. LazyName name => Component { fallback :: JSX | props }
+clientOnly = withQualified @name clientOnlyImpl
+
+withQualified
+  :: forall @name component
+   . LazyName name
+  => Fn2 String (Effect (Promise LazyModule)) component
+  -> component
+withQualified load = runFn2 load (String.drop (dot + 1) name) (loadModule (String.take dot name))
+  where
+  name = lazyName (Proxy :: Proxy name)
+  dot = fromMaybe 0 (String.lastIndexOf (String.Pattern ".") name)
 
 -- | Starts loading a `lazy` component early (e.g. on hover). Does nothing for
 -- | other components.

@@ -4,7 +4,6 @@ module Test.Core.Component
 
 import Prelude
 
-import Control.Promise (Promise)
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String as String
@@ -39,8 +38,6 @@ foreign import badge
        )
 
 foreign import clickFirstSpan :: Element -> Effect Unit
-
-foreign import loadLater :: forall p. Component.Component p -> Effect (Promise Component.LazyModule)
 
 spec :: Spec Unit
 spec = describe "Solid.Component" do
@@ -88,7 +85,7 @@ spec = describe "Solid.Component" do
     liftEffect mounted.dispose
 
   solidIt "lazy loads the definition on first use, under loading" do
-    let lazyGreeting = Component.lazy "greeting" (loadLater greeting)
+    let lazyGreeting = Component.lazy @"Test.Core.Component.Greeting.greeting" :: Component.Component { name :: String }
     mounted <- mount (Control.loading (JSX.text "loading") (Component.element lazyGreeting { name: "lin" }))
     html mounted >>= shouldEqual "loading"
     delay (Milliseconds 20.0)
@@ -96,7 +93,7 @@ spec = describe "Solid.Component" do
     liftEffect mounted.dispose
 
   solidIt "preload starts loading before first use" do
-    let lazyGreeting = Component.lazy "greeting" (loadLater greeting)
+    let lazyGreeting = Component.lazy @"Test.Core.Component.Greeting.greeting" :: Component.Component { name :: String }
     liftEffect (Component.preload lazyGreeting)
     delay (Milliseconds 20.0)
     mounted <- mount (Control.loading (JSX.text "loading") (Component.element lazyGreeting { name: "lin" }))
@@ -120,7 +117,7 @@ spec = describe "Solid.Component" do
     (ids.a /= ids.b && String.length ids.a > 0) `shouldEqual` true
 
   solidIt "clientOnly shows the fallback until the component has loaded" do
-    chart <- liftEffect (Ref.new unit) <#> \_ -> Component.clientOnly "greeting" (loadLater greeting)
+    chart <- liftEffect (Ref.new unit) <#> \_ -> Component.clientOnly @"Test.Core.Component.Chart.chart"
     mounted <- mount (Component.element chart { fallback: JSX.text "…", name: "lin" })
     html mounted >>= shouldEqual "…"
     delay (Milliseconds 20.0)

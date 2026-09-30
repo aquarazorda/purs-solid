@@ -54,7 +54,6 @@ module Solid.Router
 
 import Prelude
 
-import Control.Promise (Promise)
 import Data.Argonaut.Core (Json)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe, toNullable)
@@ -64,7 +63,7 @@ import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffec
 import Foreign.Object (Object)
 import Prim.Row as Row
 import Solid.Internal.Setup (Setup(..), runSetup)
-import Solid.Internal.View (JSX, LazyModule, Realized, realize)
+import Solid.Internal.View (class LazyName, JSX, Realized, lazyName, loadModule, realize)
 import Solid.Router.Path (class PathParams, RoutePattern, href, routePattern)
 import Solid.Router.Path (href) as Exports
 import Solid.Signal (Accessor)
@@ -130,16 +129,17 @@ layoutWith
   -> Route
 layoutWith options render children = defineRoute @path options render (unsafeCoerce children)
 
--- | A layout whose child routes load on first match. `load` is a dynamic
--- | `import()` of a module that exports `routes :: Array Route`.
+-- | A layout whose child routes load on first match, from the module `name`,
+-- | which exports `routes :: Array Route`:
+-- | `layoutLazy @"/admin" @"App.Admin" render`.
 layoutLazy
-  :: forall @path params
+  :: forall @path @name params
    . IsSymbol path
+  => LazyName name
   => PathParams path params
   => (RouteProps params -> Setup JSX)
-  -> Effect (Promise LazyModule)
   -> Route
-layoutLazy render load = defineRoute @path {} render (unsafeCoerce load)
+layoutLazy render = defineRoute @path {} render (unsafeCoerce (loadModule (lazyName (Proxy :: Proxy name))))
 
 defineRoute
   :: forall @path params options

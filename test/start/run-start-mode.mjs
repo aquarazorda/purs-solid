@@ -14,6 +14,7 @@ const clientFiles = (await readdir(assets)).filter((f) => f.endsWith(".js"));
 const clientCode = (await Promise.all(clientFiles.map((f) => readFile(join(assets, f), "utf8")))).join("\n");
 expect("server module code is not in the client bundle", clientCode.includes("nowhere"), false);
 expect("middleware is not in the client bundle", clientCode.includes("x-middleware"), false);
+expect("a lazy component is its own chunk", clientFiles.some((f) => f.startsWith("Examples.StartMode.Footer-")), true);
 
 const port = 4000 + Math.floor(Math.random() * 1000);
 const server = spawn("node", [join(dist, "server", "node.js")], { env: { ...env, PORT: String(port) }, stdio: "ignore" });
@@ -33,6 +34,7 @@ try {
   expect("middleware header", page.headers.get("x-middleware"), "purs-solid");
   const html = await page.text();
   expect("server-rendered greeting", html.includes("hello page, from the server"), true);
+  expect("server-rendered lazy component", html.includes("loaded lazily"), true);
 
   const tab = await browser.newPage();
   const problems = watchProblems(tab);
@@ -43,6 +45,7 @@ try {
   await tab.goto(origin, { waitUntil: "networkidle" });
   expect("hydrated greeting", await tab.textContent("#greeting"), "hello page, from the server");
   expect("no server call during hydration", serverCalls.length, 0);
+  expect("hydrated lazy component", await tab.textContent("#footer"), "loaded lazily");
   await tab.click("#ask");
   await tab.waitForFunction(() => document.querySelector("#reply").textContent !== "not asked", null, { timeout: 5000 });
   expect("server function reply", await tab.textContent("#reply"), "hello button, from the server");

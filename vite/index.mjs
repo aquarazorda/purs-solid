@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import solid from "@solidjs/vite-plugin";
 import { parseAst } from "vite";
@@ -29,6 +29,23 @@ const entryFile = (root, output, option, module) => {
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, `export { ${entries[option]} as default } from ${JSON.stringify(compiled)};\n`);
   return file;
+};
+
+// `lazy`, `clientOnly` and `layoutLazy` name their module in a
+// `"purs-solid:lazy:<name>"` literal at the call site. Each call site registers
+// a static import of the module, so it becomes its own chunk.
+const lazyName = /"purs-solid:lazy:([^"]+)"/g;
+
+const registerLazyModules = (code, id) => {
+  const output = path.dirname(path.dirname(id));
+  const modules = new Set(
+    [...code.matchAll(lazyName)].map(([, name]) => (/\.[a-z_][\w']*$/.test(name) ? name.slice(0, name.lastIndexOf(".")) : name))
+  );
+  const registrations = [...modules].map((module) => {
+    if (!existsSync(path.join(output, module, "index.js"))) throw new Error(`purs-solid/vite: ${id} loads ${module} lazily, but it isn't compiled`);
+    return `$$registerLazyModule(${JSON.stringify(module)}, () => import(${JSON.stringify(`../${module}/index.js`)}));`;
+  });
+  return `import { registerLazyModule as $$registerLazyModule } from "../Solid.Internal.View/foreign.js";\n${registrations.join("\n")}\n${code}`;
 };
 
 const exportName = (node) => node.name ?? node.value;
@@ -115,5 +132,27 @@ export default function pursSolid(options = {}) {
       },
     },
   };
-  return [plugin, solid(solidOptions)];
+  const lazy = {
+    name: "purs-solid:lazy",
+    enforce: "pre",
+    transform: {
+      filter: { id: compiledModule, code: /"purs-solid:lazy:/ },
+      handler(code, id) {
+        return { code: registerLazyModules(code, id), map: null };
+      },
+    },
+  };
+  // Bundled, only registered modules load: the unbundled fallback would make
+  // every compiled module a chunk.
+  const noFallback = {
+    name: "purs-solid:lazy-fallback",
+    enforce: "pre",
+    transform: {
+      filter: { id: /[\\/]Solid\.Internal\.View[\\/]foreign\.js$/ },
+      handler(code) {
+        return { code: code.replace("import(`../${name}/index.js`)", "Promise.reject(new Error(`purs-solid: ${name} is loaded lazily, but no module names it`))"), map: null };
+      },
+    },
+  };
+  return [plugin, lazy, noFallback, solid(solidOptions)];
 }

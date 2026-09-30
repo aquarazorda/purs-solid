@@ -354,10 +354,20 @@ export const childrenArrayImpl = (resolve) => {
   return () => resolved.toArray().map((child) => new Prerealized(child));
 };
 
+// purs-solid/vite registers each lazily loaded module; unbundled, modules load
+// from next to this one.
+const lazyModules = new Map();
+
+export const registerLazyModule = (name, load) => {
+  lazyModules.set(name, load);
+};
+
+export const loadModule = (name) => () => (lazyModules.get(name) ?? (() => import(`../${name}/index.js`)))();
+
 export const lazyImpl = (exportName, load) => solidLazy(() => load(), { export: exportName });
 
 export const clientOnlyImpl = (exportName, load) => {
-  const component = solidClientOnly(() => load(), { export: exportName });
+  const component = solidClientOnly(() => load(), { export: exportName, lazy: true });
   return (props) =>
     component({
       ...props,

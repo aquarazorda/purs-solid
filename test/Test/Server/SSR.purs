@@ -16,7 +16,6 @@ import Effect.Class (liftEffect)
 import Effect.Exception (Error, message)
 import Effect.Ref as Ref
 import Partial.Unsafe (unsafeCrashWith)
-import Solid.Component (LazyModule)
 import Solid.Async (createAsync, createAsyncWith, serialized, withCodec)
 import Solid.Component as Component
 import Solid.Control as Control
@@ -165,7 +164,7 @@ spec = describe "Solid.Web.SSR" do
     liftEffect (Ref.read seen) >>= shouldEqual [ "boom" ]
 
   solidIt "clientOnly components render only their fallback on the server" do
-    let chart = Component.clientOnly "chart" loadNever :: Component.Component { fallback :: JSX, points :: Int }
+    let chart = Component.clientOnly @"Test.Server.SSR.chart" :: Component.Component { fallback :: JSX, points :: Int }
     html <- render (H.div_ [ Component.element chart { fallback: text "chart soon", points: 3 } ])
     html `shouldSatisfy` has "chart soon"
 
@@ -181,4 +180,3 @@ spec = describe "Solid.Web.SSR" do
     script <- liftEffect (SSR.hydrationScriptWith { eventNames: [ "pointerdown" ] }) >>= orFail
     script `shouldSatisfy` has "pointerdown"
 
-foreign import loadNever :: Effect (Promise LazyModule)
