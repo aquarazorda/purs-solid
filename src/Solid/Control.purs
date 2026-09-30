@@ -1,5 +1,10 @@
 -- | Control flow. A branch is only created while it's shown; render callbacks
 -- | run in `Setup`, so each item or branch owns its state until it leaves.
+-- |
+-- | Conditions and lists are an `Accessor` or an `Async` (`Tracked f`). A bare
+-- | `pure x` could be either, so `when (pure b)` doesn't compile ("the instance
+-- | head contains unknown type variables"): a fixed condition is a plain
+-- | `if b then … else empty`, or annotate it (`pure b :: Accessor Boolean`).
 module Solid.Control
   ( when
   , whenElse

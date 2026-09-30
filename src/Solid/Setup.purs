@@ -11,6 +11,7 @@ import Solid.Internal.Setup (Setup(..))
 import Solid.Internal.Setup (Setup, class MonadReactive) as Exports
 
 -- | Runs an arbitrary effect during setup, e.g. `Ref.new`. The effect must not
--- | write signals or stores.
+-- | write signals or stores; the types can't tell, but Solid's dev build
+-- | reports such a write (`REACTIVE_WRITE_IN_OWNED_SCOPE`).
 liftSetup :: forall a. Effect a -> Setup a
 liftSetup = Setup
