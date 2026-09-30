@@ -6,7 +6,9 @@ module Solid.Component
   , element
   , children
   , createUniqueId
+  , module Exports
   , lazy
+  , preload
   ) where
 
 import Prelude
@@ -16,7 +18,8 @@ import Data.Function.Uncurried (runFn2)
 import Effect (Effect)
 import Effect.Uncurried (runEffectFn1)
 import Solid.Internal.Setup (Setup(..), runSetup)
-import Solid.Internal.View (ComponentRep, JSX, childrenImpl, componentElement, componentRep, lazyImpl)
+import Solid.Internal.View (ComponentRep, JSX, LazyModule, childrenImpl, componentElement, componentRep, lazyImpl, preloadImpl)
+import Solid.Internal.View (LazyModule) as Exports
 import Solid.Signal (Accessor)
 
 type Component props = ComponentRep props
@@ -38,11 +41,19 @@ createUniqueId = Setup createUniqueIdImpl
 
 foreign import createUniqueIdImpl :: Effect String
 
--- | Loaded on first use, suspending the nearest `loading` boundary. Usually a
--- | dynamic `import()` in an FFI file so the bundler splits it out:
+-- | Loaded on first use, suspending the nearest `loading` boundary. `load` is
+-- | a dynamic `import()` in an FFI file, and the name is the component's export:
 -- |
 -- | ```js
--- | export const loadSettings = () => import("../Settings/index.js").then((m) => m.settings);
+-- | export const loadSettings = () => import("../Settings/index.js");
 -- | ```
-lazy :: forall props. Effect (Promise (Component { | props })) -> Component { | props }
-lazy = lazyImpl
+-- | ```purescript
+-- | settings = lazy "settings" loadSettings
+-- | ```
+lazy :: forall props. String -> Effect (Promise LazyModule) -> Component { | props }
+lazy = runFn2 lazyImpl
+
+-- | Starts loading a `lazy` component early (e.g. on hover). Does nothing for
+-- | other components.
+preload :: forall props. Component props -> Effect Unit
+preload = runEffectFn1 preloadImpl

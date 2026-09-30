@@ -24,7 +24,7 @@ import Web.HTML.Window (document)
 
 foreign import isServer :: Boolean
 
--- | Replaces `mount`'s content. The result disposes the view.
+-- | Appends the view to `mount`'s children. The result disposes it.
 render :: JSX -> Element -> Effect (Either Error (Effect Unit))
 render view mount = clientOnly (runEffectFn3 renderImpl realize view mount)
 

@@ -69,6 +69,8 @@ renderToStringWithHead :: RenderOptions -> JSX -> Effect (Either Error { html ::
 renderToStringWithHead options view =
   try (runEffectFn3 renderToStringWithHeadImpl realize (toRep options) view)
 
+-- | Waits for all async work. `Left` only for errors thrown while starting the
+-- | render; later render errors don't reach it.
 renderToStringAsync :: JSX -> Aff (Either Error String)
 renderToStringAsync = renderToStringAsyncWith defaultRenderOptions
 
@@ -77,6 +79,7 @@ renderToStringAsyncWith options view =
   Aff.try (Promise.toAffE (runEffectFn3 renderToStringAsyncImpl realize (toRep options) view))
 
 -- | Streams the HTML: the shell first, then each boundary as it resolves.
+-- | `Left` only for errors thrown while starting the render.
 renderToReadableStream :: RenderOptions -> JSX -> Effect (Either Error (ReadableStream Uint8Array))
 renderToReadableStream options view =
   try (runEffectFn3 renderToReadableStreamImpl realize (toRep options) view)

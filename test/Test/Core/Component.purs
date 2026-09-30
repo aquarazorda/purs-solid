@@ -39,7 +39,7 @@ foreign import badge
 
 foreign import clickFirstSpan :: Element -> Effect Unit
 
-foreign import loadLater :: forall p. Component.Component p -> Effect (Promise (Component.Component p))
+foreign import loadLater :: forall p. Component.Component p -> Effect (Promise Component.LazyModule)
 
 spec :: Spec Unit
 spec = describe "Solid.Component" do
@@ -81,10 +81,18 @@ spec = describe "Solid.Component" do
     liftEffect mounted.dispose
 
   solidIt "lazy loads the definition on first use, under loading" do
-    let lazyGreeting = Component.lazy (loadLater greeting)
+    let lazyGreeting = Component.lazy "greeting" (loadLater greeting)
     mounted <- mount (Control.loading (JSX.text "loading") (Component.element lazyGreeting { name: "lin" }))
     html mounted >>= shouldEqual "loading"
     delay (Milliseconds 20.0)
+    html mounted >>= shouldEqual "hello lin"
+    liftEffect mounted.dispose
+
+  solidIt "preload starts loading before first use" do
+    let lazyGreeting = Component.lazy "greeting" (loadLater greeting)
+    liftEffect (Component.preload lazyGreeting)
+    delay (Milliseconds 20.0)
+    mounted <- mount (Control.loading (JSX.text "loading") (Component.element lazyGreeting { name: "lin" }))
     html mounted >>= shouldEqual "hello lin"
     liftEffect mounted.dispose
 

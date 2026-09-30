@@ -20,5 +20,5 @@ export const badge = (props) => {
 
 export const clickFirstSpan = (root) => () => root.querySelector("span").click();
 
-// Stands in for a dynamic `import()`: resolves to the component a moment later.
-export const loadLater = (component) => () => new Promise((resolve) => setTimeout(() => resolve(component), 5));
+// Stands in for a dynamic `import()`: resolves to the module a moment later.
+export const loadLater = (component) => () => new Promise((resolve) => setTimeout(() => resolve({ greeting: component }), 5));

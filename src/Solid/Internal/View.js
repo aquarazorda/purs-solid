@@ -342,7 +342,7 @@ export const hydrationImpl = (content) => () =>
 
 export const provideImpl = (context, value, children) => () =>
   createComponent(context, {
-    value,
+    value: { value },
     get children() {
       return realize(children());
     },
@@ -353,5 +353,8 @@ export const childrenImpl = (resolve) => {
   return () => new Prerealized(resolved());
 };
 
-export const lazyImpl = (load) =>
-  solidLazy(() => load().then((component) => ({ default: component })));
+export const lazyImpl = (exportName, load) => solidLazy(() => load(), { export: exportName });
+
+export const preloadImpl = (component) => {
+  component.preload?.().catch(() => {});
+};

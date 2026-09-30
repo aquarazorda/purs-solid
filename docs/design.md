@@ -2,7 +2,13 @@
 
 ## Scope
 
-purs-solid is bindings, not a reimplementation. It calls the public API of `solid-js`, `@solidjs/web`, `@solidjs/router`, `@solidjs/meta` and `@solidjs/vite-plugin` start mode, and never reaches into Solid internals. JavaScript exists only where a PureScript type can't express a JS idiom directly. The value added is types that reject incorrect code.
+purs-solid is bindings, not a reimplementation. It calls the public API of `solid-js`, `@solidjs/web`, `@solidjs/router`, `@solidjs/meta` and `@solidjs/vite-plugin` start mode, and never reaches into Solid internals. The value added is types that reject incorrect code.
+
+Runtime logic lives in JS FFI that calls Solid; PureScript supplies the types (rows, instance chains, type-level parsing) and thin calls. PureScript values take the shape Solid expects, so the FFI passes them straight through:
+
+- Options are records with optional fields, handed to Solid as they are. Solid applies its own defaults; PureScript never restates them.
+- No ADT → string → JS round trips, and no PureScript ADTs or interpreters on hot paths where a JS check does the job.
+- Plain DOM access uses registry bindings (`web-html`, `web-dom`, …).
 
 Elements go through `dynamic(() => tag, { static: true })`, so Solid itself does client rendering, hydration and SSR. Hand-writing compiled output against compiler-target helpers (`getNextElement`, `ssrElement`, …) would be faster at bulk creation, but it would make Solid's hydration internals ours to maintain.
 

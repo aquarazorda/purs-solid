@@ -45,7 +45,9 @@ module Solid.Internal.View
   , hydrationImpl
   , provideImpl
   , childrenImpl
+  , LazyModule
   , lazyImpl
+  , preloadImpl
   ) where
 
 import Prelude
@@ -187,4 +189,9 @@ foreign import provideImpl :: forall context a. Fn3 context a (Effect JSX) JSX
 
 foreign import childrenImpl :: EffectFn1 (Effect JSX) (Accessor JSX)
 
-foreign import lazyImpl :: forall props. Effect (Promise (ComponentRep props)) -> ComponentRep props
+-- | A module namespace from a dynamic `import()`.
+foreign import data LazyModule :: Type
+
+foreign import lazyImpl :: forall props. Fn2 String (Effect (Promise LazyModule)) (ComponentRep props)
+
+foreign import preloadImpl :: forall props. EffectFn1 (ComponentRep props) Unit

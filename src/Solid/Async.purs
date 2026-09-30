@@ -125,7 +125,8 @@ refreshAff target = toAffE (runEffectFn1 refreshPromiseImpl target)
 foreign import refreshPromiseImpl :: forall a. EffectFn1 (Refresh a) (Promise a)
 
 -- | `true` while a change to `accessor`'s value is in flight. Not `true` for
--- | the first load (that's what loading boundaries are for).
+-- | the first load (that's what loading boundaries are for), nor for a bare
+-- | `refresh`.
 foreign import isPending :: forall a. Accessor a -> Accessor Boolean
 
 -- | The in-flight value where one exists, instead of the settled one.

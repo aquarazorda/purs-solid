@@ -36,3 +36,9 @@ spec = describe "Solid.Context" do
           provide context 2 (JSX.text <<< show <$> useContext context)
       jsxValue view
     rendered `shouldEqual` "2"
+
+  solidIt "a context can hold unit" do
+    value <- liftEffect do
+      context <- createContext unit
+      createRoot \_ -> useContext context
+    value `shouldEqual` unit
