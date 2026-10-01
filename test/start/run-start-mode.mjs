@@ -35,6 +35,7 @@ try {
   const html = await page.text();
   expect("server-rendered greeting", html.includes("hello page, from the server"), true);
   expect("server-rendered lazy component", html.includes("loaded lazily"), true);
+  expect("the page preloads the lazy component's chunk", /Examples\.StartMode\.Footer-[\w-]+\.js/.test(html), true);
 
   const tab = await browser.newPage();
   const problems = watchProblems(tab);

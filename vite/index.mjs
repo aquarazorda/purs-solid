@@ -6,6 +6,7 @@ import { parseAst } from "vite";
 const marker = "useServer";
 const moduleName = /^[A-Z][\w']*(\.[A-Z][\w']*)*$/;
 const compiledModule = /[\\/]output(-es)?[\\/]([^\\/]+)[\\/]index\.js$/;
+const compiledOutput = /[\\/]output(-es)?[\\/][^\\/]+[\\/][^\\/]+\.js$/;
 const entries = { app: "app", middleware: "middleware" };
 
 // The spago workspace's output directory: `output-es` when the workspace
@@ -156,5 +157,49 @@ export default function pursSolid(options = {}) {
       },
     },
   };
-  return [plugin, lazy, noFallback, solid(solidOptions)];
+  // Server-side `lazy` finds a module's client assets, to load them before
+  // hydration, through a `$$moduleUrl` export. Solid's JSX transform adds it to
+  // JSX modules; compiled PureScript gets it here (not server modules, whose
+  // every export is a server function).
+  let root = process.cwd();
+  const moduleUrl = {
+    name: "purs-solid:module-url",
+    enforce: "pre",
+    configResolved(config) {
+      root = config.root;
+    },
+    transform: {
+      filter: { id: compiledModule },
+      handler(code, id) {
+        if (this.environment.config.consumer !== "server" || code.startsWith('"use server"')) return null;
+        const url = path.relative(root, id).split(path.sep).join("/");
+        return { code: `${code}\nexport const $$moduleUrl = ${JSON.stringify(url)};\n`, map: null };
+      },
+    },
+  };
+  // `purs` rewrites a burst of output files per build, and compiled modules
+  // have no HMR boundary. Vite's per-file handling would reload the browser
+  // and hot-update the server mid-burst, so a page renders on half-updated
+  // modules or hydrates against a server render of the other version. Once
+  // the burst settles, the server's modules are reloaded, then the browser.
+  let devServer;
+  let settle;
+  const reload = {
+    name: "purs-solid:reload",
+    apply: "serve",
+    configureServer(server) {
+      devServer = server;
+    },
+    hotUpdate({ file }) {
+      if (!compiledOutput.test(file)) return;
+      clearTimeout(settle);
+      settle = setTimeout(() => {
+        const { client, ...others } = devServer.environments;
+        for (const environment of Object.values(others)) environment.hot.send({ type: "full-reload" });
+        client.hot.send({ type: "full-reload" });
+      }, 100);
+      return [];
+    },
+  };
+  return [plugin, lazy, noFallback, moduleUrl, reload, solid(solidOptions)];
 }
