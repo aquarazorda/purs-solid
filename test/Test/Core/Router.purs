@@ -28,7 +28,7 @@ import Solid.Router.Search (searchParams, setSearch, useSearch)
 import Solid.Start.Response (redirect, reply)
 import Solid.Router.Query as Query
 import Solid.Setup (liftSetup)
-import Test.Solid (Mounted, click, html, mount, query, settle, solidIt)
+import Test.Solid (Mounted, click, html, mount, query, settle, solidIt, waitForHtml)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Effect.Exception (error)
@@ -239,8 +239,7 @@ spec = describe "Solid.Router" do
         , Router.layoutLazy @"/admin" @"Test.Core.Router.Admin" \props -> pure (H.section_ [ props.children ])
         ]
       go r.navigate "/admin/users"
-      waitLoad
-      html r.mounted >>= shouldEqual "<main><section>admin users</section></main>"
+      waitForHtml "<main><section>admin users</section></main>" r.mounted
       liftEffect r.mounted.dispose
 
     solidIt "useMatch gives the typed params while the location matches" do

@@ -21,7 +21,7 @@ import Solid.Root (createRoot)
 import Solid.DOM.HTML as H
 import Solid.JSX (JSX)
 import Solid.Signal (Accessor, createSignal, set)
-import Test.Solid (html, jsxValue, mount, solidIt)
+import Test.Solid (html, jsxValue, mount, mountFirstText, solidIt, waitForHtml)
 import Web.DOM.Element (Element)
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -87,26 +87,30 @@ spec = describe "Solid.Component" do
 
   solidIt "lazy loads the definition on first use, under loading" do
     let lazyGreeting = Component.lazy @"Test.Core.Component.Greeting.greeting" :: Component.Component { name :: String }
-    mounted <- mount (Control.loading (JSX.text "loading") (Component.element lazyGreeting { name: "lin" }))
-    html mounted >>= shouldEqual "loading"
-    delay (Milliseconds 20.0)
-    html mounted >>= shouldEqual "hello lin"
+    { mounted, first } <- mountFirstText (Control.loading (JSX.text "loading") (Component.element lazyGreeting { name: "lin" }))
+    first `shouldEqual` "loading"
+    waitForHtml "hello lin" mounted
     liftEffect mounted.dispose
 
   solidIt "lazy fails clearly when the export isn't a component" do
     let notComponent = Component.lazy @"Test.Core.Component.Greeting.answer" :: Component.Component {}
     mounted <- mount $ Control.errored (\err _ -> pure (JSX.text (message <$> err)))
       (Control.loading (JSX.text "loading") (Component.element notComponent {}))
-    delay (Milliseconds 20.0)
-    html mounted >>= shouldEqual "purs-solid: Test.Core.Component.Greeting.answer is loaded lazily, but it isn't a component"
+    waitForHtml "purs-solid: Test.Core.Component.Greeting.answer is loaded lazily, but it isn't a component" mounted
     liftEffect mounted.dispose
 
   solidIt "preload starts loading before first use" do
     let lazyGreeting = Component.lazy @"Test.Core.Component.Greeting.greeting" :: Component.Component { name :: String }
     liftEffect (Component.preload lazyGreeting)
-    delay (Milliseconds 20.0)
-    mounted <- mount (Control.loading (JSX.text "loading") (Component.element lazyGreeting { name: "lin" }))
-    html mounted >>= shouldEqual "hello lin"
+    let
+      view = Control.loading (JSX.text "loading") (Component.element lazyGreeting { name: "lin" })
+      -- The import's timing isn't ours: remount until it has landed.
+      afterPreload tries = do
+        rendered <- mountFirstText view
+        if rendered.first == "hello lin" || tries == 0 then pure rendered
+        else liftEffect rendered.mounted.dispose *> delay (Milliseconds 5.0) *> afterPreload (tries - 1 :: Int)
+    { mounted, first } <- afterPreload 400
+    first `shouldEqual` "hello lin"
     liftEffect mounted.dispose
 
   solidIt "childrenArray lists the resolved children" do
@@ -127,8 +131,7 @@ spec = describe "Solid.Component" do
 
   solidIt "clientOnly shows the fallback until the component has loaded" do
     chart <- liftEffect (Ref.new unit) <#> \_ -> Component.clientOnly @"Test.Core.Component.Chart.chart"
-    mounted <- mount (Component.element chart { fallback: JSX.text "…", name: "lin" })
-    html mounted >>= shouldEqual "…"
-    delay (Milliseconds 20.0)
-    html mounted >>= shouldEqual "hello lin"
+    { mounted, first } <- mountFirstText (Component.element chart { fallback: JSX.text "…", name: "lin" })
+    first `shouldEqual` "…"
+    waitForHtml "hello lin" mounted
     liftEffect mounted.dispose
