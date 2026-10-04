@@ -177,7 +177,7 @@ spec = describe "views" do
       expanded <- signal false
       seen <- liftEffect (Ref.new 0)
       mounted <- mount $ H.button
-        { role: "switch", "aria-expanded": expanded.get, "aria-level": 2, "aria-checked": Aria.Mixed, "aria-relevant": [ Aria.Additions, Aria.Text ], "on:ping": \_ -> Ref.modify_ (_ + 1) seen }
+        { role: "switch", "aria-expanded": expanded.get, "aria-level": 2, "aria-checked": Aria.Mixed, "aria-relevant": Aria.additions <> Aria.text, "on:ping": \_ -> Ref.modify_ (_ + 1) seen }
         "menu"
       button <- expectElement "button" mounted
       liftEffect (dispatch "ping" button)
