@@ -10,7 +10,7 @@ export default defineConfig({
     solid({
       start: { app: "Examples.StartMode.App", middleware: "Examples.StartMode.Middleware", node: true },
       ssr: true,
-      compileViews: process.env.PURS_SOLID_COMPILE_VIEWS === "1",
+      compileViews: process.env.PURS_SOLID_COMPILE_VIEWS !== "0",
     }),
   ],
   build: { outDir: here("./dist"), emptyOutDir: true },

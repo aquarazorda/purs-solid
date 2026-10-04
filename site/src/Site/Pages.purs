@@ -74,7 +74,7 @@ landing snippets demo = H.div { class: "page" }
       , H.section { class: "closing" }
           [ H.h2 {} "Solid underneath"
           , H.p {}
-              "With compileViews in the Vite plugin, views go through Solid's own compiler, into the same templates as Solid JSX, and render about as fast. Without it, purs-solid clones templates at runtime: updates cost the same, and creating DOM is about 1.35× slower."
+              "Through the Vite plugin, views go through Solid's own compiler, into the same templates as Solid JSX, and render about as fast. Elsewhere purs-solid clones templates at runtime: updates cost the same, and creating DOM is about 1.35× slower."
           , H.a { class: "button primary", href: "docs/" } "Get started"
           ]
       ]
@@ -227,8 +227,8 @@ guide snippets = case _ of
   StartMode ->
     { modules: [ "Solid.Start.ServerFunction", "Solid.Start.UseServer", "Solid.Start.Response", "Solid.Start.Middleware" ]
     , content:
-        [ H.p {} [ text "A start-mode app is a ", c "Component", text ". Use ", c "purs-solid/vite", text " in place of ", c "@solidjs/vite-plugin", text ": it takes the same options, with ", c "start.app", text " and ", c "start.middleware", text " given as module names. ", c "compileViews: true", text " compiles views with Solid's compiler into the same templates as Solid JSX; element calls it can't read stay on the runtime path." ]
-        , plain "import solid from \"purs-solid/vite\";\n\nexport default defineConfig({ plugins: [solid({ start: true, ssr: true, compileViews: true })] });"
+        [ H.p {} [ text "A start-mode app is a ", c "Component", text ". Use ", c "purs-solid/vite", text " in place of ", c "@solidjs/vite-plugin", text ": it takes the same options, with ", c "start.app", text " and ", c "start.middleware", text " given as module names. ", text "Views compile with Solid's compiler into the same templates as Solid JSX; element calls it can't read, or every call with ", c "compileViews: false", text ", stay on the runtime path." ]
+        , plain "import solid from \"purs-solid/vite\";\n\nexport default defineConfig({ plugins: [solid({ start: true, ssr: true })] });"
         , H.p {} [ text "Server functions live in a server module that re-exports ", c "Solid.Start.UseServer", text ". None of its code reaches the browser; every export is a ", c "serverFunction", text ", with ", c "Serializable", text " arguments and results. Call them with ", c "call", text ", ", c "queryServer", text " or ", c "serverAction", text "." ]
         , sample snippets "server-function"
         ]

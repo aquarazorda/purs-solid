@@ -96,8 +96,8 @@ const markServerModule = (code, id, module, server) => {
 // `@solidjs/vite-plugin` with PureScript defaults: server modules compiled
 // from the spago output, server functions on in start mode, and `start.app`
 // / `start.middleware` given as module names (`app` defaults to module `App`).
-// `compileViews: true` compiles views to Solid templates (`./compile.mjs`).
-export default function pursSolid({ compileViews = false, ...options } = {}) {
+// Views compile to Solid templates (`./compile.mjs`) unless `compileViews: false`.
+export default function pursSolid({ compileViews = true, ...options } = {}) {
   const start = options.start === true ? {} : options.start;
   const serverFunctions = options.serverFunctions ?? (start ? true : undefined);
   const include = serverFunctions?.filter?.include ?? "src/**/*.{jsx,tsx,tsrx,ts,js,mjs,cjs}";

@@ -18,7 +18,7 @@ const workspace = (spago, modules) => {
 };
 
 const configure = (options, root) => {
-  const [plugin] = pursSolid(options);
+  const plugin = pursSolid(options).find((p) => p.name === "purs-solid");
   try {
     plugin.config({ root });
     return readFileSync(join(root, "node_modules", ".purs-solid", "app.js"), "utf8");
@@ -43,7 +43,7 @@ const es = workspace("workspace:\n  backend:\n    cmd: purs-backend-es\n", { "ou
 expect("purs-backend-es output is output-es", configure({ start: true }, es).includes(join("output-es", "App")), true);
 
 const serverTransform = (code, id, consumer) => {
-  const [plugin] = pursSolid({ start: true });
+  const plugin = pursSolid({ start: true }).find((p) => p.name === "purs-solid");
   return plugin.transform.handler.call({ environment: { config: { consumer } } }, code, id);
 };
 const serverModule = `var greet = Solid_Start_ServerFunction.serverFunction()()(function (name) { return name; });

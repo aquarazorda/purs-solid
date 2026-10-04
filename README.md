@@ -80,7 +80,7 @@ The router and meta packages are needed only for `Solid.Router` and `Solid.Meta`
 
 ## Start mode
 
-A start-mode app is a `Component`. Use `purs-solid/vite` in place of `@solidjs/vite-plugin`. It takes the same options, with `start.app` and `start.middleware` given as module names. `app` defaults to the module `App` exporting `app`, and a middleware module exports `middleware`. With `compileViews: true`, element calls with literal props are compiled by Solid's compiler into the same templates as Solid JSX, on the server and in the browser; anything else stays on the runtime path.
+A start-mode app is a `Component`. Use `purs-solid/vite` in place of `@solidjs/vite-plugin`. It takes the same options, with `start.app` and `start.middleware` given as module names. `app` defaults to the module `App` exporting `app`, and a middleware module exports `middleware`. Element calls with literal props are compiled by Solid's compiler into the same templates as Solid JSX, on the server and in the browser; anything else stays on the runtime path. `compileViews: false` keeps every element on the runtime path.
 
 ```js
 import solid from "purs-solid/vite";
@@ -144,7 +144,7 @@ npm run test:all
 | `npm run test:vite` | the `purs-solid/vite` plugin's own logic |
 | `npm run test:types` | props the type checker must accept or reject |
 | `npm run test:compiled` | a fixture with every field kind, from purs and purs-backend-es output, through the runtime path and through compiled templates (`vite/compile.mjs`): the same server HTML, hydration that claims every element, and the same DOM after each interaction |
-| `npm run test:apps:compiled` | the start-mode and dev suites with `compileViews: true` |
+| `npm run test:apps:runtime` | the start-mode and dev suites with `compileViews: false` |
 | `npm run build:site` | the landing page, guide and API reference (`site/`) into `site/dist`; its code samples are compiled regions of `site/src` |
 | `npm run gen:dom` | regenerates `Solid.DOM.HTML`, `Solid.DOM.SVG` and `Solid.Internal.Names` |
 | `npm run format`, `npm run format:check` | purs-tidy over the library, tests, examples and site |
@@ -154,7 +154,7 @@ npm run test:all
 
 The rows benchmark (keyed, after [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark)): `examples/src/Bench/Rows.purs` against the same app in Solid JSX, `test/bench/reference/rows.jsx`. Medians in headless Chromium, Solid `2.0.0-rc.13`:
 
-| Operation | Solid JSX | purs-solid, `compileViews` | purs-solid, runtime |
+| Operation | Solid JSX | purs-solid (Vite plugin) | purs-solid, runtime path |
 |---|---|---|---|
 | create 1k rows | 12.0 ms | 12.4 ms | 16.9 ms |
 | replace 1k rows | 13.2 ms | 14.1 ms | 18.1 ms |
@@ -163,4 +163,4 @@ The rows benchmark (keyed, after [js-framework-benchmark](https://github.com/kra
 | create 10k rows | 128.8 ms | 126.7 ms | 164.8 ms |
 | bundle (gzip) | 24.2 kB | 34.6 kB | 39.7 kB |
 
-With `compileViews`, views compile to the same templates as Solid JSX. Without it (or outside Vite), purs-solid clones templates at runtime: updates cost about the same, and creating DOM is about 1.35x slower.
+Through `purs-solid/vite`, views compile to the same templates as Solid JSX. On the runtime path (`compileViews: false`, or builds without the plugin), purs-solid clones templates at runtime: updates cost about the same, and creating DOM is about 1.35x slower.
