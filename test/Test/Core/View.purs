@@ -30,7 +30,7 @@ import Solid.Signal (Accessor, Setter, createSignal, set)
 import Solid.Signal as Signal
 import Solid.Errors (isSafeError, markSafeError)
 import Solid.Web as Web
-import Test.Solid (Mounted, click, html, inputText, mount, mountUsing, query, settle, solidIt)
+import Test.Solid (Mounted, click, html, inputText, mount, mountUsing, query, settle, solidIt, waitForHtml)
 import Unsafe.Reference (unsafeRefEq)
 import Web.DOM.Element (Element, getAttribute, namespaceURI)
 import Web.HTML.HTMLInputElement as HTMLInputElement
@@ -372,12 +372,10 @@ spec = describe "views" do
             pure (Control.loadingOn id.get (text "loading") (text item))
         )
         {}
-      delay (Milliseconds 40.0)
-      html mounted >>= shouldEqual "item 1"
+      waitForHtml "item 1" mounted
       write id 2
       html mounted >>= shouldEqual "loading"
-      delay (Milliseconds 40.0)
-      html mounted >>= shouldEqual "item 2"
+      waitForHtml "item 2" mounted
       liftEffect mounted.dispose
 
     solidIt "loading shows the fallback until async content is ready" do
@@ -387,8 +385,7 @@ spec = describe "views" do
           pure (text greeting)
       mounted <- mount (Control.loading (text "loading") (Component.element slow {}))
       html mounted >>= shouldEqual "loading"
-      delay (Milliseconds 40.0)
-      html mounted >>= shouldEqual "ready"
+      waitForHtml "ready" mounted
       liftEffect mounted.dispose
 
     solidIt "errored catches errors from a reactive region, initially and after updates" do

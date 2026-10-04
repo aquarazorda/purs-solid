@@ -21,7 +21,7 @@ import Solid.Signal as Signal
 import Solid.Store (createStore, focus, key, value)
 import Solid.Store as Store
 import Solid.Utility (mapArray)
-import Test.Solid (html, mount, settle, solidIt)
+import Test.Solid (html, mount, settle, solidIt, waitForHtml)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM.HTML as H
@@ -265,8 +265,7 @@ spec = describe "Solid.Store" do
           H.ul {} [ Control.forEach (Store.items (Store.focusKey @"people" store)) \row _ -> pure (H.li {} (value (Store.focusKey @"name" row))) ]
     mounted <- mount (Component.element list {})
     html mounted >>= shouldEqual "loading"
-    delay (Milliseconds 20.0)
-    html mounted >>= shouldEqual "<ul><li>ada</li><li>lin</li></ul>"
+    waitForHtml "<ul><li>ada</li><li>lin</li></ul>" mounted
     liftEffect mounted.dispose
 
   solidIt "focusKey and atKey shorten one-key paths" do
