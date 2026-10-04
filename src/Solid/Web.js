@@ -1,6 +1,6 @@
 import { hydrate, isServer as solidIsServer, render } from "@solidjs/web";
 
-export const isServer = solidIsServer;
+export const isServer = () => solidIsServer;
 
 const toError = (error) => (error instanceof Error ? error : new Error(String(error)));
 

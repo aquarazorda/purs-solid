@@ -16,7 +16,8 @@ import Solid.Control as Control
 import Solid.DOM.HTML as H
 import Solid.DOM.SVG as S
 import Solid.JSX (JSX, text)
-import Solid.Signal (createSignal, modify_)
+import Solid.Lifecycle (onSettled)
+import Solid.Signal (createSignal, modify_, set)
 
 fetchGreeting :: Effect Unit -> Aff String
 fetchGreeting onFetch = do
@@ -30,6 +31,8 @@ app = Component.element root
 
 root :: Component.Component { onFetch :: Effect Unit }
 root = Component.component \{ onFetch } -> do
+  settled /\ setSettled <- createSignal false
+  onSettled (set setSettled true $> pure unit)
   count /\ setCount <- createSignal 0
   items /\ setItems <- createSignal [ "alpha", "beta" ]
   detail /\ setDetail <- createSignal (Nothing :: Maybe String)
@@ -37,6 +40,7 @@ root = Component.component \{ onFetch } -> do
 
   pure $ H.main { id: "hydration-app" }
     [ H.h1 {} "Hydration"
+    , H.p { id: "settled" } ((if _ then "settled" else "rendering") <$> settled)
     , H.button
         { id: "increment"
         , type: ButtonButton

@@ -10,6 +10,7 @@ const { renderPage } = await import(pathToFileURL(join(rootDir, "output", "Examp
 const { html, fetches } = await renderPage();
 expect("server fetched the async value once", fetches, 1);
 expect("server HTML has the resolved async value", html.includes("greeting from the server"), true);
+expect("onSettled doesn't run on the server", html.includes(">rendering<"), true);
 
 const { server, origin } = await serve({ "/": html, "/client.js": clientBundle });
 const browser = await launch();
@@ -26,6 +27,7 @@ try {
   expect("every element was claimed, none recreated", reused.fromServer, reused.total);
   expect("client did not refetch the serialized async value", await tab.$("#app[data-fetched]"), null);
   expect("async value shows after hydration", await tab.textContent("#greeting"), "greeting from the server");
+  expect("onSettled runs once hydrated", await tab.textContent("#settled"), "settled");
 
   const button = await tab.$("#increment");
   await tab.click("#increment");

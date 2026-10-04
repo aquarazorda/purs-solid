@@ -21,7 +21,6 @@ import Solid.DOM.HTML as H
 import Solid.JSX (fragment)
 import Solid.Lifecycle (onSettled)
 import Solid.Signal (createSignal, set)
-import Solid.Web (isServer)
 import Web.DOM.Document (documentElement)
 import Web.DOM.Element (getBoundingClientRect, scrollHeight)
 import Web.DOM.NonElementParentNode (getElementById)
@@ -68,16 +67,13 @@ sectionTitle = case _ of
 toc :: Component.Component {}
 toc = Component.component \_ -> do
   current /\ setCurrent <- createSignal Install
-  -- Registered on the server too: hydration keys count it.
-  onSettled
-    if isServer then pure (pure unit)
-    else do
-      let update = reading >>= set setCurrent
-      listener <- eventListener (const update)
-      target <- toEventTarget <$> window
-      addEventListener scroll listener false target
-      update
-      pure (removeEventListener scroll listener false target)
+  onSettled do
+    let update = reading >>= set setCurrent
+    listener <- eventListener (const update)
+    target <- toEventTarget <$> window
+    addEventListener scroll listener false target
+    update
+    pure (removeEventListener scroll listener false target)
   pure $ fragment
     [ H.p {} "Guide"
     , H.ol {} $ sections <#> \section ->

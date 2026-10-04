@@ -30,7 +30,11 @@ import Web.HTML.HTMLDocument as HTMLDocument
 import Web.HTML.HTMLElement as HTMLElement
 import Web.HTML.Window (document)
 
-foreign import isServer :: Boolean
+-- | An `Effect`, so setup and views can't branch on it: a component must
+-- | create the same primitives and markup on the server and in the browser,
+-- | or hydration fails. `onSettled` callbacks only run in the browser, and
+-- | `Component.clientOnly` renders content only there.
+foreign import isServer :: Effect Boolean
 
 type ClientRenderOptions =
   ( -- | Sees every error an `errored` boundary under this root renders a
@@ -79,9 +83,7 @@ requireElementById id = clientOnly do
   maybe (throw ("no element with id " <> show id)) pure found
 
 clientOnly :: forall a. Effect a -> Effect (Either Error a)
-clientOnly action
-  | isServer = pure (Left (error "Solid.Web: client-only API called on the server"))
-  | otherwise = try action
+clientOnly action = isServer >>= if _ then pure (Left (error "Solid.Web: client-only API called on the server")) else try action
 
 foreign import renderImpl :: forall options. EffectFn4 (JSX -> Realized) { | options } JSX Element (Effect Unit)
 foreign import hydrateImpl :: forall options. EffectFn4 (JSX -> Realized) { | options } JSX Element (Effect Unit)

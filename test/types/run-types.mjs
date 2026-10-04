@@ -14,6 +14,7 @@ import Solid.Async (createAsync)
 import Solid.Component as Component
 import Solid.Router.Path (href)
 import Solid.Signal (createSignal, get, set)
+import Solid.Web (isServer)
 import DOM.HTML.Indexed.InputType (InputType(..))
 import Solid.DOM (element)
 import Solid.DOM.Aria as Aria
@@ -68,6 +69,7 @@ const rejected = [
   ["text mixed into an array of elements", "JSX", `H.div {} [ "a", H.span {} "b" ]`, "JSX"],
   ["a signal write during setup", "Component.Component {}", `Component.component \\_ -> createSignal 0 >>= \\(_ /\\ setCount) -> set setCount 1 *> pure (text "")`, "Could not match type Effect with type Setup"],
   ["reading an Async with get", "Component.Component {}", `Component.component \\_ -> createAsync (pure (pure 1)) >>= \\(user /\\ _) -> get user *> pure (text "")`, "Could not match type Async with type Accessor"],
+  ["a view that branches on isServer", "Component.Component {}", `Component.component \\_ -> pure (if isServer then text "server" else text "browser")`, "Could not match type Effect Boolean with type Boolean"],
   ["a route param of the wrong type", "JSX", `H.a { href: href @"/users/:id<int>" { id: "7" } } "x"`, "Could not match type Int with type String while matching label id"],
 ];
 

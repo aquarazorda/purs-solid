@@ -18,7 +18,8 @@ onCleanup cleanup = Setup (runEffectFn1 onCleanupImpl cleanup)
 foreign import onCleanupImpl :: EffectFn1 (Effect Unit) Unit
 
 -- | Runs once the current owner's subtree has rendered with no async work
--- | pending. The returned `Effect Unit` runs on disposal.
+-- | pending, in the browser only; the server registers it without running it.
+-- | The returned `Effect Unit` runs on disposal.
 onSettled :: Effect (Effect Unit) -> Setup Unit
 onSettled callback = Setup (runEffectFn1 onSettledImpl callback)
 
