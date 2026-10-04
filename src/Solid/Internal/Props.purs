@@ -56,6 +56,7 @@ import Prim.RowList as RL
 import Prim.Symbol as Symbol
 import Record.Unsafe (unsafeGet)
 import Solid.DOM.AttrValue (class AttrValue, toAttrValue)
+import Solid.DOM.Aria (Aria, class AriaValue, ariaValue)
 import Solid.Internal.Names (attributeName, eventName)
 import Solid.Internal.View (class ToBinding, JSX, Namespace, Prop, bindingProp, elementWith, eventProp, propsProp, refProp, textBinding)
 import Solid.Signal (Signal, set)
@@ -162,6 +163,8 @@ else instance ToBinding value String => Entry kind "innerHTML" value where
   entry = bindingProp "innerHTML" identity
 else instance ToBinding value String => Entry kind "textContent" value where
   entry = bindingProp "textContent" identity
+else instance ToBinding value String => Entry kind "role" value where
+  entry = bindingProp "role" identity
 else instance
   ( StartsWith "data-" label isData
   , StartsWith "aria-" label isAria
@@ -171,7 +174,8 @@ else instance
   Entry kind label value where
   entry = prefixed @isData @isAria @isEvent @kind @label
 
--- | `data-*` and `aria-*` attributes, `on:*` events, then everything else.
+-- | `data-*` attributes, `aria-*` attributes (from `Solid.DOM.Aria`), `on:*` events,
+-- | then everything else.
 class Prefixed :: Boolean -> Boolean -> Boolean -> Type -> Symbol -> Type -> Constraint
 class Prefixed isData isAria isEvent kind label value where
   prefixed :: value -> Prop ()
@@ -179,8 +183,8 @@ class Prefixed isData isAria isEvent kind label value where
 instance (IsSymbol label, ToBinding value String) => Prefixed True isAria isEvent kind label value where
   prefixed = bindingProp (reflectSymbol (Proxy @label)) identity
 
-instance (IsSymbol label, ToBinding value String) => Prefixed False True isEvent kind label value where
-  prefixed = bindingProp (reflectSymbol (Proxy @label)) identity
+instance (IsSymbol label, Row.Cons label type_ rest Aria, ToBinding value type_, AriaValue type_) => Prefixed False True isEvent kind label value where
+  prefixed = bindingProp (reflectSymbol (Proxy @label)) ariaValue
 
 instance (IsSymbol label, TypeEquals value (Event -> Effect Unit)) => Prefixed False False True kind label value where
   prefixed =
@@ -250,8 +254,8 @@ class UntypedField :: Type -> Constraint
 class UntypedField value where
   untypedField :: String -> value -> Prop ()
 
-instance UntypedField (event -> Effect Unit) where
-  untypedField = eventProp
+instance TypeEquals result (Effect Unit) => UntypedField (event -> result) where
+  untypedField label = eventProp label <<< map to
 else instance (ToBinding value a, AttrValue a) => UntypedField value where
   untypedField label = bindingProp label toAttrValue
 

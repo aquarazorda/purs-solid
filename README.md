@@ -46,7 +46,7 @@ main = mount (Component.element counter {})
   - `Solid.JSX`, `Solid.Component`;
   - `Solid.Component.JS` (use JavaScript Solid components);
   - `Solid.Control` (conditionals, `caseOn` for data types, lists, `loading`, `errored`, portals);
-  - `Solid.DOM` (props records: `ref`, `class` toggles, `style`, `bindValue`, `data-*` / `aria-*`, `on:` events), `Solid.DOM.HTML`, `Solid.DOM.SVG`. The HTML and SVG modules are generated from `dom-indexed` by `npm run gen:dom`.
+  - `Solid.DOM` (props records: `ref`, `class` toggles, `style`, `bindValue`, typed `aria-*` and `role`, `data-*`, `on:` events), `Solid.DOM.HTML`, `Solid.DOM.SVG`, `Solid.DOM.Aria`. The HTML and SVG modules are generated from `dom-indexed` by `npm run gen:dom`.
 - **Rendering:** `Solid.Web` (`mount`, render, hydrate), `Solid.Web.SSR` (string, async and streamed server rendering), `Solid.Errors` (client and server error hooks, safe errors).
 - **Routing and head tags:**
   - `Solid.Router` (`route @"/users/:id"` gives the component `{ id :: String }`, `:id<int>` an `Int`);

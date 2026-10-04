@@ -19,6 +19,7 @@ import Solid.Component as Component
 import Solid.Context (createContext, provide, useContext)
 import Solid.Control as Control
 import Solid.DOM (element, targetChecked, targetValue)
+import Solid.DOM.Aria as Aria
 import Solid.DOM.HTML as H
 import Solid.DOM.SVG as S
 import Solid.JSX (text)
@@ -172,18 +173,18 @@ spec = describe "views" do
       html mounted >>= shouldEqual """<li class="todo done">a</li>"""
       liftEffect mounted.dispose
 
-    solidIt "aria attributes and custom events" do
-      expanded <- signal "false"
+    solidIt "role, typed aria attributes and custom events" do
+      expanded <- signal false
       seen <- liftEffect (Ref.new 0)
       mounted <- mount $ H.button
-        { "aria-expanded": expanded.get, "on:ping": \_ -> Ref.modify_ (_ + 1) seen }
+        { role: "switch", "aria-expanded": expanded.get, "aria-level": 2, "aria-checked": Aria.Mixed, "on:ping": \_ -> Ref.modify_ (_ + 1) seen }
         "menu"
       button <- expectElement "button" mounted
       liftEffect (dispatch "ping" button)
       liftEffect (Ref.read seen) >>= shouldEqual 1
-      html mounted >>= shouldEqual """<button aria-expanded="false">menu</button>"""
-      write expanded "true"
-      html mounted >>= shouldEqual """<button aria-expanded="true">menu</button>"""
+      html mounted >>= shouldEqual """<button aria-checked="mixed" aria-expanded="false" aria-level="2" role="switch">menu</button>"""
+      write expanded true
+      liftEffect (getAttribute "aria-expanded" button) >>= shouldEqual (Just "true")
       liftEffect mounted.dispose
 
     solidIt "element takes any tag and any fields" do

@@ -20,7 +20,9 @@
 -- |   checked state to a `Signal` both ways.
 -- | - `innerHTML` (**not** escaped: pass only trusted or sanitized HTML) and
 -- |   `textContent`: replace the children.
--- | - `"data-*"` / `"aria-*"`: any such attribute, as a string.
+-- | - `role`, and the `"aria-*"` attributes in `Solid.DOM.Aria`, typed by the
+-- |   spec (`"aria-expanded": isOpen`, `"aria-checked": Aria.Mixed`).
+-- | - `"data-*"`: any such attribute, as a string.
 -- | - `"on:name"`: any event by DOM name. Solid delegates it when it's one of
 -- |   the events Solid delegates.
 -- |

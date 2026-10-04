@@ -11,6 +11,7 @@ const { expect, report } = checks("types");
 const imports = `import Prelude
 import DOM.HTML.Indexed.InputType (InputType(..))
 import Solid.DOM (element)
+import Solid.DOM.Aria as Aria
 import Solid.DOM.HTML as H
 import Solid.DOM.SVG as S
 import Solid.JSX (JSX, text)
@@ -24,7 +25,7 @@ import Web.UIEvent.MouseEvent (MouseEvent)
 `;
 
 const accepted = [
-  ["Accessor String -> Accessor Boolean -> JSX", `\\label disabled -> H.div { "data-id": label, "aria-label": "x" }
+  ["Accessor String -> Accessor Boolean -> JSX", `\\label disabled -> H.div { "data-id": label, role: "group", "aria-label": label, "aria-hidden": disabled, "aria-level": 2, "aria-valuenow": 0.5, "aria-checked": Aria.Mixed, "aria-live": Aria.Polite }
   [ H.input { ref: \\input -> void (Input.value input), type: InputText, value: label, disabled, onKeyDown: \\event -> void (pure (KeyboardEvent.key event)) }
   , H.label { for: "name", class: { active: disabled, static: true }, style: { color: label } } label
   , H.td { colSpan: 2, "on:custom": \\_ -> pure unit } []
@@ -50,6 +51,11 @@ const rejected = [
   ["bindValue with a non-string signal", "Signal Int -> JSX", `\\s -> H.input { bindValue: s }`, "Int"],
   ["a class toggle that isn't a boolean", "JSX", `H.div { class: { active: "yes" } } []`, "ToBinding String Boolean"],
   ["a data attribute that isn't a string", "JSX", `H.div { "data-count": 1 } []`, "ToBinding Int String"],
+  ["an aria attribute that doesn't exist", "JSX", `H.div { "aria-labeled": "x" } []`, "aria-labeled"],
+  ["a string for an aria boolean", "JSX", `H.div { "aria-hidden": "true" } []`, "Could not match type String with type Boolean"],
+  ["a string for an aria number", "JSX", `H.div { "aria-level": "2" } []`, "Could not match type String with type Int"],
+  ["a string for an aria keyword", "JSX", `H.div { "aria-checked": "mixed" } []`, "Could not match type String with type Tristate"],
+  ["a keyword from another attribute", "JSX", `H.div { "aria-live": Aria.Mixed } []`, "Could not match type Tristate with type Live"],
   ["an on: handler for a specific event type", "JSX", `H.div { "on:ping": \\(_ :: MouseEvent) -> pure unit } []`, "MouseEvent"],
   ["text mixed into an array of elements", "JSX", `H.div {} [ "a", H.span {} "b" ]`, "JSX"],
 ];
@@ -75,7 +81,7 @@ try {
   }
 
   const errors = new Map();
-  for (const block of output.split(/\nError (?:found|\d+ of \d+):\n/).slice(1)) {
+  for (const block of output.split(/^Error (?:found|\d+ of \d+):$/m).slice(1)) {
     const module = block.match(/in module (\S+)/)?.[1];
     if (module) errors.set(module, block.replace(/\s+/g, " "));
   }
