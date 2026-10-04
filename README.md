@@ -4,6 +4,8 @@ PureScript bindings for [Solid 2.0](https://github.com/solidjs/solid): fine-grai
 
 The bindings use Solid's public API only; what they add is types that reject incorrect code. For example, a signal can't be written during setup, a derived value can't perform effects, a prop only type-checks on elements that have it, and a route's params come from its path. See [docs/design.md](docs/design.md).
 
+Guide: [aquarazorda.github.io/purs-solid](https://aquarazorda.github.io/purs-solid/).
+
 ## Example
 
 ```purescript
@@ -141,8 +143,9 @@ npm run test:all
 | `npm run test:start`, `npm run test:dev` | the start-mode example built with Vite, and under Vite dev with edits while it runs |
 | `npm run test:vite` | the `purs-solid/vite` plugin's own logic |
 | `npm run test:types` | props the type checker must accept or reject |
+| `npm run build:site` | the landing page, guide and API reference (`site/`) into `site/dist`; its code samples are compiled regions of `site/src` |
 | `npm run gen:dom` | regenerates `Solid.DOM.HTML`, `Solid.DOM.SVG` and `Solid.Internal.Names` |
-| `npm run format`, `npm run format:check` | purs-tidy over the library, tests and examples |
+| `npm run format`, `npm run format:check` | purs-tidy over the library, tests, examples and site |
 | `npm run bench`, `npm run bench:reference` | the rows benchmark, and the same app in plain Solid |
 
 ## Performance

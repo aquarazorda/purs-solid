@@ -22,8 +22,9 @@
     "bench": "spago build && node test/bench/run-bench.mjs",
     "bench:reference": "node test/bench/run-bench.mjs --reference",
     "gen:dom": "node scripts/gen-dom.mjs",
-    "format": "purs-tidy format-in-place \"src/**/*.purs\" \"test/**/*.purs\" \"examples/src/**/*.purs\"",
-    "format:check": "purs-tidy check \"src/**/*.purs\" \"test/**/*.purs\" \"examples/src/**/*.purs\"",
+    "build:site": "spago build && node site/build.mjs",
+    "format": "purs-tidy format-in-place \"src/**/*.purs\" \"test/**/*.purs\" \"examples/src/**/*.purs\" \"site/src/**/*.purs\"",
+    "format:check": "purs-tidy check \"src/**/*.purs\" \"test/**/*.purs\" \"examples/src/**/*.purs\" \"site/src/**/*.purs\"",
     "build:example:hackernews": "spago build && vite build --config examples/src/HackerNews/Host/vite.config.mjs",
     "start:example:hackernews": "node examples/src/HackerNews/Host/dist/server/node.js"
   },

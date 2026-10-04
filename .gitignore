@@ -7,3 +7,4 @@ generated-docs/
 .spec-results
 examples/src/*/Host/dist/
 .purs-repl
+site/dist/

@@ -1,0 +1,21 @@
+package:
+  name: purs-solid-site
+  dependencies:
+    - aff
+    - aff-promise
+    - arrays
+    - console
+    - dom-indexed
+    - effect
+    - either
+    - exceptions
+    - foldable-traversable
+    - maybe
+    - prelude
+    - purs-solid
+    - spec
+    - strings
+    - tuples
+    - web-dom
+    - web-html
+    - web-uievents
