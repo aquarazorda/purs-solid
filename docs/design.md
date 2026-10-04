@@ -12,6 +12,8 @@ Runtime logic lives in JS FFI that calls Solid; PureScript supplies the types (r
 
 On the server and while hydrating, elements go through `dynamic(() => tag, { static: true })`, so Solid itself does SSR and hydration. New DOM in the browser clones one `template` per subtree shape, then applies each element's props with `assign` / `spread` and inserts its other children. Attributes stay out of templates: Solid sets `href` / `action` so the router can claim links, and normalizes `style`. Hand-writing compiled output for SSR and hydration (`getNextElement`, `ssrElement`, …) would make Solid's hydration internals ours to maintain.
 
+With `compileViews`, `vite/compile.mjs` rewrites element calls in purs or purs-backend-es output into JSX and hands it to Solid's compiler, so Solid owns templates, SSR and hydration there too. It decodes each field from the element's props dictionary by the instance names in `Solid.Internal.Props`, and keeps the field's runtime meaning (the library's own converters, or the field's runtime entry). An element it can't read (props or children that aren't literal) stays a runtime call, and the two mix in one tree. `test:compiled` checks that both paths give the same DOM, server HTML and hydration.
+
 ## Rules
 
 1. **Derived values are pure; writes are effects.** `Accessor` is a lawful `Monad` with no `MonadEffect`. Effects split into a tracked compute (`Accessor a`) and an untracked apply (`a -> Effect …`).

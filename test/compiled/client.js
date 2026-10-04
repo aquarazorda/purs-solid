@@ -1,2 +1,2 @@
-import { main } from "../../output-es/Test.Compiled.Fixture/index.js";
+import { main } from "@fixture";
 main();

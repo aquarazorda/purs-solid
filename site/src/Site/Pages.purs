@@ -74,7 +74,7 @@ landing snippets demo = H.div { class: "page" }
       , H.section { class: "closing" }
           [ H.h2 {} "Solid underneath"
           , H.p {}
-              "Solid does the rendering, SSR and hydration: new DOM is cloned from templates and server output goes through Solid's own dynamic. Updates cost about the same as hand-written Solid; creating DOM is about 1.35× slower, because PureScript can't use Solid's JSX compiler."
+              "With compileViews in the Vite plugin, views go through Solid's own compiler, into the same templates as Solid JSX, and render about as fast. Without it, purs-solid clones templates at runtime: updates cost the same, and creating DOM is about 1.35× slower."
           , H.a { class: "button primary", href: "docs/" } "Get started"
           ]
       ]
@@ -227,8 +227,8 @@ guide snippets = case _ of
   StartMode ->
     { modules: [ "Solid.Start.ServerFunction", "Solid.Start.UseServer", "Solid.Start.Response", "Solid.Start.Middleware" ]
     , content:
-        [ H.p {} [ text "A start-mode app is a ", c "Component", text ". Use ", c "purs-solid/vite", text " in place of ", c "@solidjs/vite-plugin", text ": it takes the same options, with ", c "start.app", text " and ", c "start.middleware", text " given as module names." ]
-        , plain "import solid from \"purs-solid/vite\";\n\nexport default defineConfig({ plugins: [solid({ start: true, ssr: true })] });"
+        [ H.p {} [ text "A start-mode app is a ", c "Component", text ". Use ", c "purs-solid/vite", text " in place of ", c "@solidjs/vite-plugin", text ": it takes the same options, with ", c "start.app", text " and ", c "start.middleware", text " given as module names. ", c "compileViews: true", text " compiles views with Solid's compiler into the same templates as Solid JSX; element calls it can't read stay on the runtime path." ]
+        , plain "import solid from \"purs-solid/vite\";\n\nexport default defineConfig({ plugins: [solid({ start: true, ssr: true, compileViews: true })] });"
         , H.p {} [ text "Server functions live in a server module that re-exports ", c "Solid.Start.UseServer", text ". None of its code reaches the browser; every export is a ", c "serverFunction", text ", with ", c "Serializable", text " arguments and results. Call them with ", c "call", text ", ", c "queryServer", text " or ", c "serverAction", text "." ]
         , sample snippets "server-function"
         ]

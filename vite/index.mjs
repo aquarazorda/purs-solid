@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import path from "node:path";
 import solid from "@solidjs/vite-plugin";
 import { parseAst } from "vite";
+import { pursViews } from "./compile.mjs";
 
 const marker = "useServer";
 const moduleName = /^[A-Z][\w']*(\.[A-Z][\w']*)*$/;
@@ -95,7 +96,8 @@ const markServerModule = (code, id, module, server) => {
 // `@solidjs/vite-plugin` with PureScript defaults: server modules compiled
 // from the spago output, server functions on in start mode, and `start.app`
 // / `start.middleware` given as module names (`app` defaults to module `App`).
-export default function pursSolid(options = {}) {
+// `compileViews: true` compiles views to Solid templates (`./compile.mjs`).
+export default function pursSolid({ compileViews = false, ...options } = {}) {
   const start = options.start === true ? {} : options.start;
   const serverFunctions = options.serverFunctions ?? (start ? true : undefined);
   const include = serverFunctions?.filter?.include ?? "src/**/*.{jsx,tsx,tsrx,ts,js,mjs,cjs}";
@@ -201,5 +203,6 @@ export default function pursSolid(options = {}) {
       return [];
     },
   };
-  return [plugin, lazy, noFallback, moduleUrl, reload, solid(solidOptions)];
+  const views = compileViews ? [pursViews({ hydratable: !!options.ssr })] : [];
+  return [...views, plugin, lazy, noFallback, moduleUrl, reload, solid(solidOptions)];
 }

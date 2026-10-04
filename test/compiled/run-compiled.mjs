@@ -1,25 +1,38 @@
 // Renders Test.Compiled.Fixture through the runtime path and through compiled
-// templates (`vite/compile.mjs`): in the browser, on the server, and hydrated.
-// Both modes are driven the same way and must give the same DOM.
+// templates (`vite/compile.mjs`), from purs and purs-backend-es output: in the
+// browser, on the server, and hydrated. Both modes are driven the same way and
+// must give the same DOM.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { env } from "node:process";
 import { pathToFileURL } from "node:url";
 import { checks, launch, rootDir, run, serve, watchProblems } from "../support.mjs";
 
-const { expect, report } = checks("compiled");
+const { expect: check, report } = checks("compiled");
 const modes = ["runtime", "compiled"];
 
 run("purs-backend-es", ["build"]);
+for (const output of ["output", "output-es"]) {
 const build = (mode, target) => {
+  env.PURS_SOLID_OUTPUT = output;
   env.PURS_SOLID_VIEWS = mode;
   env.PURS_SOLID_TARGET = target;
   run("vite", ["build", "--config", join(rootDir, "test", "compiled", "vite.config.mjs")]);
-  return join(rootDir, "dist", "compiled", `${mode}-${target}`, target === "server" ? "server.js" : "app.js");
+  return join(rootDir, "dist", "compiled", output, `${mode}-${target}`, target === "server" ? "server.js" : "app.js");
 };
 const bundles = {};
 for (const mode of modes) for (const target of ["client", "hydrate", "server"]) bundles[`${mode}-${target}`] = build(mode, target);
+const expect = (label, actual, expected) => check(`${output}: ${label}`, actual, expected);
 expect("the compiled bundle has Solid templates", readFileSync(bundles["compiled-client"], "utf8").includes("<main"), true);
+
+// The first difference between two snapshots, with some context, or `null`.
+const difference = (actual, expected) => {
+  const [a, e] = [JSON.stringify(actual), JSON.stringify(expected)];
+  if (a === e) return null;
+  let at = 0;
+  while (a[at] === e[at]) at += 1;
+  return { expected: e.slice(Math.max(0, at - 60), at + 60), got: a.slice(Math.max(0, at - 60), at + 60) };
+};
 
 const pages = {};
 for (const mode of modes) {
@@ -102,13 +115,14 @@ try {
     expect(`${mode}: hydrates without errors, mismatches or warnings`, results[`${mode}-hydrate`].problems, []);
     expect(`${mode}: hydration claims every server-rendered element`, results[`${mode}-hydrate`].reused, true);
   }
-  expect("same server HTML", results["compiled-server"], results["runtime-server"]);
+  expect("same server HTML", difference(results["compiled-server"], results["runtime-server"]), null);
   for (const target of ["client", "hydrate"]) {
     steps.forEach(([name], i) =>
-      expect(`${target}: same DOM after ${name}`, results[`compiled-${target}`].snapshots[i], results[`runtime-${target}`].snapshots[i]));
+      expect(`${target}: same DOM after ${name}`, difference(results[`compiled-${target}`].snapshots[i], results[`runtime-${target}`].snapshots[i]), null));
   }
 } finally {
   await browser.close();
   server.close();
+}
 }
 report();

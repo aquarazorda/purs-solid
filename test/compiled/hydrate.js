@@ -1,3 +1,3 @@
-import { hydrateMain } from "../../output-es/Test.Compiled.Fixture/index.js";
+import { hydrateMain } from "@fixture";
 hydrateMain();
 document.getElementById("app").setAttribute("data-hydrated", "");

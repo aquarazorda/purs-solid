@@ -1,6 +1,7 @@
 -- | Element props as records. Each field is converted to a `Prop` by a
 -- | function the instances build once per record type, so rendering only
--- | reads the fields and applies those functions.
+-- | reads the fields and applies those functions. `vite/compile.mjs` reads
+-- | compiled props dictionaries by these instances' names.
 module Solid.Internal.Props
   ( class Props
   , props
@@ -91,14 +92,14 @@ class Props :: Row Type -> Row Type -> Constraint
 class Props row props where
   props :: Array (Record props -> Prop ())
 
-instance (RL.RowToList props list, PropsRL (Typed row) list props) => Props row props where
+instance propsRecord :: (RL.RowToList props list, PropsRL (Typed row) list props) => Props row props where
   props = propsRL @(Typed row) @list
 
 class UntypedProps :: Row Type -> Constraint
 class UntypedProps props where
   untypedProps :: Array (Record props -> Prop ())
 
-instance (RL.RowToList props list, PropsRL Untyped list props) => UntypedProps props where
+instance untypedPropsRecord :: (RL.RowToList props list, PropsRL Untyped list props) => UntypedProps props where
   untypedProps = propsRL @Untyped @list
 
 applyProps :: forall props r. Array (Record props -> Prop ()) -> Record props -> Array (Prop r)
@@ -118,11 +119,11 @@ class Children :: Type -> Constraint
 class Children children where
   toChildren :: children -> Array JSX
 
-instance Children JSX where
+instance childrenJSX :: Children JSX where
   toChildren child = [ child ]
-else instance TypeEquals child JSX => Children (Array child) where
+else instance childrenArray :: TypeEquals child JSX => Children (Array child) where
   toChildren = unsafeCoerce
-else instance ToBinding text String => Children text where
+else instance childrenText :: ToBinding text String => Children text where
   toChildren text = [ textBinding text ]
 
 class PropsRL :: Type -> RL.RowList Type -> Row Type -> Constraint
@@ -145,27 +146,27 @@ class Entry :: Type -> Symbol -> Type -> Constraint
 class Entry kind label value where
   entry :: value -> Prop ()
 
-instance (ElementType kind element, TypeEquals value (element -> Effect Unit)) => Entry kind "ref" value where
+instance entryRef :: (ElementType kind element, TypeEquals value (element -> Effect Unit)) => Entry kind "ref" value where
   entry callback = refProp (unsafeCoerce (to callback))
-else instance (Supports kind "class", ClassValue value) => Entry kind "class" value where
+else instance entryClass :: (Supports kind "class", ClassValue value) => Entry kind "class" value where
   entry = classValue
-else instance (Supports kind "style", StyleValue value) => Entry kind "style" value where
+else instance entryStyle :: (Supports kind "style", StyleValue value) => Entry kind "style" value where
   entry = styleValue
-else instance (Supports kind "value", Supports kind "onInput", TypeEquals value (Signal String)) => Entry kind "bindValue" value where
+else instance entryBindValue :: (Supports kind "value", Supports kind "onInput", TypeEquals value (Signal String)) => Entry kind "bindValue" value where
   entry signal = case to signal of
     current /\ setter -> propsProp
       [ bindingProp "value" identity current, eventProp "onInput" \event -> targetValue event >>= set setter ]
-else instance (Supports kind "checked", Supports kind "onChange", TypeEquals value (Signal Boolean)) => Entry kind "bindChecked" value where
+else instance entryBindChecked :: (Supports kind "checked", Supports kind "onChange", TypeEquals value (Signal Boolean)) => Entry kind "bindChecked" value where
   entry signal = case to signal of
     current /\ setter -> propsProp
       [ bindingProp "checked" identity current, eventProp "onChange" \event -> targetChecked event >>= set setter ]
-else instance ToBinding value String => Entry kind "innerHTML" value where
+else instance entryInnerHTML :: ToBinding value String => Entry kind "innerHTML" value where
   entry = bindingProp "innerHTML" identity
-else instance ToBinding value String => Entry kind "textContent" value where
+else instance entryTextContent :: ToBinding value String => Entry kind "textContent" value where
   entry = bindingProp "textContent" identity
-else instance ToBinding value String => Entry kind "role" value where
+else instance entryRole :: ToBinding value String => Entry kind "role" value where
   entry = bindingProp "role" identity
-else instance
+else instance entryPrefixed ::
   ( StartsWith "data-" label isData
   , StartsWith "aria-" label isAria
   , StartsWith "on:" label isEvent
@@ -180,20 +181,20 @@ class Prefixed :: Boolean -> Boolean -> Boolean -> Type -> Symbol -> Type -> Con
 class Prefixed isData isAria isEvent kind label value where
   prefixed :: value -> Prop ()
 
-instance (IsSymbol label, ToBinding value String) => Prefixed True isAria isEvent kind label value where
+instance prefixedData :: (IsSymbol label, ToBinding value String) => Prefixed True isAria isEvent kind label value where
   prefixed = bindingProp (reflectSymbol (Proxy @label)) identity
 
-instance (IsSymbol label, Row.Cons label type_ rest Aria, ToBinding value type_, AriaValue type_) => Prefixed False True isEvent kind label value where
+instance prefixedAria :: (IsSymbol label, Row.Cons label type_ rest Aria, ToBinding value type_, AriaValue type_) => Prefixed False True isEvent kind label value where
   prefixed = bindingProp (reflectSymbol (Proxy @label)) ariaValue
 
-instance (IsSymbol label, TypeEquals value (Event -> Effect Unit)) => Prefixed False False True kind label value where
+instance prefixedEvent :: (IsSymbol label, TypeEquals value (Event -> Effect Unit)) => Prefixed False False True kind label value where
   prefixed =
     let
       name = "on" <> String.drop 3 (reflectSymbol (Proxy @label))
     in
       \callback -> eventProp name (to callback)
 
-instance Attribute kind label value => Prefixed False False False kind label value where
+instance prefixedAttribute :: Attribute kind label value => Prefixed False False False kind label value where
   prefixed = attribute @kind @label
 
 class Supports :: Type -> Symbol -> Constraint
@@ -212,10 +213,10 @@ class Attribute :: Type -> Symbol -> Type -> Constraint
 class Attribute kind label value where
   attribute :: value -> Prop ()
 
-instance (IsSymbol label, Row.Cons label type_ rest row, RowField type_ value) => Attribute (Typed row) label value where
+instance attributeTyped :: (IsSymbol label, Row.Cons label type_ rest row, RowField type_ value) => Attribute (Typed row) label value where
   attribute = field @type_ (reflectSymbol (Proxy @label))
 
-instance (IsSymbol label, UntypedField value) => Attribute Untyped label value where
+instance attributeUntyped :: (IsSymbol label, UntypedField value) => Attribute Untyped label value where
   attribute = untypedField (reflectSymbol (Proxy @label))
 
 -- | A row field: an event handler for event types, otherwise an attribute
@@ -224,25 +225,25 @@ class RowField :: Type -> Type -> Constraint
 class RowField type_ value where
   field :: String -> value -> Prop ()
 
-instance TypeEquals value (Event -> Effect Unit) => RowField Event value where
+instance rowFieldEvent :: TypeEquals value (Event -> Effect Unit) => RowField Event value where
   field label = handler label <<< to
-else instance TypeEquals value (MouseEvent -> Effect Unit) => RowField MouseEvent value where
+else instance rowFieldMouseEvent :: TypeEquals value (MouseEvent -> Effect Unit) => RowField MouseEvent value where
   field label = handler label <<< to
-else instance TypeEquals value (KeyboardEvent -> Effect Unit) => RowField KeyboardEvent value where
+else instance rowFieldKeyboardEvent :: TypeEquals value (KeyboardEvent -> Effect Unit) => RowField KeyboardEvent value where
   field label = handler label <<< to
-else instance TypeEquals value (FocusEvent -> Effect Unit) => RowField FocusEvent value where
+else instance rowFieldFocusEvent :: TypeEquals value (FocusEvent -> Effect Unit) => RowField FocusEvent value where
   field label = handler label <<< to
-else instance TypeEquals value (PointerEvent -> Effect Unit) => RowField PointerEvent value where
+else instance rowFieldPointerEvent :: TypeEquals value (PointerEvent -> Effect Unit) => RowField PointerEvent value where
   field label = handler label <<< to
-else instance TypeEquals value (DragEvent -> Effect Unit) => RowField DragEvent value where
+else instance rowFieldDragEvent :: TypeEquals value (DragEvent -> Effect Unit) => RowField DragEvent value where
   field label = handler label <<< to
-else instance TypeEquals value (TouchEvent -> Effect Unit) => RowField TouchEvent value where
+else instance rowFieldTouchEvent :: TypeEquals value (TouchEvent -> Effect Unit) => RowField TouchEvent value where
   field label = handler label <<< to
-else instance TypeEquals value (ClipboardEvent -> Effect Unit) => RowField ClipboardEvent value where
+else instance rowFieldClipboardEvent :: TypeEquals value (ClipboardEvent -> Effect Unit) => RowField ClipboardEvent value where
   field label = handler label <<< to
-else instance TypeEquals value (WheelEvent -> Effect Unit) => RowField WheelEvent value where
+else instance rowFieldWheelEvent :: TypeEquals value (WheelEvent -> Effect Unit) => RowField WheelEvent value where
   field label = handler label <<< to
-else instance (ToBinding value type_, AttrValue type_) => RowField type_ value where
+else instance rowFieldAttribute :: (ToBinding value type_, AttrValue type_) => RowField type_ value where
   field label = bindingProp (attributeName label) toAttrValue
 
 handler :: forall event. String -> (event -> Effect Unit) -> Prop ()
@@ -254,9 +255,9 @@ class UntypedField :: Type -> Constraint
 class UntypedField value where
   untypedField :: String -> value -> Prop ()
 
-instance TypeEquals result (Effect Unit) => UntypedField (event -> result) where
+instance untypedFieldEvent :: TypeEquals result (Effect Unit) => UntypedField (event -> result) where
   untypedField label = eventProp label <<< map to
-else instance (ToBinding value a, AttrValue a) => UntypedField value where
+else instance untypedFieldAttribute :: (ToBinding value a, AttrValue a) => UntypedField value where
   untypedField label = bindingProp label toAttrValue
 
 -- | `class`: a string (or accessor), or a record of classes to toggles.
@@ -264,9 +265,9 @@ class ClassValue :: Type -> Constraint
 class ClassValue value where
   classValue :: value -> Prop ()
 
-instance (RL.RowToList classes list, Toggles list classes) => ClassValue (Record classes) where
+instance classValueRecord :: (RL.RowToList classes list, Toggles list classes) => ClassValue (Record classes) where
   classValue = let converters = toggles @list in \record -> propsProp (map (_ $ record) converters)
-else instance ToBinding value String => ClassValue value where
+else instance classValueText :: ToBinding value String => ClassValue value where
   classValue = bindingProp "class" identity
 
 class Toggles :: RL.RowList Type -> Row Type -> Constraint
@@ -289,9 +290,9 @@ class StyleValue :: Type -> Constraint
 class StyleValue value where
   styleValue :: value -> Prop ()
 
-instance (RL.RowToList properties list, StyleEntries list properties) => StyleValue (Record properties) where
+instance styleValueRecord :: (RL.RowToList properties list, StyleEntries list properties) => StyleValue (Record properties) where
   styleValue = let converters = styleEntries @list in \record -> propsProp (map (_ $ record) converters)
-else instance ToBinding value String => StyleValue value where
+else instance styleValueText :: ToBinding value String => StyleValue value where
   styleValue = bindingProp "style" identity
 
 class StyleEntries :: RL.RowList Type -> Row Type -> Constraint

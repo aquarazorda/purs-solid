@@ -1,35 +1,37 @@
-// Compiles element calls in purs-backend-es output to JSX for Solid's compiler,
-// so views get the same templates as Solid JSX. Each field is decoded from the
-// element's props dictionary and keeps its runtime meaning; an element whose
-// props or children aren't literal stays a runtime call.
+// Compiles element calls in compiled PureScript (purs or purs-backend-es output)
+// to JSX for Solid's compiler, so views get the same templates as Solid JSX.
+// Each field is decoded from the element's props dictionary and keeps its
+// runtime meaning; an element whose props or children aren't literal stays a
+// runtime call.
 import { parse } from "@babel/parser";
 import generateModule from "@babel/generator";
 import * as t from "@babel/types";
-import { DOMWithState, SVGElements } from "@solidjs/web";
+import { DOMWithState, SVGElements, VoidElements } from "@solidjs/web";
 
 const generate = generateModule.default;
 
-const helpers = ["childValue", "readValue", "fieldValue", "fieldProps"];
+const helpers = ["childValue", "readValue", "fieldValue", "fieldProps", "fieldPart"];
 const helper = (name) => t.identifier(`$$${name}`);
 
-const identityConverters = new Set(["identity", "unsafeCoerce"]);
-
+// Module names, with purs (`_`) and purs-backend-es (`$d`) escapes undone.
+// The instances this reads are named in `Solid.Internal.Props`.
+const unescape = (name) => name?.replace(/\$d/g, ".").replace(/_/g, ".");
 const nameOf = (node) =>
-  t.isMemberExpression(node) && !node.computed ? node.property.name : t.isIdentifier(node) ? node.name : undefined;
+  t.isMemberExpression(node)
+    ? node.computed
+      ? t.isStringLiteral(node.property) ? node.property.value : undefined
+      : node.property.name
+    : t.isIdentifier(node)
+      ? node.name
+      : undefined;
+const moduleOf = (node) => (t.isMemberExpression(node) && t.isIdentifier(node.object) ? unescape(node.object.name) : undefined);
 
-const callRoot = (node) => {
-  while (t.isCallExpression(node)) node = node.callee;
-  return node;
-};
+const reserved = new Set(["ado", "case", "class", "data", "derive", "do", "else", "false", "forall", "foreign", "if", "import",
+  "in", "infix", "infixl", "infixr", "instance", "let", "module", "newtype", "of", "then", "true", "type", "where"]);
+const tagOf = (name) => (name.endsWith("_") && reserved.has(name.slice(0, -1)) ? name.slice(0, -1) : name);
 
-const callArguments = (node) => {
-  const all = [];
-  while (t.isCallExpression(node)) {
-    all.unshift(node.arguments);
-    node = node.callee;
-  }
-  return all;
-};
+// Converters whose values are already what Solid sets.
+const identityConverters = /^(identity|unsafeCoerce|attrValue(String|Int|Number|Boolean)|ariaValue(String|Int|Number))$/;
 
 // Replaces identifiers (not property names) with the expressions bound to them.
 const substitute = (node, locals) => {
@@ -60,12 +62,34 @@ const unwrapIife = (node) => {
   return t.isReturnStatement(last) && last.argument ? substitute(last.argument, locals) : node;
 };
 
+const returned = (fn) => {
+  if (!t.isFunction(fn)) return undefined;
+  if (!t.isBlockStatement(fn.body)) return fn.body;
+  const [statement] = fn.body.body;
+  return fn.body.body.length === 1 && t.isReturnStatement(statement) ? statement.argument : undefined;
+};
+
 const symbolLabel = (node) => {
   const property = t.isObjectExpression(node) && node.properties.find((p) => nameOf(p.key) === "reflectSymbol");
-  return property && t.isArrowFunctionExpression(property.value) && t.isStringLiteral(property.value.body)
-    ? property.value.body.value
-    : undefined;
+  const value = property && (t.isObjectMethod(property) ? property : property.value);
+  const body = value && returned(value);
+  return t.isStringLiteral(body) ? body.value : undefined;
 };
+
+// `import * as X from "../Module/index.js"`: X -> Module.
+const importedModules = (ast) => {
+  const out = new Map();
+  for (const statement of ast.program.body) {
+    const match = t.isImportDeclaration(statement) && statement.source.value.match(/^\.\.\/([^/]+)\/index\.js$/);
+    const namespace = match && statement.specifiers.find((s) => t.isImportNamespaceSpecifier(s));
+    if (namespace) out.set(namespace.local.name, match[1]);
+  }
+  return out;
+};
+
+// Modules whose converters and constructors the plugin may evaluate at build time.
+export const constantModules = (code) =>
+  [...new Set([...code.matchAll(/from "\.\.\/((?:DOM\.HTML\.Indexed\.\w+|Solid\.DOM\.AttrValue|Solid\.DOM\.Aria))\/index\.js"/g)].map((m) => m[1]))];
 
 export const compileViews = ({ attributeName, eventName }) => {
   const analyse = (ast) => {
@@ -83,119 +107,160 @@ export const compileViews = ({ attributeName, eventName }) => {
       return node;
     };
 
-    // label -> entry dictionary, from `propsRLCons(symbol)(entry)(rest).propsRL` chains.
+    // An application chain `f(a)(b)…`, following bindings and simple arrow
+    // functions: the function it starts from and each argument list.
+    const flatten = (node, seen = new Set()) => {
+      node = resolve(node, seen);
+      if (t.isCallExpression(node)) {
+        const inner = flatten(node.callee, seen);
+        const callee = inner.root;
+        if (inner.args.length === 0 && t.isArrowFunctionExpression(callee) && callee.params.length === 1 && t.isIdentifier(callee.params[0])) {
+          const body = returned(callee);
+          if (body) return flatten(substitute(body, new Map([[callee.params[0].name, node.arguments[0]]])), seen);
+        }
+        return { root: callee, args: [...inner.args, node.arguments] };
+      }
+      return { root: node, args: [] };
+    };
+    const rootName = (chain) => nameOf(chain.root);
+    const lastArgument = (chain) => chain.args.at(-1)?.[0];
+
+    // label -> entry dictionary, from `propsRLCons(symbol)(entry)(rest)` chains.
     const fields = (dict) => {
-      dict = resolve(dict);
-      const list = t.isObjectExpression(dict) && dict.properties.find((p) => ["props", "untypedProps"].includes(nameOf(p.key)));
+      let list;
+      const direct = resolve(dict);
+      if (t.isObjectExpression(direct)) {
+        list = direct.properties.find((p) => ["props", "untypedProps"].includes(nameOf(p.key)))?.value;
+      } else if (["propsRecord", "untypedPropsRecord"].includes(rootName(flatten(dict)))) list = lastArgument(flatten(dict));
       if (!list) return undefined;
       const out = new Map();
-      let node = list.value;
+      let node = list;
       for (;;) {
         node = resolve(node);
         if (t.isMemberExpression(node) && nameOf(node) === "propsRL") node = resolve(node.object);
-        if (t.isArrayExpression(node) && node.elements.length === 0) return out;
-        if (nameOf(node) === "propsRLNil") return out;
-        const args = callArguments(node);
-        if (nameOf(callRoot(node)) !== "propsRLCons" || args.length !== 3) return undefined;
-        const label = symbolLabel(resolve(args[0][0]));
+        if ((t.isArrayExpression(node) && node.elements.length === 0) || nameOf(node) === "propsRLNil") return out;
+        const chain = flatten(node);
+        if (rootName(chain) !== "propsRLCons" || chain.args.length !== 3) return undefined;
+        const label = symbolLabel(resolve(chain.args[0][0]));
         if (label === undefined) return undefined;
-        out.set(label, args[1][0]);
-        node = args[2][0];
+        out.set(label, chain.args[1][0]);
+        node = chain.args[2][0];
       }
     };
 
     const nameArgument = (node) => {
       node = resolve(node);
       if (t.isStringLiteral(node)) return node.value;
-      if (t.isCallExpression(node) && nameOf(node.callee) === "attributeName" && t.isStringLiteral(node.arguments[0])) {
-        return attributeName(node.arguments[0].value);
+      const chain = flatten(node);
+      if (rootName(chain) === "attributeName" && t.isStringLiteral(lastArgument(chain))) return attributeName(lastArgument(chain).value);
+      return undefined;
+    };
+
+    const member = (object, property) => t.memberExpression(object, t.identifier(property));
+    const converter = (node) => (identityConverters.test(nameOf(node) ?? "") ? null : node);
+    const attribute = (name, convert) => ({ kind: "attribute", name, convert: convert && converter(convert) });
+
+    // purs: instances applied to instances.
+    const decodeInstance = (label, dict) => {
+      const chain = flatten(dict);
+      const name = rootName(chain);
+      const inner = (c) => flatten(lastArgument(c));
+      switch (name) {
+        case "entryRef":
+          return { kind: "ref" };
+        case "entryBindValue":
+        case "entryBindChecked":
+          return { kind: "bind", entry: member(dict, "entry") };
+        case "entryInnerHTML":
+        case "entryTextContent":
+        case "entryRole":
+          return attribute(label, null);
+        case "entryClass":
+        case "entryStyle":
+          return rootName(inner(chain)) === `${label}ValueRecord` ? { kind: `${label}Record` } : attribute(label, null);
+        case "entryPrefixed":
+          break;
+        default:
+          return undefined;
+      }
+      const prefixed = inner(chain);
+      switch (rootName(prefixed)) {
+        case "prefixedData":
+          return attribute(label, null);
+        case "prefixedAria":
+          return attribute(label, member(lastArgument(prefixed), "ariaValue"));
+        case "prefixedEvent":
+          return { kind: "event", name: "on" + label.slice(3) };
+        case "prefixedAttribute": {
+          const attr = inner(prefixed);
+          if (rootName(attr) !== "attributeTyped") return undefined;
+          const field = inner(attr);
+          if (/^rowField\w*Event$/.test(rootName(field))) return { kind: "event", name: eventName(label) };
+          if (rootName(field) === "rowFieldAttribute") return attribute(attributeName(label), member(lastArgument(field), "toAttrValue"));
+        }
       }
       return undefined;
     };
 
-    // What a field compiles to, from its entry dictionary.
-    const decode = (label, dict) => {
-      dict = resolve(dict);
-      const entryProperty = t.isObjectExpression(dict) && dict.properties.find((p) => nameOf(p.key) === "entry");
-      const instance = nameOf(callRoot(dict));
-      if (instance === "entry$x34ref$x34") return { kind: "ref" };
-      const entry = entryProperty ? resolve(entryProperty.value) : t.memberExpression(dict, t.identifier("entry"));
-      const args = callArguments(entry);
-      const root = nameOf(callRoot(entry));
-      if (root === "bindingProp" && args.length === 3) {
-        const name = nameArgument(args[1][0]);
-        if (name !== undefined) return { kind: "attribute", name, convert: args[2][0] };
+    // purs-backend-es: instance bodies inlined as `{entry: …}`.
+    const decodeEntry = (label, entry) => {
+      const chain = flatten(entry);
+      if (rootName(chain) === "bindingProp" && chain.args.length === 3) {
+        const name = nameArgument(chain.args[1][0]);
+        if (name !== undefined) return attribute(name, chain.args[2][0]);
       }
-      if (t.isCallExpression(entry) && t.isMemberExpression(entry.callee) && nameOf(entry.callee) === "field") {
-        const fieldLabel = entry.arguments[0];
+      if (t.isCallExpression(entry) && nameOf(entry.callee) === "field" && t.isMemberExpression(entry.callee) && t.isStringLiteral(entry.arguments[0])) {
+        const fieldLabel = entry.arguments[0].value;
         const owner = entry.callee.object;
-        if (/^rowField\w*Event$/.test(nameOf(callRoot(owner)) ?? "") && t.isStringLiteral(fieldLabel)) {
-          return { kind: "event", name: eventName(fieldLabel.value) };
-        }
-        const instanceObject = resolve(owner);
-        const field = t.isObjectExpression(instanceObject) && instanceObject.properties.find((p) => nameOf(p.key) === "field");
-        if (field && t.isArrowFunctionExpression(field.value) && t.isStringLiteral(fieldLabel)) {
-          const body = field.value.body;
-          const inner = callArguments(body);
-          if (nameOf(callRoot(body)) === "bindingProp" && inner.length === 3) {
-            return { kind: "attribute", name: attributeName(fieldLabel.value), convert: inner[2][0] };
-          }
-        }
+        if (/^rowField\w*Event$/.test(rootName(flatten(owner)) ?? "")) return { kind: "event", name: eventName(fieldLabel) };
+        const instance = resolve(owner);
+        const field = t.isObjectExpression(instance) && instance.properties.find((p) => nameOf(p.key) === "field");
+        const body = field && returned(field.value);
+        const inner = body && flatten(body);
+        if (inner && rootName(inner) === "bindingProp" && inner.args.length === 3) return attribute(attributeName(fieldLabel), inner.args[2][0]);
       }
-      if (t.isMemberExpression(entry) && nameOf(entry) === "classValue" && nameOf(callRoot(entry.object)) === "classValueRecord") {
-        return { kind: "classRecord" };
-      }
-      if (t.isMemberExpression(entry) && nameOf(entry) === "styleValue" && nameOf(callRoot(entry.object)) === "styleValueRecord") {
-        return { kind: "styleRecord" };
-      }
-      if (t.isMemberExpression(entry) && nameOf(entry) === "prefixed" && nameOf(callRoot(entry.object)) === "prefixedFalseFalseTrue") {
-        return { kind: "event", name: "on" + label.slice(3) };
-      }
-      return { kind: "field", entry };
-    };
-
-    // `typedElement(props)(children)(ns)(tag)` (or `typedVoidElement(props)(ns)(tag)`) in a binding.
-    const element = (node, seen = new Set()) => {
-      node = unwrapIife(node);
-      if (t.isIdentifier(node) && decls.has(node.name) && !seen.has(node.name)) {
-        seen.add(node.name);
-        return element(decls.get(node.name), seen);
-      }
-      const args = callArguments(node);
-      const root = nameOf(callRoot(node));
-      if (root === "typedElement" && args.length === 4) {
-        return { props: args[0][0], children: args[1][0], ns: args[2][0], tag: args[3][0] };
-      }
-      if (root === "typedVoidElement" && args.length === 3) {
-        return { props: args[0][0], ns: args[1][0], tag: args[2][0], void: true };
-      }
-      // `const td1 = td(children)`, with `td = dictChildren => typedElement(props)(dictChildren)(0)("td")`.
-      if (t.isCallExpression(node) && node.arguments.length === 1 && t.isIdentifier(node.callee)) {
-        const partial = resolve(node.callee);
-        if (t.isArrowFunctionExpression(partial) && partial.params.length === 1 && t.isIdentifier(partial.params[0])) {
-          const inner = element(partial.body, seen);
-          if (inner && t.isIdentifier(inner.children) && inner.children.name === partial.params[0].name) {
-            return { ...inner, children: node.arguments[0] };
-          }
-        }
-        if (t.isCallExpression(partial) || t.isMemberExpression(partial)) {
-          const inner = element(t.callExpression(partial, node.arguments), seen);
-          if (inner) return inner;
-        }
-      }
-      // `typedElement(props)` partially applied, then `(children)(ns)(tag)` at the binding.
-      if (args.length > 0 && t.isIdentifier(callRoot(node)) && decls.has(callRoot(node).name)) {
-        const base = resolve(callRoot(node));
-        if (base !== callRoot(node)) return element(args.reduce((f, a) => t.callExpression(f, a), base), seen);
+      if (t.isMemberExpression(entry)) {
+        const owner = rootName(flatten(entry.object));
+        if (nameOf(entry) === "classValue" && owner === "classValueRecord") return { kind: "classRecord" };
+        if (nameOf(entry) === "styleValue" && owner === "styleValueRecord") return { kind: "styleRecord" };
+        if (nameOf(entry) === "prefixed" && owner === "prefixedEvent") return { kind: "event", name: "on" + label.slice(3) };
       }
       return undefined;
+    };
+
+    const decode = (label, dict) => {
+      const direct = resolve(dict);
+      const entry = t.isObjectExpression(direct) && direct.properties.find((p) => nameOf(p.key) === "entry");
+      return (entry ? decodeEntry(label, resolve(entry.value)) : decodeInstance(label, dict)) ??
+        { kind: "field", entry: entry ? entry.value : member(dict, "entry") };
     };
 
     const childrenKind = (dict) => {
       if (dict === undefined) return "void";
-      if (nameOf(resolve(dict)) === "childrenJSX" || nameOf(dict) === "childrenJSX") return "jsx";
-      const source = generate(resolve(dict)).code;
-      return source.includes("textBindingImpl") ? "text" : source.includes("unsafeCoerce") ? "array" : undefined;
+      const direct = resolve(dict);
+      if (t.isObjectExpression(direct)) {
+        const source = generate(direct).code;
+        return source.includes("textBindingImpl") ? "text" : source.includes("unsafeCoerce") ? "array" : undefined;
+      }
+      return { childrenArray: "array", childrenJSX: "jsx", childrenText: "text" }[rootName(flatten(dict))];
+    };
+
+    // `typedElement(props)(children)(ns)(tag)` / `typedVoidElement(props)(ns)(tag)`
+    // (purs-backend-es), `Solid_DOM_HTML.tag(props)(children)` (purs).
+    const element = (init) => {
+      const chain = flatten(init);
+      const name = rootName(chain);
+      const { args } = chain;
+      if (name === "typedElement" && args.length === 4) return { props: args[0][0], children: args[1][0], ns: args[2][0], tag: args[3][0] };
+      if (name === "typedVoidElement" && args.length === 3) return { props: args[0][0], ns: args[1][0], tag: args[2][0] };
+      const module = moduleOf(chain.root);
+      if (module === "Solid.DOM.HTML" || module === "Solid.DOM.SVG") {
+        const tag = tagOf(nameOf(chain.root));
+        const ns = t.numericLiteral(module === "Solid.DOM.SVG" ? 1 : 0);
+        const isVoid = module === "Solid.DOM.HTML" && VoidElements.has(tag);
+        if (args.length === (isVoid ? 1 : 2)) return { props: args[0][0], children: args[1]?.[0], ns, tag: t.stringLiteral(tag) };
+      }
+      return undefined;
     };
 
     const elements = new Map();
@@ -208,80 +273,98 @@ export const compileViews = ({ attributeName, eventName }) => {
       const decoded = new Map([...props].map(([label, dict]) => [label, decode(label, dict)]));
       elements.set(name, { tag: found.tag.value, svg: found.ns.value === 1, kind, fields: decoded });
     }
-    return elements;
+    return { elements, flatten, rootName, lastArgument };
   };
 
-  const attribute = (name, value) => t.jsxAttribute(t.jsxIdentifier(name), value);
+  const jsxAttribute = (name, value) =>
+    t.jsxAttribute(name.includes(":") ? t.jsxNamespacedName(t.jsxIdentifier(name.split(":")[0]), t.jsxIdentifier(name.split(":")[1])) : t.jsxIdentifier(name), value);
   const container = (expression) => t.jsxExpressionContainer(expression);
   const call = (name, ...args) => t.callExpression(helper(name), args);
-  const isIdentityConverter = (node) => identityConverters.has(nameOf(node));
-  const literalText = (node) =>
-    t.isStringLiteral(node) ? node.value : t.isNumericLiteral(node) ? String(node.value) : undefined;
-
-  const effectHandler = (value, arg) =>
-    t.arrowFunctionExpression([arg], t.callExpression(t.callExpression(value, [arg]), []));
-
-  const recordValues = (node, read) =>
+  const literalText = (node) => (t.isStringLiteral(node) ? node.value : t.isNumericLiteral(node) ? String(node.value) : undefined);
+  const handler = (value, arg) => t.arrowFunctionExpression([arg], t.callExpression(t.callExpression(value, [arg]), []));
+  const isPlainRecord = (node) => t.isObjectExpression(node) && node.properties.every((p) => t.isObjectProperty(p) && !p.computed);
+  const record = (node) =>
     t.objectExpression(node.properties.map((p) =>
-      t.objectProperty(p.key, t.isBooleanLiteral(p.value) || t.isStringLiteral(p.value) ? p.value : read(p.value))));
+      t.objectProperty(p.key, t.isBooleanLiteral(p.value) || t.isStringLiteral(p.value) ? p.value : call("readValue", p.value))));
+  const value = (node, convert) => (convert ? call("fieldValue", node, convert) : call("readValue", node));
 
-  const isPlainRecord = (node) =>
-    t.isObjectExpression(node) && node.properties.every((p) => t.isObjectProperty(p) && !p.computed);
-
-  // JSX attributes for one element's literal props record.
-  const attributes = (info, props) => {
+  // JSX attributes for one element's literal props record. Stateful DOM
+  // properties (`value`, `checked`) are attributes in server HTML.
+  const attributes = (info, props, server, constant) => {
+    const state = (name) => (server ? name : `prop:${name}`);
     if (!isPlainRecord(props)) return undefined;
     const out = [];
     for (const prop of props.properties) {
       const label = t.isIdentifier(prop.key) ? prop.key.name : t.isStringLiteral(prop.key) ? prop.key.value : undefined;
       const field = info.fields.get(label);
       if (field === undefined) return undefined;
-      const value = prop.value;
+      const v = prop.value;
       switch (field.kind) {
         case "attribute": {
           const { name, convert } = field;
-          const text = literalText(value);
-          if (name === "style") out.push(attribute("style", container(call("fieldValue", value, convert))));
-          else if (DOMWithState[info.tag.toUpperCase()]?.[name]) {
-            out.push(t.jsxAttribute(t.jsxNamespacedName(t.jsxIdentifier("prop"), t.jsxIdentifier(name)), container(call("fieldValue", value, convert))));
-          } else if (text !== undefined && isIdentityConverter(convert)) out.push(attribute(name, t.stringLiteral(text)));
-          else if (t.isBooleanLiteral(value) && isIdentityConverter(convert)) out.push(attribute(name, container(value)));
-          else out.push(attribute(name, container(call("fieldValue", value, convert))));
+          const text = convert ? constant(v, convert) : literalText(v);
+          if (name === "style") out.push(jsxAttribute("style", container(value(v, convert))));
+          else if (DOMWithState[info.tag.toUpperCase()]?.[name]) out.push(jsxAttribute(state(name), container(value(v, convert))));
+          else if (text !== undefined) out.push(jsxAttribute(name, t.stringLiteral(text)));
+          else if (t.isBooleanLiteral(v) && !convert) out.push(jsxAttribute(name, container(v)));
+          else out.push(jsxAttribute(name, container(value(v, convert))));
           break;
         }
         case "event":
-          out.push(attribute(field.name, container(effectHandler(value, t.identifier("e")))));
+          out.push(jsxAttribute(field.name, container(handler(v, t.identifier("e")))));
           break;
         case "ref":
-          out.push(attribute("ref", container(effectHandler(value, t.identifier("el")))));
+          out.push(jsxAttribute("ref", container(handler(v, t.identifier("el")))));
           break;
         case "classRecord":
-          if (!isPlainRecord(value)) return undefined;
-          out.push(attribute("class", container(recordValues(value, (v) => call("readValue", v)))));
-          break;
         case "styleRecord":
-          if (!isPlainRecord(value)) return undefined;
-          out.push(attribute("style", container(recordValues(value, (v) => call("readValue", v)))));
+          if (!isPlainRecord(v)) return undefined;
+          out.push(jsxAttribute(field.kind === "classRecord" ? "class" : "style", container(record(v))));
           break;
+        case "bind": {
+          const [property, event] = label === "bindValue" ? ["value", "onInput"] : ["checked", "onChange"];
+          out.push(jsxAttribute(state(property), container(call("fieldPart", field.entry, v, t.stringLiteral(property)))));
+          if (!server) out.push(jsxAttribute(event, container(call("fieldPart", field.entry, t.cloneNode(v, true), t.stringLiteral(event)))));
+          break;
+        }
         default:
-          out.push(t.jsxSpreadAttribute(call("fieldProps", field.entry, value)));
+          out.push(t.jsxSpreadAttribute(call("fieldProps", field.entry, v)));
       }
     }
     return out;
   };
 
-  const textChild = (node) => {
-    if (t.isCallExpression(node) && nameOf(node.callee) === "textBindingImpl" && node.arguments.length === 1) {
-      const [value] = node.arguments;
-      return t.isStringLiteral(value) ? container(value) : container(value);
-    }
-    return undefined;
-  };
-
-  return (code) => {
+  return (code, { server = false, modules = new Map() } = {}) => {
     const ast = parse(code, { sourceType: "module" });
-    const elements = analyse(ast);
+    const imported = importedModules(ast);
+
+    // A converter applied to a literal or a nullary constructor, evaluated now
+    // when both come from `modules` (see `constantModules`).
+    const constant = (node, convert) => {
+      const exported = (object, name) => (t.isIdentifier(object) ? modules.get(imported.get(object.name))?.[name] : undefined);
+      if (!t.isMemberExpression(convert) || !t.isMemberExpression(convert.object)) return undefined;
+      const fn = exported(convert.object.object, nameOf(convert.object))?.[nameOf(convert)];
+      if (typeof fn !== "function") return undefined;
+      let input;
+      if (t.isStringLiteral(node) || t.isNumericLiteral(node) || t.isBooleanLiteral(node)) input = node.value;
+      else if (t.isMemberExpression(node) && nameOf(node) === "value" && t.isMemberExpression(node.object)) {
+        input = exported(node.object.object, nameOf(node.object))?.value;
+      } else if (t.isMemberExpression(node)) input = exported(node.object, nameOf(node));
+      if (input === undefined) return undefined;
+      const result = fn(input);
+      return typeof result === "string" || typeof result === "number" ? String(result) : undefined;
+    };
+    const { elements, flatten, rootName, lastArgument } = analyse(ast);
     if (elements.size === 0) return undefined;
+
+    // `text(x)` (purs) / `textBindingImpl(x)` (purs-backend-es) in an array of children.
+    const textChild = (node) => {
+      if (!t.isCallExpression(node)) return undefined;
+      const chain = flatten(node);
+      const name = rootName(chain);
+      const isText = name === "textBindingImpl" || (name === "text" && /JSX$/.test(moduleOf(chain.root) ?? ""));
+      return isText ? container(lastArgument(chain)) : undefined;
+    };
 
     const convert = (node, parentSvg) => {
       if (!t.isCallExpression(node)) return undefined;
@@ -299,10 +382,11 @@ export const compileViews = ({ attributeName, eventName }) => {
       if (info === undefined) return undefined;
       // A root SVG element needs a tag Solid knows is SVG; HTML can't sit inside SVG here.
       if (info.svg ? !parentSvg && !SVGElements.has(info.tag) : parentSvg) return undefined;
-      const attrs = attributes(info, props);
+      const attrs = attributes(info, props, server, constant);
       if (attrs === undefined) return undefined;
+      const inSvg = info.svg || info.tag === "svg";
+      const childOf = (item) => convert(item, inSvg) ?? textChild(item) ?? container(call("childValue", item));
       const content = [];
-      const childOf = (item) => convert(item, info.svg || info.tag === "svg") ?? textChild(item) ?? container(call("childValue", item));
       if (info.kind === "array") {
         if (!t.isArrayExpression(children)) return undefined;
         for (const item of children.elements) content.push(childOf(item));
@@ -328,29 +412,35 @@ export const compileViews = ({ attributeName, eventName }) => {
     ast.program = visit(ast.program);
     if (rewritten === 0) return undefined;
     const imports = helpers.map((name) => `${name} as $$${name}`).join(", ");
-    return {
-      code: `import { ${imports} } from "../Solid.Internal.View/foreign.js";\n${generate(ast).code}`,
-      rewritten,
-    };
+    return { code: `import { ${imports} } from "../Solid.Internal.View/foreign.js";\n${generate(ast).code}`, rewritten };
   };
 };
 
-// The Vite plugin: compiles purs-backend-es output modules that create elements.
-export const pursViews = ({ generate: mode = "dom", hydratable = false } = {}) => {
+// The Vite plugin: compiles output modules that create elements. Servers use
+// `generate: "ssr"`, browsers `"dom"`; `hydratable` when pages are server-rendered.
+export const pursViews = ({ generate: mode, hydratable = false } = {}) => {
   let compile;
   return {
     name: "purs-solid:views",
     enforce: "pre",
-    async transform(code, id) {
-      if (!/\/output-es\/[^/]+\/index\.js$/.test(id) || !code.includes("typedElement")) return null;
+    async transform(code, id, options) {
+      if (!/[\\/]output(-es)?[\\/][^\\/]+[\\/]index\.js$/.test(id) || !/typedElement|Solid_DOM_(HTML|SVG)/.test(code)) return null;
       if (compile === undefined) {
         const names = await import(new URL("../Solid.Internal.Names/index.js", `file://${id}`).href);
         compile = compileViews(names);
       }
-      const result = compile(code);
+      const server = mode ? mode === "ssr" : (this.environment?.config.consumer ?? (options?.ssr ? "server" : "client")) === "server";
+      const modules = new Map();
+      for (const name of constantModules(code)) modules.set(name, await import(new URL(`../${name}/index.js`, `file://${id}`).href));
+      const result = compile(code, { server, modules });
       if (result === undefined) return null;
       const { transformAsync } = await import("@solidjs/compiler");
-      const compiled = await transformAsync(result.code, { generate: mode, hydratable, filename: id.replace(/\.js$/, ".jsx"), sourceMap: false });
+      const compiled = await transformAsync(result.code, {
+        generate: server ? "ssr" : "dom",
+        hydratable,
+        filename: id.replace(/\.js$/, ".jsx"),
+        sourceMap: false,
+      });
       return { code: compiled.code, map: null };
     },
   };

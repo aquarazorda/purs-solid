@@ -86,8 +86,9 @@ const realizeChildren = (children) => {
 };
 
 // Used by templates compiled from PureScript (`vite/compile.mjs`): a child to
-// insert, a field's value (from a value or an accessor), and a field Solid's
-// compiler can't express, as props to spread.
+// insert, a field's value (from a value or an accessor), a field Solid's
+// compiler can't express as props to spread, and one key of a field that sets
+// several (`bindValue`'s `value` and `onInput`).
 export const childValue = (jsx) => untrack(() => realizeChild(jsx));
 
 export const readValue = (value) => (typeof value === "function" ? value() : value);
@@ -95,6 +96,12 @@ export const readValue = (value) => (typeof value === "function" ? value() : val
 export const fieldValue = (value, convert) => convert(typeof value === "function" ? value() : value);
 
 export const fieldProps = (entry, value) => propsObject(0, "", [entry(value)], noChildren);
+
+export const fieldPart = (entry, value, k) => {
+  const find = (prop) => (prop.m === PROPS ? prop.v.map(find).find((part) => part !== undefined) : prop.k === k ? prop : undefined);
+  const part = find(entry(value));
+  return part.m === REACTIVE ? part.v() : part.v;
+};
 
 export const textJsx = (value) => value;
 
