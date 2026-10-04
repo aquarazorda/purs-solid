@@ -14,10 +14,7 @@ import Prelude
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Solid.Component as Component
-import Solid.DOM (classWhen)
 import Solid.DOM.HTML as H
-import Solid.DOM.Props as P
-import Solid.JSX (text)
 import Solid.Reactivity (createMemo)
 import Solid.Signal (createSignal, modify_)
 import Solid.Web (mount)
@@ -26,13 +23,9 @@ counter :: Component.Component {}
 counter = Component.component \_ -> do
   count /\ setCount <- createSignal 0
   doubled <- createMemo ((_ * 2) <$> count)
-  pure $ H.div [ P.class_ "counter" ]
-    [ H.button
-        [ P.onClick \_ -> modify_ setCount (_ + 1)
-        , classWhen "big" ((_ > 3) <$> count)
-        ]
-        [ text "+" ]
-    , H.span_ [ text (show <$> doubled) ]
+  pure $ H.div { class: "counter" }
+    [ H.button { onClick: \_ -> modify_ setCount (_ + 1), class: { big: (_ > 3) <$> count } } "+"
+    , H.span {} (show <$> doubled)
     ]
 
 main :: Effect Unit
@@ -53,7 +46,7 @@ main = mount (Component.element counter {})
   - `Solid.JSX`, `Solid.Component`;
   - `Solid.Component.JS` (use JavaScript Solid components);
   - `Solid.Control` (conditionals, `caseOn` for data types, lists, `loading`, `errored`, portals);
-  - `Solid.DOM`, `Solid.DOM.HTML` / `Solid.DOM.Props`, `Solid.DOM.SVG` / `Solid.DOM.SVG.Props`. The HTML and SVG modules are generated from `dom-indexed` by `npm run gen:dom`.
+  - `Solid.DOM` (props records: `ref`, `class` toggles, `style`, `bindValue`, `data-*` / `aria-*`, `on:` events), `Solid.DOM.HTML`, `Solid.DOM.SVG`. The HTML and SVG modules are generated from `dom-indexed` by `npm run gen:dom`.
 - **Rendering:** `Solid.Web` (`mount`, render, hydrate), `Solid.Web.SSR` (string, async and streamed server rendering), `Solid.Errors` (client and server error hooks, safe errors).
 - **Routing and head tags:**
   - `Solid.Router` (`route @"/users/:id"` gives the component `{ id :: String }`, `:id<int>` an `Int`);

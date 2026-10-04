@@ -2,7 +2,8 @@
 module Solid.DOM.SVG where
 
 import DOM.HTML.Indexed as I
-import Solid.Internal.View (JSX, Prop, elementWith, svgNamespace)
+import Solid.Internal.Props (class Children, class Props, typedElement)
+import Solid.Internal.View (JSX, svgNamespace)
 import Web.DOM.Element (Element)
 
 type SVGAttributes = I.InteractiveEvents
@@ -71,458 +72,230 @@ type SVGAttributes = I.InteractiveEvents
   , y2 :: String
   )
 
-a :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-a = elementWith svgNamespace "a"
+a :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+a = typedElement @SVGAttributes svgNamespace "a"
 
-a_ :: Array JSX -> JSX
-a_ = elementWith svgNamespace "a" []
+altGlyph :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+altGlyph = typedElement @SVGAttributes svgNamespace "altGlyph"
 
-altGlyph :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-altGlyph = elementWith svgNamespace "altGlyph"
+altGlyphDef :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+altGlyphDef = typedElement @SVGAttributes svgNamespace "altGlyphDef"
 
-altGlyph_ :: Array JSX -> JSX
-altGlyph_ = elementWith svgNamespace "altGlyph" []
+altGlyphItem :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+altGlyphItem = typedElement @SVGAttributes svgNamespace "altGlyphItem"
 
-altGlyphDef :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-altGlyphDef = elementWith svgNamespace "altGlyphDef"
+animate :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+animate = typedElement @SVGAttributes svgNamespace "animate"
 
-altGlyphDef_ :: Array JSX -> JSX
-altGlyphDef_ = elementWith svgNamespace "altGlyphDef" []
+animateColor :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+animateColor = typedElement @SVGAttributes svgNamespace "animateColor"
 
-altGlyphItem :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-altGlyphItem = elementWith svgNamespace "altGlyphItem"
+animateMotion :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+animateMotion = typedElement @SVGAttributes svgNamespace "animateMotion"
 
-altGlyphItem_ :: Array JSX -> JSX
-altGlyphItem_ = elementWith svgNamespace "altGlyphItem" []
+animateTransform :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+animateTransform = typedElement @SVGAttributes svgNamespace "animateTransform"
 
-animate :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-animate = elementWith svgNamespace "animate"
+circle :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+circle = typedElement @SVGAttributes svgNamespace "circle"
 
-animate_ :: Array JSX -> JSX
-animate_ = elementWith svgNamespace "animate" []
+clipPath :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+clipPath = typedElement @SVGAttributes svgNamespace "clipPath"
 
-animateColor :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-animateColor = elementWith svgNamespace "animateColor"
+colorProfile :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+colorProfile = typedElement @SVGAttributes svgNamespace "colorProfile"
 
-animateColor_ :: Array JSX -> JSX
-animateColor_ = elementWith svgNamespace "animateColor" []
+cursor :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+cursor = typedElement @SVGAttributes svgNamespace "cursor"
 
-animateMotion :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-animateMotion = elementWith svgNamespace "animateMotion"
+defs :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+defs = typedElement @SVGAttributes svgNamespace "defs"
 
-animateMotion_ :: Array JSX -> JSX
-animateMotion_ = elementWith svgNamespace "animateMotion" []
+desc :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+desc = typedElement @SVGAttributes svgNamespace "desc"
 
-animateTransform :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-animateTransform = elementWith svgNamespace "animateTransform"
+ellipse :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+ellipse = typedElement @SVGAttributes svgNamespace "ellipse"
 
-animateTransform_ :: Array JSX -> JSX
-animateTransform_ = elementWith svgNamespace "animateTransform" []
+feBlend :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feBlend = typedElement @SVGAttributes svgNamespace "feBlend"
 
-circle :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-circle = elementWith svgNamespace "circle"
+feColorMatrix :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feColorMatrix = typedElement @SVGAttributes svgNamespace "feColorMatrix"
 
-circle_ :: Array JSX -> JSX
-circle_ = elementWith svgNamespace "circle" []
+feComponentTransfer :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feComponentTransfer = typedElement @SVGAttributes svgNamespace "feComponentTransfer"
 
-clipPath :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-clipPath = elementWith svgNamespace "clipPath"
+feComposite :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feComposite = typedElement @SVGAttributes svgNamespace "feComposite"
 
-clipPath_ :: Array JSX -> JSX
-clipPath_ = elementWith svgNamespace "clipPath" []
+feConvolveMatrix :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feConvolveMatrix = typedElement @SVGAttributes svgNamespace "feConvolveMatrix"
 
-colorProfile :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-colorProfile = elementWith svgNamespace "colorProfile"
+feDiffuseLighting :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feDiffuseLighting = typedElement @SVGAttributes svgNamespace "feDiffuseLighting"
 
-colorProfile_ :: Array JSX -> JSX
-colorProfile_ = elementWith svgNamespace "colorProfile" []
+feDisplacementMap :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feDisplacementMap = typedElement @SVGAttributes svgNamespace "feDisplacementMap"
 
-cursor :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-cursor = elementWith svgNamespace "cursor"
+feDistantLight :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feDistantLight = typedElement @SVGAttributes svgNamespace "feDistantLight"
 
-cursor_ :: Array JSX -> JSX
-cursor_ = elementWith svgNamespace "cursor" []
+feDropShadow :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feDropShadow = typedElement @SVGAttributes svgNamespace "feDropShadow"
 
-defs :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-defs = elementWith svgNamespace "defs"
+feFlood :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feFlood = typedElement @SVGAttributes svgNamespace "feFlood"
 
-defs_ :: Array JSX -> JSX
-defs_ = elementWith svgNamespace "defs" []
+feFuncA :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feFuncA = typedElement @SVGAttributes svgNamespace "feFuncA"
 
-desc :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-desc = elementWith svgNamespace "desc"
+feFuncB :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feFuncB = typedElement @SVGAttributes svgNamespace "feFuncB"
 
-desc_ :: Array JSX -> JSX
-desc_ = elementWith svgNamespace "desc" []
+feFuncG :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feFuncG = typedElement @SVGAttributes svgNamespace "feFuncG"
 
-ellipse :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-ellipse = elementWith svgNamespace "ellipse"
+feFuncR :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feFuncR = typedElement @SVGAttributes svgNamespace "feFuncR"
 
-ellipse_ :: Array JSX -> JSX
-ellipse_ = elementWith svgNamespace "ellipse" []
+feGaussianBlur :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feGaussianBlur = typedElement @SVGAttributes svgNamespace "feGaussianBlur"
 
-feBlend :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feBlend = elementWith svgNamespace "feBlend"
+feImage :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feImage = typedElement @SVGAttributes svgNamespace "feImage"
 
-feBlend_ :: Array JSX -> JSX
-feBlend_ = elementWith svgNamespace "feBlend" []
+feMerge :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feMerge = typedElement @SVGAttributes svgNamespace "feMerge"
 
-feColorMatrix :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feColorMatrix = elementWith svgNamespace "feColorMatrix"
+feMergeNode :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feMergeNode = typedElement @SVGAttributes svgNamespace "feMergeNode"
 
-feColorMatrix_ :: Array JSX -> JSX
-feColorMatrix_ = elementWith svgNamespace "feColorMatrix" []
+feMorphology :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feMorphology = typedElement @SVGAttributes svgNamespace "feMorphology"
 
-feComponentTransfer :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feComponentTransfer = elementWith svgNamespace "feComponentTransfer"
+feOffset :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feOffset = typedElement @SVGAttributes svgNamespace "feOffset"
 
-feComponentTransfer_ :: Array JSX -> JSX
-feComponentTransfer_ = elementWith svgNamespace "feComponentTransfer" []
+fePointLight :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+fePointLight = typedElement @SVGAttributes svgNamespace "fePointLight"
 
-feComposite :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feComposite = elementWith svgNamespace "feComposite"
+feSpecularLighting :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feSpecularLighting = typedElement @SVGAttributes svgNamespace "feSpecularLighting"
 
-feComposite_ :: Array JSX -> JSX
-feComposite_ = elementWith svgNamespace "feComposite" []
+feSpotLight :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feSpotLight = typedElement @SVGAttributes svgNamespace "feSpotLight"
 
-feConvolveMatrix :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feConvolveMatrix = elementWith svgNamespace "feConvolveMatrix"
+feTile :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feTile = typedElement @SVGAttributes svgNamespace "feTile"
 
-feConvolveMatrix_ :: Array JSX -> JSX
-feConvolveMatrix_ = elementWith svgNamespace "feConvolveMatrix" []
+feTurbulence :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+feTurbulence = typedElement @SVGAttributes svgNamespace "feTurbulence"
 
-feDiffuseLighting :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feDiffuseLighting = elementWith svgNamespace "feDiffuseLighting"
+filter :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+filter = typedElement @SVGAttributes svgNamespace "filter"
 
-feDiffuseLighting_ :: Array JSX -> JSX
-feDiffuseLighting_ = elementWith svgNamespace "feDiffuseLighting" []
+font :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+font = typedElement @SVGAttributes svgNamespace "font"
 
-feDisplacementMap :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feDisplacementMap = elementWith svgNamespace "feDisplacementMap"
+foreignObject :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+foreignObject = typedElement @SVGAttributes svgNamespace "foreignObject"
 
-feDisplacementMap_ :: Array JSX -> JSX
-feDisplacementMap_ = elementWith svgNamespace "feDisplacementMap" []
+g :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+g = typedElement @SVGAttributes svgNamespace "g"
 
-feDistantLight :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feDistantLight = elementWith svgNamespace "feDistantLight"
+glyph :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+glyph = typedElement @SVGAttributes svgNamespace "glyph"
 
-feDistantLight_ :: Array JSX -> JSX
-feDistantLight_ = elementWith svgNamespace "feDistantLight" []
+glyphRef :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+glyphRef = typedElement @SVGAttributes svgNamespace "glyphRef"
 
-feDropShadow :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feDropShadow = elementWith svgNamespace "feDropShadow"
+hkern :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+hkern = typedElement @SVGAttributes svgNamespace "hkern"
 
-feDropShadow_ :: Array JSX -> JSX
-feDropShadow_ = elementWith svgNamespace "feDropShadow" []
+image :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+image = typedElement @SVGAttributes svgNamespace "image"
 
-feFlood :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feFlood = elementWith svgNamespace "feFlood"
+line :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+line = typedElement @SVGAttributes svgNamespace "line"
 
-feFlood_ :: Array JSX -> JSX
-feFlood_ = elementWith svgNamespace "feFlood" []
+linearGradient :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+linearGradient = typedElement @SVGAttributes svgNamespace "linearGradient"
 
-feFuncA :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feFuncA = elementWith svgNamespace "feFuncA"
+marker :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+marker = typedElement @SVGAttributes svgNamespace "marker"
 
-feFuncA_ :: Array JSX -> JSX
-feFuncA_ = elementWith svgNamespace "feFuncA" []
+mask :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+mask = typedElement @SVGAttributes svgNamespace "mask"
 
-feFuncB :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feFuncB = elementWith svgNamespace "feFuncB"
+metadata :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+metadata = typedElement @SVGAttributes svgNamespace "metadata"
 
-feFuncB_ :: Array JSX -> JSX
-feFuncB_ = elementWith svgNamespace "feFuncB" []
+missingGlyph :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+missingGlyph = typedElement @SVGAttributes svgNamespace "missingGlyph"
 
-feFuncG :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feFuncG = elementWith svgNamespace "feFuncG"
+mpath :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+mpath = typedElement @SVGAttributes svgNamespace "mpath"
 
-feFuncG_ :: Array JSX -> JSX
-feFuncG_ = elementWith svgNamespace "feFuncG" []
+path :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+path = typedElement @SVGAttributes svgNamespace "path"
 
-feFuncR :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feFuncR = elementWith svgNamespace "feFuncR"
+pattern :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+pattern = typedElement @SVGAttributes svgNamespace "pattern"
 
-feFuncR_ :: Array JSX -> JSX
-feFuncR_ = elementWith svgNamespace "feFuncR" []
+polygon :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+polygon = typedElement @SVGAttributes svgNamespace "polygon"
 
-feGaussianBlur :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feGaussianBlur = elementWith svgNamespace "feGaussianBlur"
+polyline :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+polyline = typedElement @SVGAttributes svgNamespace "polyline"
 
-feGaussianBlur_ :: Array JSX -> JSX
-feGaussianBlur_ = elementWith svgNamespace "feGaussianBlur" []
+radialGradient :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+radialGradient = typedElement @SVGAttributes svgNamespace "radialGradient"
 
-feImage :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feImage = elementWith svgNamespace "feImage"
+rect :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+rect = typedElement @SVGAttributes svgNamespace "rect"
 
-feImage_ :: Array JSX -> JSX
-feImage_ = elementWith svgNamespace "feImage" []
+script :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+script = typedElement @SVGAttributes svgNamespace "script"
 
-feMerge :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feMerge = elementWith svgNamespace "feMerge"
+set :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+set = typedElement @SVGAttributes svgNamespace "set"
 
-feMerge_ :: Array JSX -> JSX
-feMerge_ = elementWith svgNamespace "feMerge" []
+stop :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+stop = typedElement @SVGAttributes svgNamespace "stop"
 
-feMergeNode :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feMergeNode = elementWith svgNamespace "feMergeNode"
+style :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+style = typedElement @SVGAttributes svgNamespace "style"
 
-feMergeNode_ :: Array JSX -> JSX
-feMergeNode_ = elementWith svgNamespace "feMergeNode" []
+svg :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+svg = typedElement @SVGAttributes svgNamespace "svg"
 
-feMorphology :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feMorphology = elementWith svgNamespace "feMorphology"
+switch :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+switch = typedElement @SVGAttributes svgNamespace "switch"
 
-feMorphology_ :: Array JSX -> JSX
-feMorphology_ = elementWith svgNamespace "feMorphology" []
+symbol :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+symbol = typedElement @SVGAttributes svgNamespace "symbol"
 
-feOffset :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feOffset = elementWith svgNamespace "feOffset"
+text :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+text = typedElement @SVGAttributes svgNamespace "text"
 
-feOffset_ :: Array JSX -> JSX
-feOffset_ = elementWith svgNamespace "feOffset" []
+textPath :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+textPath = typedElement @SVGAttributes svgNamespace "textPath"
 
-fePointLight :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-fePointLight = elementWith svgNamespace "fePointLight"
+title :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+title = typedElement @SVGAttributes svgNamespace "title"
 
-fePointLight_ :: Array JSX -> JSX
-fePointLight_ = elementWith svgNamespace "fePointLight" []
+tref :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+tref = typedElement @SVGAttributes svgNamespace "tref"
 
-feSpecularLighting :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feSpecularLighting = elementWith svgNamespace "feSpecularLighting"
+tspan :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+tspan = typedElement @SVGAttributes svgNamespace "tspan"
 
-feSpecularLighting_ :: Array JSX -> JSX
-feSpecularLighting_ = elementWith svgNamespace "feSpecularLighting" []
+use :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+use = typedElement @SVGAttributes svgNamespace "use"
 
-feSpotLight :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feSpotLight = elementWith svgNamespace "feSpotLight"
+view :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+view = typedElement @SVGAttributes svgNamespace "view"
 
-feSpotLight_ :: Array JSX -> JSX
-feSpotLight_ = elementWith svgNamespace "feSpotLight" []
-
-feTile :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feTile = elementWith svgNamespace "feTile"
-
-feTile_ :: Array JSX -> JSX
-feTile_ = elementWith svgNamespace "feTile" []
-
-feTurbulence :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-feTurbulence = elementWith svgNamespace "feTurbulence"
-
-feTurbulence_ :: Array JSX -> JSX
-feTurbulence_ = elementWith svgNamespace "feTurbulence" []
-
-filter :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-filter = elementWith svgNamespace "filter"
-
-filter_ :: Array JSX -> JSX
-filter_ = elementWith svgNamespace "filter" []
-
-font :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-font = elementWith svgNamespace "font"
-
-font_ :: Array JSX -> JSX
-font_ = elementWith svgNamespace "font" []
-
-foreignObject :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-foreignObject = elementWith svgNamespace "foreignObject"
-
-foreignObject_ :: Array JSX -> JSX
-foreignObject_ = elementWith svgNamespace "foreignObject" []
-
-g :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-g = elementWith svgNamespace "g"
-
-g_ :: Array JSX -> JSX
-g_ = elementWith svgNamespace "g" []
-
-glyph :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-glyph = elementWith svgNamespace "glyph"
-
-glyph_ :: Array JSX -> JSX
-glyph_ = elementWith svgNamespace "glyph" []
-
-glyphRef :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-glyphRef = elementWith svgNamespace "glyphRef"
-
-glyphRef_ :: Array JSX -> JSX
-glyphRef_ = elementWith svgNamespace "glyphRef" []
-
-hkern :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-hkern = elementWith svgNamespace "hkern"
-
-hkern_ :: Array JSX -> JSX
-hkern_ = elementWith svgNamespace "hkern" []
-
-image :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-image = elementWith svgNamespace "image"
-
-image_ :: Array JSX -> JSX
-image_ = elementWith svgNamespace "image" []
-
-line :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-line = elementWith svgNamespace "line"
-
-line_ :: Array JSX -> JSX
-line_ = elementWith svgNamespace "line" []
-
-linearGradient :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-linearGradient = elementWith svgNamespace "linearGradient"
-
-linearGradient_ :: Array JSX -> JSX
-linearGradient_ = elementWith svgNamespace "linearGradient" []
-
-marker :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-marker = elementWith svgNamespace "marker"
-
-marker_ :: Array JSX -> JSX
-marker_ = elementWith svgNamespace "marker" []
-
-mask :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-mask = elementWith svgNamespace "mask"
-
-mask_ :: Array JSX -> JSX
-mask_ = elementWith svgNamespace "mask" []
-
-metadata :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-metadata = elementWith svgNamespace "metadata"
-
-metadata_ :: Array JSX -> JSX
-metadata_ = elementWith svgNamespace "metadata" []
-
-missingGlyph :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-missingGlyph = elementWith svgNamespace "missingGlyph"
-
-missingGlyph_ :: Array JSX -> JSX
-missingGlyph_ = elementWith svgNamespace "missingGlyph" []
-
-mpath :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-mpath = elementWith svgNamespace "mpath"
-
-mpath_ :: Array JSX -> JSX
-mpath_ = elementWith svgNamespace "mpath" []
-
-path :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-path = elementWith svgNamespace "path"
-
-path_ :: Array JSX -> JSX
-path_ = elementWith svgNamespace "path" []
-
-pattern :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-pattern = elementWith svgNamespace "pattern"
-
-pattern_ :: Array JSX -> JSX
-pattern_ = elementWith svgNamespace "pattern" []
-
-polygon :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-polygon = elementWith svgNamespace "polygon"
-
-polygon_ :: Array JSX -> JSX
-polygon_ = elementWith svgNamespace "polygon" []
-
-polyline :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-polyline = elementWith svgNamespace "polyline"
-
-polyline_ :: Array JSX -> JSX
-polyline_ = elementWith svgNamespace "polyline" []
-
-radialGradient :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-radialGradient = elementWith svgNamespace "radialGradient"
-
-radialGradient_ :: Array JSX -> JSX
-radialGradient_ = elementWith svgNamespace "radialGradient" []
-
-rect :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-rect = elementWith svgNamespace "rect"
-
-rect_ :: Array JSX -> JSX
-rect_ = elementWith svgNamespace "rect" []
-
-script :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-script = elementWith svgNamespace "script"
-
-script_ :: Array JSX -> JSX
-script_ = elementWith svgNamespace "script" []
-
-set :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-set = elementWith svgNamespace "set"
-
-set_ :: Array JSX -> JSX
-set_ = elementWith svgNamespace "set" []
-
-stop :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-stop = elementWith svgNamespace "stop"
-
-stop_ :: Array JSX -> JSX
-stop_ = elementWith svgNamespace "stop" []
-
-style :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-style = elementWith svgNamespace "style"
-
-style_ :: Array JSX -> JSX
-style_ = elementWith svgNamespace "style" []
-
-svg :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-svg = elementWith svgNamespace "svg"
-
-svg_ :: Array JSX -> JSX
-svg_ = elementWith svgNamespace "svg" []
-
-switch :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-switch = elementWith svgNamespace "switch"
-
-switch_ :: Array JSX -> JSX
-switch_ = elementWith svgNamespace "switch" []
-
-symbol :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-symbol = elementWith svgNamespace "symbol"
-
-symbol_ :: Array JSX -> JSX
-symbol_ = elementWith svgNamespace "symbol" []
-
-text :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-text = elementWith svgNamespace "text"
-
-text_ :: Array JSX -> JSX
-text_ = elementWith svgNamespace "text" []
-
-textPath :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-textPath = elementWith svgNamespace "textPath"
-
-textPath_ :: Array JSX -> JSX
-textPath_ = elementWith svgNamespace "textPath" []
-
-title :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-title = elementWith svgNamespace "title"
-
-title_ :: Array JSX -> JSX
-title_ = elementWith svgNamespace "title" []
-
-tref :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-tref = elementWith svgNamespace "tref"
-
-tref_ :: Array JSX -> JSX
-tref_ = elementWith svgNamespace "tref" []
-
-tspan :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-tspan = elementWith svgNamespace "tspan"
-
-tspan_ :: Array JSX -> JSX
-tspan_ = elementWith svgNamespace "tspan" []
-
-use :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-use = elementWith svgNamespace "use"
-
-use_ :: Array JSX -> JSX
-use_ = elementWith svgNamespace "use" []
-
-view :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-view = elementWith svgNamespace "view"
-
-view_ :: Array JSX -> JSX
-view_ = elementWith svgNamespace "view" []
-
-vkern :: Array (Prop SVGAttributes) -> Array JSX -> JSX
-vkern = elementWith svgNamespace "vkern"
-
-vkern_ :: Array JSX -> JSX
-vkern_ = elementWith svgNamespace "vkern" []
+vkern :: forall props children. Props SVGAttributes props => Children children => Record props -> children -> JSX
+vkern = typedElement @SVGAttributes svgNamespace "vkern"

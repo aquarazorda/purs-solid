@@ -1,9 +1,10 @@
 -- | Document head tags. Render them anywhere; they're collected into `<head>`
 -- | (on the server, into the head markup `Solid.Web.SSR` returns), and the
--- | last registered tag wins per identity. No provider is needed.
+-- | last registered tag wins per identity. No provider is needed. Props are
+-- | the element's, plus `key`: the tag's identity for deduplication, e.g. for
+-- | several `og:image` metas.
 module Solid.Meta
-  ( key
-  , head
+  ( head
   , title
   , titleWith
   , meta
@@ -16,12 +17,9 @@ module Solid.Meta
 
 import Data.Function.Uncurried (runFn3)
 import DOM.HTML.Indexed as I
-import Solid.Internal.View (class ToBinding, JSX, Prop, propsComponentElement, staticProp)
+import Solid.Internal.Props (class Props, applyProps, props)
+import Solid.Internal.View (class ToBinding, JSX, Prop, propsComponentElement)
 import Solid.JSX (text)
-
--- | Sets the tag's identity for deduplication, e.g. for several `og:image` metas.
-key :: forall r. String -> Prop (key :: String | r)
-key = staticProp "key"
 
 -- | Same-identity tags inside a group coexist; a later group replaces an
 -- | earlier one's set while it's rendered.
@@ -29,31 +27,34 @@ head :: Array JSX -> JSX
 head children = runFn3 propsComponentElement headImpl ([] :: Array (Prop ())) children
 
 title :: forall v. ToBinding v String => v -> JSX
-title = titleWith []
+title = titleWith {}
 
-titleWith :: forall v. ToBinding v String => Array (Prop (key :: String | I.HTMLtitle)) -> v -> JSX
-titleWith props value = runFn3 propsComponentElement titleImpl props [ text value ]
+titleWith :: forall v props. ToBinding v String => Props (key :: String | I.HTMLtitle) props => Record props -> v -> JSX
+titleWith record value = tag @(key :: String | I.HTMLtitle) titleImpl record [ text value ]
 
-meta :: Array (Prop (key :: String | I.HTMLmeta)) -> JSX
-meta props = runFn3 propsComponentElement metaImpl props []
+meta :: forall props. Props (key :: String | I.HTMLmeta) props => Record props -> JSX
+meta record = tag @(key :: String | I.HTMLmeta) metaImpl record []
 
-link :: Array (Prop (key :: String | I.HTMLlink)) -> JSX
-link props = runFn3 propsComponentElement linkImpl props []
+link :: forall props. Props (key :: String | I.HTMLlink) props => Record props -> JSX
+link record = tag @(key :: String | I.HTMLlink) linkImpl record []
 
 -- | `<link rel="stylesheet">`.
-stylesheet :: Array (Prop (key :: String | I.HTMLlink)) -> JSX
-stylesheet props = runFn3 propsComponentElement stylesheetImpl props []
+stylesheet :: forall props. Props (key :: String | I.HTMLlink) props => Record props -> JSX
+stylesheet record = tag @(key :: String | I.HTMLlink) stylesheetImpl record []
 
-style :: Array (Prop (key :: String | I.HTMLstyle)) -> String -> JSX
-style props css = runFn3 propsComponentElement styleImpl props [ text css ]
+style :: forall props. Props (key :: String | I.HTMLstyle) props => Record props -> String -> JSX
+style record css = tag @(key :: String | I.HTMLstyle) styleImpl record [ text css ]
 
 -- | The content isn't escaped.
-script :: Array (Prop (key :: String | I.HTMLscript)) -> String -> JSX
-script props source = runFn3 propsComponentElement scriptImpl props [ text source ]
+script :: forall props. Props (key :: String | I.HTMLscript) props => Record props -> String -> JSX
+script record source = tag @(key :: String | I.HTMLscript) scriptImpl record [ text source ]
 
 -- | Rendered with the document shell on the server; ignored on the client.
-base :: Array (Prop I.HTMLbase) -> JSX
-base props = runFn3 propsComponentElement baseImpl props []
+base :: forall props. Props I.HTMLbase props => Record props -> JSX
+base record = tag @I.HTMLbase baseImpl record []
+
+tag :: forall @row props. Props row props => MetaComponent -> Record props -> Array JSX -> JSX
+tag component record = runFn3 propsComponentElement component (applyProps (props @row) record)
 
 foreign import data MetaComponent :: Type
 

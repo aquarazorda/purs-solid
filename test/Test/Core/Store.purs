@@ -262,7 +262,7 @@ spec = describe "Solid.Store" do
           (pure (delay (Milliseconds 5.0) $> Store.atKey @"people" (Store.set [ { name: "ada" }, { name: "lin" } ])))
           { people: [] :: Array { name :: String } }
         pure $ Control.loading (text "loading") $
-          H.ul_ [ Control.forEach (Store.items (Store.focusKey @"people" store)) \row _ -> pure (H.li_ [ text (value (Store.focusKey @"name" row)) ]) ]
+          H.ul {} [ Control.forEach (Store.items (Store.focusKey @"people" store)) \row _ -> pure (H.li {} (value (Store.focusKey @"name" row))) ]
     mounted <- mount (Component.element list {})
     html mounted >>= shouldEqual "loading"
     delay (Milliseconds 20.0)

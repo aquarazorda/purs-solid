@@ -9,9 +9,8 @@ import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Solid.Component as Component
 import Solid.Control as Control
-import Solid.DOM (bindValue, classWhen, targetChecked)
+import Solid.DOM (targetChecked)
 import Solid.DOM.HTML as H
-import Solid.DOM.Props as P
 import Solid.JSX (text)
 import Solid.Reactivity (createMemo)
 import Solid.Signal (createSignal, get, set)
@@ -80,11 +79,10 @@ todoApp = Component.component \_ -> do
 
     filterButton label which =
       H.button
-        [ P.class_ "filter-btn"
-        , classWhen "selected" ((_ == which) <$> visibility)
-        , P.onClick \_ -> set setVisibility which
-        ]
-        [ text label ]
+        { class: { "filter-btn": true, selected: (_ == which) <$> visibility }
+        , onClick: \_ -> set setVisibility which
+        }
+        label
 
     renderTodo row _ = do
       let
@@ -92,68 +90,64 @@ todoApp = Component.component \_ -> do
         completed = value (focusKey @"completed" row)
         visible = visibleIn <$> visibility <*> todo
       pure $ Control.when visible $
-        H.li [ P.class_ "todo", classWhen "completed" completed ]
+        H.li { class: { todo: true, completed } }
           [ H.input
-              [ P.class_ "todo-toggle"
-              , P.type_ InputCheckbox
-              , P.checked completed
-              , P.onChange \event -> do
+              { class: "todo-toggle"
+              , type: InputCheckbox
+              , checked: completed
+              , onChange: \event -> do
                   id <- _.id <$> get todo
                   targetChecked event >>= setCompleted id
-              ]
-          , H.span [ P.class_ "todo-title" ] [ text (value (focusKey @"title" row)) ]
-          , H.button
-              [ P.class_ "destroy"
-              , P.onClick \_ -> get todo >>= removeTodo <<< _.id
-              ]
-              [ text "Delete" ]
+              }
+          , H.span { class: "todo-title" } (value (focusKey @"title" row))
+          , H.button { class: "destroy", onClick: \_ -> get todo >>= removeTodo <<< _.id } "Delete"
           ]
 
-  pure $ H.div [ P.class_ "todomvc-shell" ]
-    [ H.section [ P.class_ "todoapp" ]
-        [ H.header [ P.class_ "header" ]
-            [ H.h1_ [ text "todos" ]
+  pure $ H.div { class: "todomvc-shell" }
+    [ H.section { class: "todoapp" }
+        [ H.header { class: "header" }
+            [ H.h1 {} "todos"
             , H.input
-                [ P.class_ "new-todo"
-                , P.placeholder "What needs to be done?"
-                , bindValue (draft /\ setDraft)
-                , P.autofocus true
-                , P.onKeyDown \event -> case KeyboardEvent.key event of
+                { class: "new-todo"
+                , placeholder: "What needs to be done?"
+                , bindValue: draft /\ setDraft
+                , autofocus: true
+                , onKeyDown: \event -> case KeyboardEvent.key event of
                     "Enter" -> addDraftTodo
                     "Escape" -> set setDraft ""
                     _ -> pure unit
-                ]
+                }
             ]
         , Control.when hasTodos $
-            H.section [ P.class_ "main" ]
+            H.section { class: "main" }
               [ H.input
-                  [ P.id "toggle-all"
-                  , P.class_ "toggle-all"
-                  , P.type_ InputCheckbox
-                  , P.checked allCompleted
-                  , P.onChange \event -> targetChecked event >>= setAllCompleted
-                  ]
-              , H.label [ P.for "toggle-all", P.class_ "toggle-all-label" ] [ text "Mark all as complete" ]
-              , H.ul [ P.class_ "todo-list" ] [ Control.forEach rows renderTodo ]
+                  { id: "toggle-all"
+                  , class: "toggle-all"
+                  , type: InputCheckbox
+                  , checked: allCompleted
+                  , onChange: \event -> targetChecked event >>= setAllCompleted
+                  }
+              , H.label { for: "toggle-all", class: "toggle-all-label" } "Mark all as complete"
+              , H.ul { class: "todo-list" } (Control.forEach rows renderTodo)
               ]
         , Control.whenElse hasTodos
-            ( H.footer [ P.class_ "footer" ]
-                [ H.span [ P.class_ "todo-count" ]
-                    [ H.strong_ [ text (show <$> activeCount) ]
+            ( H.footer { class: "footer" }
+                [ H.span { class: "todo-count" }
+                    [ H.strong {} (show <$> activeCount)
                     , text (activeCount <#> \n -> if n == 1 then " item left" else " items left")
                     ]
-                , H.div [ P.class_ "filters" ]
+                , H.div { class: "filters" }
                     [ filterButton "All" ShowAll
                     , filterButton "Active" ShowActive
                     , filterButton "Completed" ShowCompleted
                     ]
                 , Control.when hasCompleted $
-                    H.button [ P.class_ "clear-completed", P.onClick \_ -> clearCompleted ] [ text "Clear completed" ]
+                    H.button { class: "clear-completed", onClick: \_ -> clearCompleted } "Clear completed"
                 ]
             )
-            (H.div [ P.class_ "empty-state" ] [ text "Add your first task to get started." ])
+            (H.div { class: "empty-state" } "Add your first task to get started.")
         ]
-    , H.footer [ P.class_ "info" ] [ text "PureScript TodoMVC powered by purs-solid" ]
+    , H.footer { class: "info" } "PureScript TodoMVC powered by purs-solid"
     ]
 
 main :: Effect Unit

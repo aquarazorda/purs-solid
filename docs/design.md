@@ -20,7 +20,7 @@ Elements go through `dynamic(() => tag, { static: true })`, so Solid itself does
 4. **Passing a prop isn't reading it.** Props are plain records; reactive fields are `Accessor a`.
 5. **JSX is a description.** `JSX` is lazy; parents and control flow realize it, so hidden branches are never built.
 6. **Stores are updated with typed paths and pure `Update` values**, applied to Solid's draft in the FFI. Non-structural values are frozen before entering a store (`StoreValue`), because Solid 2 proxies class instances and PureScript ADTs are class instances.
-7. **Typed DOM.** Props are arrays indexed by each element's `dom-indexed` row; every prop accepts a value or an `Accessor`.
+7. **Typed DOM.** Props are records checked field by field against each element's `dom-indexed` row; every attribute accepts a value or an `Accessor`, and event fields take handlers for the row's event type. Instances turn a record type into its per-field converters once, so a render only applies them.
 8. **Data crossing server and client is `Serializable`** (primitives, `Nullable`, arrays, records) or goes through an explicit codec.
 
 ## FFI rules

@@ -14,10 +14,8 @@ import Effect (Effect)
 import Effect.Ref as Ref
 import Solid.Component as Component
 import Solid.Control as Control
-import Solid.DOM (classWhen)
 import Solid.DOM.HTML as H
-import Solid.DOM.Props as P
-import Solid.JSX (JSX, text)
+import Solid.JSX (JSX)
 import Solid.Setup (Setup, liftSetup)
 import Solid.Signal (Accessor, Setter, createSignal, get, modify_, set)
 import Solid.Store (createSelector)
@@ -131,19 +129,19 @@ app = Component.component \_ -> do
     removeRow id = modify_ setRows (Array.filter (\row -> row.id /= id))
 
     button id label action =
-      H.button [ P.id id, P.type_ ButtonButton, P.onClick \_ -> action ] [ text label ]
+      H.button { id, type: ButtonButton, onClick: \_ -> action } label
 
     renderRow :: RowItem -> Accessor Int -> Setup JSX
-    renderRow row _ = pure $ H.tr [ classWhen "danger" (isSelected row.id) ]
-      [ H.td [ P.class_ "col-md-1" ] [ text (show row.id) ]
-      , H.td [ P.class_ "col-md-4" ] [ H.a [ P.onClick \_ -> set setSelected row.id ] [ text row.label ] ]
-      , H.td [ P.class_ "col-md-1" ]
-          [ H.a [ P.class_ "remove", P.onClick \_ -> removeRow row.id ] [ text "x" ] ]
-      , H.td [ P.class_ "col-md-6" ] []
+    renderRow row _ = pure $ H.tr { class: { danger: isSelected row.id } }
+      [ H.td { class: "col-md-1" } (show row.id)
+      , H.td { class: "col-md-4" } [ H.a { onClick: \_ -> set setSelected row.id } row.label ]
+      , H.td { class: "col-md-1" }
+          [ H.a { class: "remove", onClick: \_ -> removeRow row.id } "x" ]
+      , H.td { class: "col-md-6" } []
       ]
 
-  pure $ H.div [ P.class_ "container" ]
-    [ H.div [ P.class_ "jumbotron" ]
+  pure $ H.div { class: "container" }
+    [ H.div { class: "jumbotron" }
         [ button "run" "Create 1,000 rows" (replaceWith 1000)
         , button "runlots" "Create 10,000 rows" (replaceWith 10000)
         , button "add" "Append 1,000 rows" (append 1000)
@@ -151,8 +149,8 @@ app = Component.component \_ -> do
         , button "clear" "Clear" (set setRows [])
         , button "swaprows" "Swap Rows" (modify_ setRows (swapAt 1 998))
         ]
-    , H.table [ P.class_ "table" ]
-        [ H.tbody [ P.id "tbody" ] [ Control.forEachByReference rows renderRow ] ]
+    , H.table { class: "table" }
+        [ H.tbody { id: "tbody" } [ Control.forEachByReference rows renderRow ] ]
     ]
 
 main :: Effect Unit

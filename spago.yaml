@@ -26,6 +26,7 @@ package:
     - strings
     - tailrec
     - tuples
+    - type-equality
     - unsafe-coerce
     - web-clipboard
     - web-dom

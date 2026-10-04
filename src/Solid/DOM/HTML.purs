@@ -2,7 +2,8 @@
 module Solid.DOM.HTML where
 
 import DOM.HTML.Indexed as I
-import Solid.Internal.View (JSX, Prop, elementWith, htmlNamespace)
+import Solid.Internal.Props (class Children, class Props, typedElement, typedVoidElement)
+import Solid.Internal.View (JSX, htmlNamespace)
 import Web.HTML.HTMLAnchorElement (HTMLAnchorElement)
 import Web.HTML.HTMLAreaElement (HTMLAreaElement)
 import Web.HTML.HTMLAudioElement (HTMLAudioElement)
@@ -64,674 +65,338 @@ import Web.HTML.HTMLTrackElement (HTMLTrackElement)
 import Web.HTML.HTMLUListElement (HTMLUListElement)
 import Web.HTML.HTMLVideoElement (HTMLVideoElement)
 
-a :: Array (Prop ("$element" :: HTMLAnchorElement | I.HTMLa)) -> Array JSX -> JSX
-a = elementWith htmlNamespace "a"
+a :: forall props children. Props ("$element" :: HTMLAnchorElement | I.HTMLa) props => Children children => Record props -> children -> JSX
+a = typedElement @("$element" :: HTMLAnchorElement | I.HTMLa) htmlNamespace "a"
 
-a_ :: Array JSX -> JSX
-a_ = elementWith htmlNamespace "a" []
+abbr :: forall props children. Props ("$element" :: HTMLElement | I.HTMLabbr) props => Children children => Record props -> children -> JSX
+abbr = typedElement @("$element" :: HTMLElement | I.HTMLabbr) htmlNamespace "abbr"
 
-abbr :: Array (Prop ("$element" :: HTMLElement | I.HTMLabbr)) -> Array JSX -> JSX
-abbr = elementWith htmlNamespace "abbr"
+address :: forall props children. Props ("$element" :: HTMLElement | I.HTMLaddress) props => Children children => Record props -> children -> JSX
+address = typedElement @("$element" :: HTMLElement | I.HTMLaddress) htmlNamespace "address"
 
-abbr_ :: Array JSX -> JSX
-abbr_ = elementWith htmlNamespace "abbr" []
+area :: forall props. Props ("$element" :: HTMLAreaElement | I.HTMLarea) props => Record props -> JSX
+area = typedVoidElement @("$element" :: HTMLAreaElement | I.HTMLarea) htmlNamespace "area"
 
-address :: Array (Prop ("$element" :: HTMLElement | I.HTMLaddress)) -> Array JSX -> JSX
-address = elementWith htmlNamespace "address"
+article :: forall props children. Props ("$element" :: HTMLElement | I.HTMLarticle) props => Children children => Record props -> children -> JSX
+article = typedElement @("$element" :: HTMLElement | I.HTMLarticle) htmlNamespace "article"
 
-address_ :: Array JSX -> JSX
-address_ = elementWith htmlNamespace "address" []
+aside :: forall props children. Props ("$element" :: HTMLElement | I.HTMLaside) props => Children children => Record props -> children -> JSX
+aside = typedElement @("$element" :: HTMLElement | I.HTMLaside) htmlNamespace "aside"
 
-area :: Array (Prop ("$element" :: HTMLAreaElement | I.HTMLarea)) -> JSX
-area props = elementWith htmlNamespace "area" props []
+audio :: forall props children. Props ("$element" :: HTMLAudioElement | I.HTMLaudio) props => Children children => Record props -> children -> JSX
+audio = typedElement @("$element" :: HTMLAudioElement | I.HTMLaudio) htmlNamespace "audio"
 
-area_ :: JSX
-area_ = elementWith htmlNamespace "area" [] []
+b :: forall props children. Props ("$element" :: HTMLElement | I.HTMLb) props => Children children => Record props -> children -> JSX
+b = typedElement @("$element" :: HTMLElement | I.HTMLb) htmlNamespace "b"
 
-article :: Array (Prop ("$element" :: HTMLElement | I.HTMLarticle)) -> Array JSX -> JSX
-article = elementWith htmlNamespace "article"
+base :: forall props. Props ("$element" :: HTMLBaseElement | I.HTMLbase) props => Record props -> JSX
+base = typedVoidElement @("$element" :: HTMLBaseElement | I.HTMLbase) htmlNamespace "base"
 
-article_ :: Array JSX -> JSX
-article_ = elementWith htmlNamespace "article" []
+bdi :: forall props children. Props ("$element" :: HTMLElement | I.HTMLbdi) props => Children children => Record props -> children -> JSX
+bdi = typedElement @("$element" :: HTMLElement | I.HTMLbdi) htmlNamespace "bdi"
 
-aside :: Array (Prop ("$element" :: HTMLElement | I.HTMLaside)) -> Array JSX -> JSX
-aside = elementWith htmlNamespace "aside"
+bdo :: forall props children. Props ("$element" :: HTMLElement | I.HTMLbdo) props => Children children => Record props -> children -> JSX
+bdo = typedElement @("$element" :: HTMLElement | I.HTMLbdo) htmlNamespace "bdo"
 
-aside_ :: Array JSX -> JSX
-aside_ = elementWith htmlNamespace "aside" []
+blockquote :: forall props children. Props ("$element" :: HTMLQuoteElement | I.HTMLblockquote) props => Children children => Record props -> children -> JSX
+blockquote = typedElement @("$element" :: HTMLQuoteElement | I.HTMLblockquote) htmlNamespace "blockquote"
 
-audio :: Array (Prop ("$element" :: HTMLAudioElement | I.HTMLaudio)) -> Array JSX -> JSX
-audio = elementWith htmlNamespace "audio"
+body :: forall props children. Props ("$element" :: HTMLBodyElement | I.HTMLbody) props => Children children => Record props -> children -> JSX
+body = typedElement @("$element" :: HTMLBodyElement | I.HTMLbody) htmlNamespace "body"
 
-audio_ :: Array JSX -> JSX
-audio_ = elementWith htmlNamespace "audio" []
+br :: forall props. Props ("$element" :: HTMLBRElement | I.HTMLbr) props => Record props -> JSX
+br = typedVoidElement @("$element" :: HTMLBRElement | I.HTMLbr) htmlNamespace "br"
 
-b :: Array (Prop ("$element" :: HTMLElement | I.HTMLb)) -> Array JSX -> JSX
-b = elementWith htmlNamespace "b"
+button :: forall props children. Props ("$element" :: HTMLButtonElement | I.HTMLbutton) props => Children children => Record props -> children -> JSX
+button = typedElement @("$element" :: HTMLButtonElement | I.HTMLbutton) htmlNamespace "button"
 
-b_ :: Array JSX -> JSX
-b_ = elementWith htmlNamespace "b" []
+canvas :: forall props children. Props ("$element" :: HTMLCanvasElement | I.HTMLcanvas) props => Children children => Record props -> children -> JSX
+canvas = typedElement @("$element" :: HTMLCanvasElement | I.HTMLcanvas) htmlNamespace "canvas"
 
-base :: Array (Prop ("$element" :: HTMLBaseElement | I.HTMLbase)) -> JSX
-base props = elementWith htmlNamespace "base" props []
+caption :: forall props children. Props ("$element" :: HTMLTableCaptionElement | I.HTMLcaption) props => Children children => Record props -> children -> JSX
+caption = typedElement @("$element" :: HTMLTableCaptionElement | I.HTMLcaption) htmlNamespace "caption"
 
-base_ :: JSX
-base_ = elementWith htmlNamespace "base" [] []
+cite :: forall props children. Props ("$element" :: HTMLElement | I.HTMLcite) props => Children children => Record props -> children -> JSX
+cite = typedElement @("$element" :: HTMLElement | I.HTMLcite) htmlNamespace "cite"
 
-bdi :: Array (Prop ("$element" :: HTMLElement | I.HTMLbdi)) -> Array JSX -> JSX
-bdi = elementWith htmlNamespace "bdi"
+code :: forall props children. Props ("$element" :: HTMLElement | I.HTMLcode) props => Children children => Record props -> children -> JSX
+code = typedElement @("$element" :: HTMLElement | I.HTMLcode) htmlNamespace "code"
 
-bdi_ :: Array JSX -> JSX
-bdi_ = elementWith htmlNamespace "bdi" []
+col :: forall props. Props ("$element" :: HTMLTableColElement | I.HTMLcol) props => Record props -> JSX
+col = typedVoidElement @("$element" :: HTMLTableColElement | I.HTMLcol) htmlNamespace "col"
 
-bdo :: Array (Prop ("$element" :: HTMLElement | I.HTMLbdo)) -> Array JSX -> JSX
-bdo = elementWith htmlNamespace "bdo"
+colgroup :: forall props children. Props ("$element" :: HTMLTableColElement | I.HTMLcolgroup) props => Children children => Record props -> children -> JSX
+colgroup = typedElement @("$element" :: HTMLTableColElement | I.HTMLcolgroup) htmlNamespace "colgroup"
 
-bdo_ :: Array JSX -> JSX
-bdo_ = elementWith htmlNamespace "bdo" []
+command :: forall props. Props ("$element" :: HTMLElement | I.HTMLcommand) props => Record props -> JSX
+command = typedVoidElement @("$element" :: HTMLElement | I.HTMLcommand) htmlNamespace "command"
 
-blockquote :: Array (Prop ("$element" :: HTMLQuoteElement | I.HTMLblockquote)) -> Array JSX -> JSX
-blockquote = elementWith htmlNamespace "blockquote"
+datalist :: forall props children. Props ("$element" :: HTMLDataListElement | I.HTMLdatalist) props => Children children => Record props -> children -> JSX
+datalist = typedElement @("$element" :: HTMLDataListElement | I.HTMLdatalist) htmlNamespace "datalist"
 
-blockquote_ :: Array JSX -> JSX
-blockquote_ = elementWith htmlNamespace "blockquote" []
+dd :: forall props children. Props ("$element" :: HTMLElement | I.HTMLdd) props => Children children => Record props -> children -> JSX
+dd = typedElement @("$element" :: HTMLElement | I.HTMLdd) htmlNamespace "dd"
 
-body :: Array (Prop ("$element" :: HTMLBodyElement | I.HTMLbody)) -> Array JSX -> JSX
-body = elementWith htmlNamespace "body"
+del :: forall props children. Props ("$element" :: HTMLModElement | I.HTMLdel) props => Children children => Record props -> children -> JSX
+del = typedElement @("$element" :: HTMLModElement | I.HTMLdel) htmlNamespace "del"
 
-body_ :: Array JSX -> JSX
-body_ = elementWith htmlNamespace "body" []
+details :: forall props children. Props ("$element" :: HTMLElement | I.HTMLdetails) props => Children children => Record props -> children -> JSX
+details = typedElement @("$element" :: HTMLElement | I.HTMLdetails) htmlNamespace "details"
 
-br :: Array (Prop ("$element" :: HTMLBRElement | I.HTMLbr)) -> JSX
-br props = elementWith htmlNamespace "br" props []
+dfn :: forall props children. Props ("$element" :: HTMLElement | I.HTMLdfn) props => Children children => Record props -> children -> JSX
+dfn = typedElement @("$element" :: HTMLElement | I.HTMLdfn) htmlNamespace "dfn"
 
-br_ :: JSX
-br_ = elementWith htmlNamespace "br" [] []
+dialog :: forall props children. Props ("$element" :: HTMLDialogElement | I.HTMLdialog) props => Children children => Record props -> children -> JSX
+dialog = typedElement @("$element" :: HTMLDialogElement | I.HTMLdialog) htmlNamespace "dialog"
 
-button :: Array (Prop ("$element" :: HTMLButtonElement | I.HTMLbutton)) -> Array JSX -> JSX
-button = elementWith htmlNamespace "button"
+div :: forall props children. Props ("$element" :: HTMLDivElement | I.HTMLdiv) props => Children children => Record props -> children -> JSX
+div = typedElement @("$element" :: HTMLDivElement | I.HTMLdiv) htmlNamespace "div"
 
-button_ :: Array JSX -> JSX
-button_ = elementWith htmlNamespace "button" []
+dl :: forall props children. Props ("$element" :: HTMLDListElement | I.HTMLdl) props => Children children => Record props -> children -> JSX
+dl = typedElement @("$element" :: HTMLDListElement | I.HTMLdl) htmlNamespace "dl"
 
-canvas :: Array (Prop ("$element" :: HTMLCanvasElement | I.HTMLcanvas)) -> Array JSX -> JSX
-canvas = elementWith htmlNamespace "canvas"
+dt :: forall props children. Props ("$element" :: HTMLElement | I.HTMLdt) props => Children children => Record props -> children -> JSX
+dt = typedElement @("$element" :: HTMLElement | I.HTMLdt) htmlNamespace "dt"
 
-canvas_ :: Array JSX -> JSX
-canvas_ = elementWith htmlNamespace "canvas" []
+em :: forall props children. Props ("$element" :: HTMLElement | I.HTMLem) props => Children children => Record props -> children -> JSX
+em = typedElement @("$element" :: HTMLElement | I.HTMLem) htmlNamespace "em"
 
-caption :: Array (Prop ("$element" :: HTMLTableCaptionElement | I.HTMLcaption)) -> Array JSX -> JSX
-caption = elementWith htmlNamespace "caption"
+embed :: forall props. Props ("$element" :: HTMLEmbedElement | I.HTMLembed) props => Record props -> JSX
+embed = typedVoidElement @("$element" :: HTMLEmbedElement | I.HTMLembed) htmlNamespace "embed"
 
-caption_ :: Array JSX -> JSX
-caption_ = elementWith htmlNamespace "caption" []
+fieldset :: forall props children. Props ("$element" :: HTMLFieldSetElement | I.HTMLfieldset) props => Children children => Record props -> children -> JSX
+fieldset = typedElement @("$element" :: HTMLFieldSetElement | I.HTMLfieldset) htmlNamespace "fieldset"
 
-cite :: Array (Prop ("$element" :: HTMLElement | I.HTMLcite)) -> Array JSX -> JSX
-cite = elementWith htmlNamespace "cite"
+figcaption :: forall props children. Props ("$element" :: HTMLElement | I.HTMLfigcaption) props => Children children => Record props -> children -> JSX
+figcaption = typedElement @("$element" :: HTMLElement | I.HTMLfigcaption) htmlNamespace "figcaption"
 
-cite_ :: Array JSX -> JSX
-cite_ = elementWith htmlNamespace "cite" []
+figure :: forall props children. Props ("$element" :: HTMLElement | I.HTMLfigure) props => Children children => Record props -> children -> JSX
+figure = typedElement @("$element" :: HTMLElement | I.HTMLfigure) htmlNamespace "figure"
 
-code :: Array (Prop ("$element" :: HTMLElement | I.HTMLcode)) -> Array JSX -> JSX
-code = elementWith htmlNamespace "code"
+footer :: forall props children. Props ("$element" :: HTMLElement | I.HTMLfooter) props => Children children => Record props -> children -> JSX
+footer = typedElement @("$element" :: HTMLElement | I.HTMLfooter) htmlNamespace "footer"
 
-code_ :: Array JSX -> JSX
-code_ = elementWith htmlNamespace "code" []
+form :: forall props children. Props ("$element" :: HTMLFormElement | I.HTMLform) props => Children children => Record props -> children -> JSX
+form = typedElement @("$element" :: HTMLFormElement | I.HTMLform) htmlNamespace "form"
 
-col :: Array (Prop ("$element" :: HTMLTableColElement | I.HTMLcol)) -> JSX
-col props = elementWith htmlNamespace "col" props []
+h1 :: forall props children. Props ("$element" :: HTMLHeadingElement | I.HTMLh1) props => Children children => Record props -> children -> JSX
+h1 = typedElement @("$element" :: HTMLHeadingElement | I.HTMLh1) htmlNamespace "h1"
 
-col_ :: JSX
-col_ = elementWith htmlNamespace "col" [] []
+h2 :: forall props children. Props ("$element" :: HTMLHeadingElement | I.HTMLh2) props => Children children => Record props -> children -> JSX
+h2 = typedElement @("$element" :: HTMLHeadingElement | I.HTMLh2) htmlNamespace "h2"
 
-colgroup :: Array (Prop ("$element" :: HTMLTableColElement | I.HTMLcolgroup)) -> Array JSX -> JSX
-colgroup = elementWith htmlNamespace "colgroup"
+h3 :: forall props children. Props ("$element" :: HTMLHeadingElement | I.HTMLh3) props => Children children => Record props -> children -> JSX
+h3 = typedElement @("$element" :: HTMLHeadingElement | I.HTMLh3) htmlNamespace "h3"
 
-colgroup_ :: Array JSX -> JSX
-colgroup_ = elementWith htmlNamespace "colgroup" []
+h4 :: forall props children. Props ("$element" :: HTMLHeadingElement | I.HTMLh4) props => Children children => Record props -> children -> JSX
+h4 = typedElement @("$element" :: HTMLHeadingElement | I.HTMLh4) htmlNamespace "h4"
 
-command :: Array (Prop ("$element" :: HTMLElement | I.HTMLcommand)) -> JSX
-command props = elementWith htmlNamespace "command" props []
+h5 :: forall props children. Props ("$element" :: HTMLHeadingElement | I.HTMLh5) props => Children children => Record props -> children -> JSX
+h5 = typedElement @("$element" :: HTMLHeadingElement | I.HTMLh5) htmlNamespace "h5"
 
-command_ :: JSX
-command_ = elementWith htmlNamespace "command" [] []
+h6 :: forall props children. Props ("$element" :: HTMLHeadingElement | I.HTMLh6) props => Children children => Record props -> children -> JSX
+h6 = typedElement @("$element" :: HTMLHeadingElement | I.HTMLh6) htmlNamespace "h6"
 
-datalist :: Array (Prop ("$element" :: HTMLDataListElement | I.HTMLdatalist)) -> Array JSX -> JSX
-datalist = elementWith htmlNamespace "datalist"
+head :: forall props children. Props ("$element" :: HTMLHeadElement | I.HTMLhead) props => Children children => Record props -> children -> JSX
+head = typedElement @("$element" :: HTMLHeadElement | I.HTMLhead) htmlNamespace "head"
 
-datalist_ :: Array JSX -> JSX
-datalist_ = elementWith htmlNamespace "datalist" []
+header :: forall props children. Props ("$element" :: HTMLElement | I.HTMLheader) props => Children children => Record props -> children -> JSX
+header = typedElement @("$element" :: HTMLElement | I.HTMLheader) htmlNamespace "header"
 
-dd :: Array (Prop ("$element" :: HTMLElement | I.HTMLdd)) -> Array JSX -> JSX
-dd = elementWith htmlNamespace "dd"
+hr :: forall props. Props ("$element" :: HTMLHRElement | I.HTMLhr) props => Record props -> JSX
+hr = typedVoidElement @("$element" :: HTMLHRElement | I.HTMLhr) htmlNamespace "hr"
 
-dd_ :: Array JSX -> JSX
-dd_ = elementWith htmlNamespace "dd" []
+html :: forall props children. Props ("$element" :: HTMLHtmlElement | I.HTMLhtml) props => Children children => Record props -> children -> JSX
+html = typedElement @("$element" :: HTMLHtmlElement | I.HTMLhtml) htmlNamespace "html"
 
-del :: Array (Prop ("$element" :: HTMLModElement | I.HTMLdel)) -> Array JSX -> JSX
-del = elementWith htmlNamespace "del"
+i :: forall props children. Props ("$element" :: HTMLElement | I.HTMLi) props => Children children => Record props -> children -> JSX
+i = typedElement @("$element" :: HTMLElement | I.HTMLi) htmlNamespace "i"
 
-del_ :: Array JSX -> JSX
-del_ = elementWith htmlNamespace "del" []
+iframe :: forall props children. Props ("$element" :: HTMLIFrameElement | I.HTMLiframe) props => Children children => Record props -> children -> JSX
+iframe = typedElement @("$element" :: HTMLIFrameElement | I.HTMLiframe) htmlNamespace "iframe"
 
-details :: Array (Prop ("$element" :: HTMLElement | I.HTMLdetails)) -> Array JSX -> JSX
-details = elementWith htmlNamespace "details"
+img :: forall props. Props ("$element" :: HTMLImageElement | I.HTMLimg) props => Record props -> JSX
+img = typedVoidElement @("$element" :: HTMLImageElement | I.HTMLimg) htmlNamespace "img"
 
-details_ :: Array JSX -> JSX
-details_ = elementWith htmlNamespace "details" []
+input :: forall props. Props ("$element" :: HTMLInputElement | I.HTMLinput) props => Record props -> JSX
+input = typedVoidElement @("$element" :: HTMLInputElement | I.HTMLinput) htmlNamespace "input"
 
-dfn :: Array (Prop ("$element" :: HTMLElement | I.HTMLdfn)) -> Array JSX -> JSX
-dfn = elementWith htmlNamespace "dfn"
+ins :: forall props children. Props ("$element" :: HTMLModElement | I.HTMLins) props => Children children => Record props -> children -> JSX
+ins = typedElement @("$element" :: HTMLModElement | I.HTMLins) htmlNamespace "ins"
 
-dfn_ :: Array JSX -> JSX
-dfn_ = elementWith htmlNamespace "dfn" []
+kbd :: forall props children. Props ("$element" :: HTMLElement | I.HTMLkbd) props => Children children => Record props -> children -> JSX
+kbd = typedElement @("$element" :: HTMLElement | I.HTMLkbd) htmlNamespace "kbd"
 
-dialog :: Array (Prop ("$element" :: HTMLDialogElement | I.HTMLdialog)) -> Array JSX -> JSX
-dialog = elementWith htmlNamespace "dialog"
+label :: forall props children. Props ("$element" :: HTMLLabelElement | I.HTMLlabel) props => Children children => Record props -> children -> JSX
+label = typedElement @("$element" :: HTMLLabelElement | I.HTMLlabel) htmlNamespace "label"
 
-dialog_ :: Array JSX -> JSX
-dialog_ = elementWith htmlNamespace "dialog" []
+legend :: forall props children. Props ("$element" :: HTMLLegendElement | I.HTMLlegend) props => Children children => Record props -> children -> JSX
+legend = typedElement @("$element" :: HTMLLegendElement | I.HTMLlegend) htmlNamespace "legend"
 
-div :: Array (Prop ("$element" :: HTMLDivElement | I.HTMLdiv)) -> Array JSX -> JSX
-div = elementWith htmlNamespace "div"
+li :: forall props children. Props ("$element" :: HTMLLIElement | I.HTMLli) props => Children children => Record props -> children -> JSX
+li = typedElement @("$element" :: HTMLLIElement | I.HTMLli) htmlNamespace "li"
 
-div_ :: Array JSX -> JSX
-div_ = elementWith htmlNamespace "div" []
+link :: forall props. Props ("$element" :: HTMLLinkElement | I.HTMLlink) props => Record props -> JSX
+link = typedVoidElement @("$element" :: HTMLLinkElement | I.HTMLlink) htmlNamespace "link"
 
-dl :: Array (Prop ("$element" :: HTMLDListElement | I.HTMLdl)) -> Array JSX -> JSX
-dl = elementWith htmlNamespace "dl"
+main :: forall props children. Props ("$element" :: HTMLElement | I.HTMLmain) props => Children children => Record props -> children -> JSX
+main = typedElement @("$element" :: HTMLElement | I.HTMLmain) htmlNamespace "main"
 
-dl_ :: Array JSX -> JSX
-dl_ = elementWith htmlNamespace "dl" []
+map :: forall props children. Props ("$element" :: HTMLMapElement | I.HTMLmap) props => Children children => Record props -> children -> JSX
+map = typedElement @("$element" :: HTMLMapElement | I.HTMLmap) htmlNamespace "map"
 
-dt :: Array (Prop ("$element" :: HTMLElement | I.HTMLdt)) -> Array JSX -> JSX
-dt = elementWith htmlNamespace "dt"
+mark :: forall props children. Props ("$element" :: HTMLElement | I.HTMLmark) props => Children children => Record props -> children -> JSX
+mark = typedElement @("$element" :: HTMLElement | I.HTMLmark) htmlNamespace "mark"
 
-dt_ :: Array JSX -> JSX
-dt_ = elementWith htmlNamespace "dt" []
+menu :: forall props children. Props ("$element" :: HTMLElement | I.HTMLmenu) props => Children children => Record props -> children -> JSX
+menu = typedElement @("$element" :: HTMLElement | I.HTMLmenu) htmlNamespace "menu"
 
-em :: Array (Prop ("$element" :: HTMLElement | I.HTMLem)) -> Array JSX -> JSX
-em = elementWith htmlNamespace "em"
+menuitem :: forall props children. Props ("$element" :: HTMLElement | I.HTMLmenuitem) props => Children children => Record props -> children -> JSX
+menuitem = typedElement @("$element" :: HTMLElement | I.HTMLmenuitem) htmlNamespace "menuitem"
 
-em_ :: Array JSX -> JSX
-em_ = elementWith htmlNamespace "em" []
+meta :: forall props. Props ("$element" :: HTMLMetaElement | I.HTMLmeta) props => Record props -> JSX
+meta = typedVoidElement @("$element" :: HTMLMetaElement | I.HTMLmeta) htmlNamespace "meta"
 
-embed :: Array (Prop ("$element" :: HTMLEmbedElement | I.HTMLembed)) -> JSX
-embed props = elementWith htmlNamespace "embed" props []
+meter :: forall props children. Props ("$element" :: HTMLMeterElement | I.HTMLmeter) props => Children children => Record props -> children -> JSX
+meter = typedElement @("$element" :: HTMLMeterElement | I.HTMLmeter) htmlNamespace "meter"
 
-embed_ :: JSX
-embed_ = elementWith htmlNamespace "embed" [] []
+nav :: forall props children. Props ("$element" :: HTMLElement | I.HTMLnav) props => Children children => Record props -> children -> JSX
+nav = typedElement @("$element" :: HTMLElement | I.HTMLnav) htmlNamespace "nav"
 
-fieldset :: Array (Prop ("$element" :: HTMLFieldSetElement | I.HTMLfieldset)) -> Array JSX -> JSX
-fieldset = elementWith htmlNamespace "fieldset"
+noscript :: forall props children. Props ("$element" :: HTMLElement | I.HTMLnoscript) props => Children children => Record props -> children -> JSX
+noscript = typedElement @("$element" :: HTMLElement | I.HTMLnoscript) htmlNamespace "noscript"
 
-fieldset_ :: Array JSX -> JSX
-fieldset_ = elementWith htmlNamespace "fieldset" []
+object :: forall props children. Props ("$element" :: HTMLObjectElement | I.HTMLobject) props => Children children => Record props -> children -> JSX
+object = typedElement @("$element" :: HTMLObjectElement | I.HTMLobject) htmlNamespace "object"
 
-figcaption :: Array (Prop ("$element" :: HTMLElement | I.HTMLfigcaption)) -> Array JSX -> JSX
-figcaption = elementWith htmlNamespace "figcaption"
+ol :: forall props children. Props ("$element" :: HTMLOListElement | I.HTMLol) props => Children children => Record props -> children -> JSX
+ol = typedElement @("$element" :: HTMLOListElement | I.HTMLol) htmlNamespace "ol"
 
-figcaption_ :: Array JSX -> JSX
-figcaption_ = elementWith htmlNamespace "figcaption" []
+optgroup :: forall props children. Props ("$element" :: HTMLOptGroupElement | I.HTMLoptgroup) props => Children children => Record props -> children -> JSX
+optgroup = typedElement @("$element" :: HTMLOptGroupElement | I.HTMLoptgroup) htmlNamespace "optgroup"
 
-figure :: Array (Prop ("$element" :: HTMLElement | I.HTMLfigure)) -> Array JSX -> JSX
-figure = elementWith htmlNamespace "figure"
+option :: forall props children. Props ("$element" :: HTMLOptionElement | I.HTMLoption) props => Children children => Record props -> children -> JSX
+option = typedElement @("$element" :: HTMLOptionElement | I.HTMLoption) htmlNamespace "option"
 
-figure_ :: Array JSX -> JSX
-figure_ = elementWith htmlNamespace "figure" []
+output :: forall props children. Props ("$element" :: HTMLOutputElement | I.HTMLoutput) props => Children children => Record props -> children -> JSX
+output = typedElement @("$element" :: HTMLOutputElement | I.HTMLoutput) htmlNamespace "output"
 
-footer :: Array (Prop ("$element" :: HTMLElement | I.HTMLfooter)) -> Array JSX -> JSX
-footer = elementWith htmlNamespace "footer"
+p :: forall props children. Props ("$element" :: HTMLParagraphElement | I.HTMLp) props => Children children => Record props -> children -> JSX
+p = typedElement @("$element" :: HTMLParagraphElement | I.HTMLp) htmlNamespace "p"
 
-footer_ :: Array JSX -> JSX
-footer_ = elementWith htmlNamespace "footer" []
+param :: forall props. Props ("$element" :: HTMLParamElement | I.HTMLparam) props => Record props -> JSX
+param = typedVoidElement @("$element" :: HTMLParamElement | I.HTMLparam) htmlNamespace "param"
 
-form :: Array (Prop ("$element" :: HTMLFormElement | I.HTMLform)) -> Array JSX -> JSX
-form = elementWith htmlNamespace "form"
+picture :: forall props children. Props ("$element" :: HTMLElement | I.Interactive ()) props => Children children => Record props -> children -> JSX
+picture = typedElement @("$element" :: HTMLElement | I.Interactive ()) htmlNamespace "picture"
 
-form_ :: Array JSX -> JSX
-form_ = elementWith htmlNamespace "form" []
+pre :: forall props children. Props ("$element" :: HTMLPreElement | I.HTMLpre) props => Children children => Record props -> children -> JSX
+pre = typedElement @("$element" :: HTMLPreElement | I.HTMLpre) htmlNamespace "pre"
 
-h1 :: Array (Prop ("$element" :: HTMLHeadingElement | I.HTMLh1)) -> Array JSX -> JSX
-h1 = elementWith htmlNamespace "h1"
+progress :: forall props children. Props ("$element" :: HTMLProgressElement | I.HTMLprogress) props => Children children => Record props -> children -> JSX
+progress = typedElement @("$element" :: HTMLProgressElement | I.HTMLprogress) htmlNamespace "progress"
 
-h1_ :: Array JSX -> JSX
-h1_ = elementWith htmlNamespace "h1" []
+q :: forall props children. Props ("$element" :: HTMLQuoteElement | I.HTMLq) props => Children children => Record props -> children -> JSX
+q = typedElement @("$element" :: HTMLQuoteElement | I.HTMLq) htmlNamespace "q"
 
-h2 :: Array (Prop ("$element" :: HTMLHeadingElement | I.HTMLh2)) -> Array JSX -> JSX
-h2 = elementWith htmlNamespace "h2"
+rp :: forall props children. Props ("$element" :: HTMLElement | I.HTMLrp) props => Children children => Record props -> children -> JSX
+rp = typedElement @("$element" :: HTMLElement | I.HTMLrp) htmlNamespace "rp"
 
-h2_ :: Array JSX -> JSX
-h2_ = elementWith htmlNamespace "h2" []
+rt :: forall props children. Props ("$element" :: HTMLElement | I.HTMLrt) props => Children children => Record props -> children -> JSX
+rt = typedElement @("$element" :: HTMLElement | I.HTMLrt) htmlNamespace "rt"
 
-h3 :: Array (Prop ("$element" :: HTMLHeadingElement | I.HTMLh3)) -> Array JSX -> JSX
-h3 = elementWith htmlNamespace "h3"
+ruby :: forall props children. Props ("$element" :: HTMLElement | I.HTMLruby) props => Children children => Record props -> children -> JSX
+ruby = typedElement @("$element" :: HTMLElement | I.HTMLruby) htmlNamespace "ruby"
 
-h3_ :: Array JSX -> JSX
-h3_ = elementWith htmlNamespace "h3" []
+samp :: forall props children. Props ("$element" :: HTMLElement | I.HTMLsamp) props => Children children => Record props -> children -> JSX
+samp = typedElement @("$element" :: HTMLElement | I.HTMLsamp) htmlNamespace "samp"
 
-h4 :: Array (Prop ("$element" :: HTMLHeadingElement | I.HTMLh4)) -> Array JSX -> JSX
-h4 = elementWith htmlNamespace "h4"
+script :: forall props children. Props ("$element" :: HTMLScriptElement | I.HTMLscript) props => Children children => Record props -> children -> JSX
+script = typedElement @("$element" :: HTMLScriptElement | I.HTMLscript) htmlNamespace "script"
 
-h4_ :: Array JSX -> JSX
-h4_ = elementWith htmlNamespace "h4" []
+search :: forall props children. Props ("$element" :: HTMLElement | I.Interactive ()) props => Children children => Record props -> children -> JSX
+search = typedElement @("$element" :: HTMLElement | I.Interactive ()) htmlNamespace "search"
 
-h5 :: Array (Prop ("$element" :: HTMLHeadingElement | I.HTMLh5)) -> Array JSX -> JSX
-h5 = elementWith htmlNamespace "h5"
+section :: forall props children. Props ("$element" :: HTMLElement | I.HTMLsection) props => Children children => Record props -> children -> JSX
+section = typedElement @("$element" :: HTMLElement | I.HTMLsection) htmlNamespace "section"
 
-h5_ :: Array JSX -> JSX
-h5_ = elementWith htmlNamespace "h5" []
+select :: forall props children. Props ("$element" :: HTMLSelectElement | I.HTMLselect) props => Children children => Record props -> children -> JSX
+select = typedElement @("$element" :: HTMLSelectElement | I.HTMLselect) htmlNamespace "select"
 
-h6 :: Array (Prop ("$element" :: HTMLHeadingElement | I.HTMLh6)) -> Array JSX -> JSX
-h6 = elementWith htmlNamespace "h6"
+slot :: forall props children. Props ("$element" :: HTMLElement | I.Interactive ()) props => Children children => Record props -> children -> JSX
+slot = typedElement @("$element" :: HTMLElement | I.Interactive ()) htmlNamespace "slot"
 
-h6_ :: Array JSX -> JSX
-h6_ = elementWith htmlNamespace "h6" []
+small :: forall props children. Props ("$element" :: HTMLElement | I.HTMLsmall) props => Children children => Record props -> children -> JSX
+small = typedElement @("$element" :: HTMLElement | I.HTMLsmall) htmlNamespace "small"
 
-head :: Array (Prop ("$element" :: HTMLHeadElement | I.HTMLhead)) -> Array JSX -> JSX
-head = elementWith htmlNamespace "head"
+source :: forall props. Props ("$element" :: HTMLSourceElement | I.HTMLsource) props => Record props -> JSX
+source = typedVoidElement @("$element" :: HTMLSourceElement | I.HTMLsource) htmlNamespace "source"
 
-head_ :: Array JSX -> JSX
-head_ = elementWith htmlNamespace "head" []
+span :: forall props children. Props ("$element" :: HTMLSpanElement | I.HTMLspan) props => Children children => Record props -> children -> JSX
+span = typedElement @("$element" :: HTMLSpanElement | I.HTMLspan) htmlNamespace "span"
 
-header :: Array (Prop ("$element" :: HTMLElement | I.HTMLheader)) -> Array JSX -> JSX
-header = elementWith htmlNamespace "header"
+strong :: forall props children. Props ("$element" :: HTMLElement | I.HTMLstrong) props => Children children => Record props -> children -> JSX
+strong = typedElement @("$element" :: HTMLElement | I.HTMLstrong) htmlNamespace "strong"
 
-header_ :: Array JSX -> JSX
-header_ = elementWith htmlNamespace "header" []
+style :: forall props children. Props ("$element" :: HTMLStyleElement | I.HTMLstyle) props => Children children => Record props -> children -> JSX
+style = typedElement @("$element" :: HTMLStyleElement | I.HTMLstyle) htmlNamespace "style"
 
-hr :: Array (Prop ("$element" :: HTMLHRElement | I.HTMLhr)) -> JSX
-hr props = elementWith htmlNamespace "hr" props []
+sub :: forall props children. Props ("$element" :: HTMLElement | I.HTMLsub) props => Children children => Record props -> children -> JSX
+sub = typedElement @("$element" :: HTMLElement | I.HTMLsub) htmlNamespace "sub"
 
-hr_ :: JSX
-hr_ = elementWith htmlNamespace "hr" [] []
+summary :: forall props children. Props ("$element" :: HTMLElement | I.HTMLsummary) props => Children children => Record props -> children -> JSX
+summary = typedElement @("$element" :: HTMLElement | I.HTMLsummary) htmlNamespace "summary"
 
-html :: Array (Prop ("$element" :: HTMLHtmlElement | I.HTMLhtml)) -> Array JSX -> JSX
-html = elementWith htmlNamespace "html"
+sup :: forall props children. Props ("$element" :: HTMLElement | I.HTMLsup) props => Children children => Record props -> children -> JSX
+sup = typedElement @("$element" :: HTMLElement | I.HTMLsup) htmlNamespace "sup"
 
-html_ :: Array JSX -> JSX
-html_ = elementWith htmlNamespace "html" []
+table :: forall props children. Props ("$element" :: HTMLTableElement | I.HTMLtable) props => Children children => Record props -> children -> JSX
+table = typedElement @("$element" :: HTMLTableElement | I.HTMLtable) htmlNamespace "table"
 
-i :: Array (Prop ("$element" :: HTMLElement | I.HTMLi)) -> Array JSX -> JSX
-i = elementWith htmlNamespace "i"
+tbody :: forall props children. Props ("$element" :: HTMLTableSectionElement | I.HTMLtbody) props => Children children => Record props -> children -> JSX
+tbody = typedElement @("$element" :: HTMLTableSectionElement | I.HTMLtbody) htmlNamespace "tbody"
 
-i_ :: Array JSX -> JSX
-i_ = elementWith htmlNamespace "i" []
+td :: forall props children. Props ("$element" :: HTMLTableDataCellElement | I.HTMLtd) props => Children children => Record props -> children -> JSX
+td = typedElement @("$element" :: HTMLTableDataCellElement | I.HTMLtd) htmlNamespace "td"
 
-iframe :: Array (Prop ("$element" :: HTMLIFrameElement | I.HTMLiframe)) -> Array JSX -> JSX
-iframe = elementWith htmlNamespace "iframe"
+template :: forall props children. Props ("$element" :: HTMLTemplateElement | I.Interactive ()) props => Children children => Record props -> children -> JSX
+template = typedElement @("$element" :: HTMLTemplateElement | I.Interactive ()) htmlNamespace "template"
 
-iframe_ :: Array JSX -> JSX
-iframe_ = elementWith htmlNamespace "iframe" []
+textarea :: forall props children. Props ("$element" :: HTMLTextAreaElement | I.HTMLtextarea) props => Children children => Record props -> children -> JSX
+textarea = typedElement @("$element" :: HTMLTextAreaElement | I.HTMLtextarea) htmlNamespace "textarea"
 
-img :: Array (Prop ("$element" :: HTMLImageElement | I.HTMLimg)) -> JSX
-img props = elementWith htmlNamespace "img" props []
+tfoot :: forall props children. Props ("$element" :: HTMLTableSectionElement | I.HTMLtfoot) props => Children children => Record props -> children -> JSX
+tfoot = typedElement @("$element" :: HTMLTableSectionElement | I.HTMLtfoot) htmlNamespace "tfoot"
 
-img_ :: JSX
-img_ = elementWith htmlNamespace "img" [] []
+th :: forall props children. Props ("$element" :: HTMLTableHeaderCellElement | I.HTMLth) props => Children children => Record props -> children -> JSX
+th = typedElement @("$element" :: HTMLTableHeaderCellElement | I.HTMLth) htmlNamespace "th"
 
-input :: Array (Prop ("$element" :: HTMLInputElement | I.HTMLinput)) -> JSX
-input props = elementWith htmlNamespace "input" props []
+thead :: forall props children. Props ("$element" :: HTMLTableSectionElement | I.HTMLthead) props => Children children => Record props -> children -> JSX
+thead = typedElement @("$element" :: HTMLTableSectionElement | I.HTMLthead) htmlNamespace "thead"
 
-input_ :: JSX
-input_ = elementWith htmlNamespace "input" [] []
+time :: forall props children. Props ("$element" :: HTMLTimeElement | I.HTMLtime) props => Children children => Record props -> children -> JSX
+time = typedElement @("$element" :: HTMLTimeElement | I.HTMLtime) htmlNamespace "time"
 
-ins :: Array (Prop ("$element" :: HTMLModElement | I.HTMLins)) -> Array JSX -> JSX
-ins = elementWith htmlNamespace "ins"
+title :: forall props children. Props ("$element" :: HTMLTitleElement | I.HTMLtitle) props => Children children => Record props -> children -> JSX
+title = typedElement @("$element" :: HTMLTitleElement | I.HTMLtitle) htmlNamespace "title"
 
-ins_ :: Array JSX -> JSX
-ins_ = elementWith htmlNamespace "ins" []
+tr :: forall props children. Props ("$element" :: HTMLTableRowElement | I.HTMLtr) props => Children children => Record props -> children -> JSX
+tr = typedElement @("$element" :: HTMLTableRowElement | I.HTMLtr) htmlNamespace "tr"
 
-kbd :: Array (Prop ("$element" :: HTMLElement | I.HTMLkbd)) -> Array JSX -> JSX
-kbd = elementWith htmlNamespace "kbd"
+track :: forall props. Props ("$element" :: HTMLTrackElement | I.HTMLtrack) props => Record props -> JSX
+track = typedVoidElement @("$element" :: HTMLTrackElement | I.HTMLtrack) htmlNamespace "track"
 
-kbd_ :: Array JSX -> JSX
-kbd_ = elementWith htmlNamespace "kbd" []
+u :: forall props children. Props ("$element" :: HTMLElement | I.HTMLu) props => Children children => Record props -> children -> JSX
+u = typedElement @("$element" :: HTMLElement | I.HTMLu) htmlNamespace "u"
 
-label :: Array (Prop ("$element" :: HTMLLabelElement | I.HTMLlabel)) -> Array JSX -> JSX
-label = elementWith htmlNamespace "label"
+ul :: forall props children. Props ("$element" :: HTMLUListElement | I.HTMLul) props => Children children => Record props -> children -> JSX
+ul = typedElement @("$element" :: HTMLUListElement | I.HTMLul) htmlNamespace "ul"
 
-label_ :: Array JSX -> JSX
-label_ = elementWith htmlNamespace "label" []
+var :: forall props children. Props ("$element" :: HTMLElement | I.HTMLvar) props => Children children => Record props -> children -> JSX
+var = typedElement @("$element" :: HTMLElement | I.HTMLvar) htmlNamespace "var"
 
-legend :: Array (Prop ("$element" :: HTMLLegendElement | I.HTMLlegend)) -> Array JSX -> JSX
-legend = elementWith htmlNamespace "legend"
+video :: forall props children. Props ("$element" :: HTMLVideoElement | I.HTMLvideo) props => Children children => Record props -> children -> JSX
+video = typedElement @("$element" :: HTMLVideoElement | I.HTMLvideo) htmlNamespace "video"
 
-legend_ :: Array JSX -> JSX
-legend_ = elementWith htmlNamespace "legend" []
-
-li :: Array (Prop ("$element" :: HTMLLIElement | I.HTMLli)) -> Array JSX -> JSX
-li = elementWith htmlNamespace "li"
-
-li_ :: Array JSX -> JSX
-li_ = elementWith htmlNamespace "li" []
-
-link :: Array (Prop ("$element" :: HTMLLinkElement | I.HTMLlink)) -> JSX
-link props = elementWith htmlNamespace "link" props []
-
-link_ :: JSX
-link_ = elementWith htmlNamespace "link" [] []
-
-main :: Array (Prop ("$element" :: HTMLElement | I.HTMLmain)) -> Array JSX -> JSX
-main = elementWith htmlNamespace "main"
-
-main_ :: Array JSX -> JSX
-main_ = elementWith htmlNamespace "main" []
-
-map :: Array (Prop ("$element" :: HTMLMapElement | I.HTMLmap)) -> Array JSX -> JSX
-map = elementWith htmlNamespace "map"
-
-map_ :: Array JSX -> JSX
-map_ = elementWith htmlNamespace "map" []
-
-mark :: Array (Prop ("$element" :: HTMLElement | I.HTMLmark)) -> Array JSX -> JSX
-mark = elementWith htmlNamespace "mark"
-
-mark_ :: Array JSX -> JSX
-mark_ = elementWith htmlNamespace "mark" []
-
-menu :: Array (Prop ("$element" :: HTMLElement | I.HTMLmenu)) -> Array JSX -> JSX
-menu = elementWith htmlNamespace "menu"
-
-menu_ :: Array JSX -> JSX
-menu_ = elementWith htmlNamespace "menu" []
-
-menuitem :: Array (Prop ("$element" :: HTMLElement | I.HTMLmenuitem)) -> Array JSX -> JSX
-menuitem = elementWith htmlNamespace "menuitem"
-
-menuitem_ :: Array JSX -> JSX
-menuitem_ = elementWith htmlNamespace "menuitem" []
-
-meta :: Array (Prop ("$element" :: HTMLMetaElement | I.HTMLmeta)) -> JSX
-meta props = elementWith htmlNamespace "meta" props []
-
-meta_ :: JSX
-meta_ = elementWith htmlNamespace "meta" [] []
-
-meter :: Array (Prop ("$element" :: HTMLMeterElement | I.HTMLmeter)) -> Array JSX -> JSX
-meter = elementWith htmlNamespace "meter"
-
-meter_ :: Array JSX -> JSX
-meter_ = elementWith htmlNamespace "meter" []
-
-nav :: Array (Prop ("$element" :: HTMLElement | I.HTMLnav)) -> Array JSX -> JSX
-nav = elementWith htmlNamespace "nav"
-
-nav_ :: Array JSX -> JSX
-nav_ = elementWith htmlNamespace "nav" []
-
-noscript :: Array (Prop ("$element" :: HTMLElement | I.HTMLnoscript)) -> Array JSX -> JSX
-noscript = elementWith htmlNamespace "noscript"
-
-noscript_ :: Array JSX -> JSX
-noscript_ = elementWith htmlNamespace "noscript" []
-
-object :: Array (Prop ("$element" :: HTMLObjectElement | I.HTMLobject)) -> Array JSX -> JSX
-object = elementWith htmlNamespace "object"
-
-object_ :: Array JSX -> JSX
-object_ = elementWith htmlNamespace "object" []
-
-ol :: Array (Prop ("$element" :: HTMLOListElement | I.HTMLol)) -> Array JSX -> JSX
-ol = elementWith htmlNamespace "ol"
-
-ol_ :: Array JSX -> JSX
-ol_ = elementWith htmlNamespace "ol" []
-
-optgroup :: Array (Prop ("$element" :: HTMLOptGroupElement | I.HTMLoptgroup)) -> Array JSX -> JSX
-optgroup = elementWith htmlNamespace "optgroup"
-
-optgroup_ :: Array JSX -> JSX
-optgroup_ = elementWith htmlNamespace "optgroup" []
-
-option :: Array (Prop ("$element" :: HTMLOptionElement | I.HTMLoption)) -> Array JSX -> JSX
-option = elementWith htmlNamespace "option"
-
-option_ :: Array JSX -> JSX
-option_ = elementWith htmlNamespace "option" []
-
-output :: Array (Prop ("$element" :: HTMLOutputElement | I.HTMLoutput)) -> Array JSX -> JSX
-output = elementWith htmlNamespace "output"
-
-output_ :: Array JSX -> JSX
-output_ = elementWith htmlNamespace "output" []
-
-p :: Array (Prop ("$element" :: HTMLParagraphElement | I.HTMLp)) -> Array JSX -> JSX
-p = elementWith htmlNamespace "p"
-
-p_ :: Array JSX -> JSX
-p_ = elementWith htmlNamespace "p" []
-
-param :: Array (Prop ("$element" :: HTMLParamElement | I.HTMLparam)) -> JSX
-param props = elementWith htmlNamespace "param" props []
-
-param_ :: JSX
-param_ = elementWith htmlNamespace "param" [] []
-
-picture :: Array (Prop ("$element" :: HTMLElement | I.Interactive ())) -> Array JSX -> JSX
-picture = elementWith htmlNamespace "picture"
-
-picture_ :: Array JSX -> JSX
-picture_ = elementWith htmlNamespace "picture" []
-
-pre :: Array (Prop ("$element" :: HTMLPreElement | I.HTMLpre)) -> Array JSX -> JSX
-pre = elementWith htmlNamespace "pre"
-
-pre_ :: Array JSX -> JSX
-pre_ = elementWith htmlNamespace "pre" []
-
-progress :: Array (Prop ("$element" :: HTMLProgressElement | I.HTMLprogress)) -> Array JSX -> JSX
-progress = elementWith htmlNamespace "progress"
-
-progress_ :: Array JSX -> JSX
-progress_ = elementWith htmlNamespace "progress" []
-
-q :: Array (Prop ("$element" :: HTMLQuoteElement | I.HTMLq)) -> Array JSX -> JSX
-q = elementWith htmlNamespace "q"
-
-q_ :: Array JSX -> JSX
-q_ = elementWith htmlNamespace "q" []
-
-rp :: Array (Prop ("$element" :: HTMLElement | I.HTMLrp)) -> Array JSX -> JSX
-rp = elementWith htmlNamespace "rp"
-
-rp_ :: Array JSX -> JSX
-rp_ = elementWith htmlNamespace "rp" []
-
-rt :: Array (Prop ("$element" :: HTMLElement | I.HTMLrt)) -> Array JSX -> JSX
-rt = elementWith htmlNamespace "rt"
-
-rt_ :: Array JSX -> JSX
-rt_ = elementWith htmlNamespace "rt" []
-
-ruby :: Array (Prop ("$element" :: HTMLElement | I.HTMLruby)) -> Array JSX -> JSX
-ruby = elementWith htmlNamespace "ruby"
-
-ruby_ :: Array JSX -> JSX
-ruby_ = elementWith htmlNamespace "ruby" []
-
-samp :: Array (Prop ("$element" :: HTMLElement | I.HTMLsamp)) -> Array JSX -> JSX
-samp = elementWith htmlNamespace "samp"
-
-samp_ :: Array JSX -> JSX
-samp_ = elementWith htmlNamespace "samp" []
-
-script :: Array (Prop ("$element" :: HTMLScriptElement | I.HTMLscript)) -> Array JSX -> JSX
-script = elementWith htmlNamespace "script"
-
-script_ :: Array JSX -> JSX
-script_ = elementWith htmlNamespace "script" []
-
-search :: Array (Prop ("$element" :: HTMLElement | I.Interactive ())) -> Array JSX -> JSX
-search = elementWith htmlNamespace "search"
-
-search_ :: Array JSX -> JSX
-search_ = elementWith htmlNamespace "search" []
-
-section :: Array (Prop ("$element" :: HTMLElement | I.HTMLsection)) -> Array JSX -> JSX
-section = elementWith htmlNamespace "section"
-
-section_ :: Array JSX -> JSX
-section_ = elementWith htmlNamespace "section" []
-
-select :: Array (Prop ("$element" :: HTMLSelectElement | I.HTMLselect)) -> Array JSX -> JSX
-select = elementWith htmlNamespace "select"
-
-select_ :: Array JSX -> JSX
-select_ = elementWith htmlNamespace "select" []
-
-slot :: Array (Prop ("$element" :: HTMLElement | I.Interactive ())) -> Array JSX -> JSX
-slot = elementWith htmlNamespace "slot"
-
-slot_ :: Array JSX -> JSX
-slot_ = elementWith htmlNamespace "slot" []
-
-small :: Array (Prop ("$element" :: HTMLElement | I.HTMLsmall)) -> Array JSX -> JSX
-small = elementWith htmlNamespace "small"
-
-small_ :: Array JSX -> JSX
-small_ = elementWith htmlNamespace "small" []
-
-source :: Array (Prop ("$element" :: HTMLSourceElement | I.HTMLsource)) -> JSX
-source props = elementWith htmlNamespace "source" props []
-
-source_ :: JSX
-source_ = elementWith htmlNamespace "source" [] []
-
-span :: Array (Prop ("$element" :: HTMLSpanElement | I.HTMLspan)) -> Array JSX -> JSX
-span = elementWith htmlNamespace "span"
-
-span_ :: Array JSX -> JSX
-span_ = elementWith htmlNamespace "span" []
-
-strong :: Array (Prop ("$element" :: HTMLElement | I.HTMLstrong)) -> Array JSX -> JSX
-strong = elementWith htmlNamespace "strong"
-
-strong_ :: Array JSX -> JSX
-strong_ = elementWith htmlNamespace "strong" []
-
-style :: Array (Prop ("$element" :: HTMLStyleElement | I.HTMLstyle)) -> Array JSX -> JSX
-style = elementWith htmlNamespace "style"
-
-style_ :: Array JSX -> JSX
-style_ = elementWith htmlNamespace "style" []
-
-sub :: Array (Prop ("$element" :: HTMLElement | I.HTMLsub)) -> Array JSX -> JSX
-sub = elementWith htmlNamespace "sub"
-
-sub_ :: Array JSX -> JSX
-sub_ = elementWith htmlNamespace "sub" []
-
-summary :: Array (Prop ("$element" :: HTMLElement | I.HTMLsummary)) -> Array JSX -> JSX
-summary = elementWith htmlNamespace "summary"
-
-summary_ :: Array JSX -> JSX
-summary_ = elementWith htmlNamespace "summary" []
-
-sup :: Array (Prop ("$element" :: HTMLElement | I.HTMLsup)) -> Array JSX -> JSX
-sup = elementWith htmlNamespace "sup"
-
-sup_ :: Array JSX -> JSX
-sup_ = elementWith htmlNamespace "sup" []
-
-table :: Array (Prop ("$element" :: HTMLTableElement | I.HTMLtable)) -> Array JSX -> JSX
-table = elementWith htmlNamespace "table"
-
-table_ :: Array JSX -> JSX
-table_ = elementWith htmlNamespace "table" []
-
-tbody :: Array (Prop ("$element" :: HTMLTableSectionElement | I.HTMLtbody)) -> Array JSX -> JSX
-tbody = elementWith htmlNamespace "tbody"
-
-tbody_ :: Array JSX -> JSX
-tbody_ = elementWith htmlNamespace "tbody" []
-
-td :: Array (Prop ("$element" :: HTMLTableDataCellElement | I.HTMLtd)) -> Array JSX -> JSX
-td = elementWith htmlNamespace "td"
-
-td_ :: Array JSX -> JSX
-td_ = elementWith htmlNamespace "td" []
-
-template :: Array (Prop ("$element" :: HTMLTemplateElement | I.Interactive ())) -> Array JSX -> JSX
-template = elementWith htmlNamespace "template"
-
-template_ :: Array JSX -> JSX
-template_ = elementWith htmlNamespace "template" []
-
-textarea :: Array (Prop ("$element" :: HTMLTextAreaElement | I.HTMLtextarea)) -> Array JSX -> JSX
-textarea = elementWith htmlNamespace "textarea"
-
-textarea_ :: Array JSX -> JSX
-textarea_ = elementWith htmlNamespace "textarea" []
-
-tfoot :: Array (Prop ("$element" :: HTMLTableSectionElement | I.HTMLtfoot)) -> Array JSX -> JSX
-tfoot = elementWith htmlNamespace "tfoot"
-
-tfoot_ :: Array JSX -> JSX
-tfoot_ = elementWith htmlNamespace "tfoot" []
-
-th :: Array (Prop ("$element" :: HTMLTableHeaderCellElement | I.HTMLth)) -> Array JSX -> JSX
-th = elementWith htmlNamespace "th"
-
-th_ :: Array JSX -> JSX
-th_ = elementWith htmlNamespace "th" []
-
-thead :: Array (Prop ("$element" :: HTMLTableSectionElement | I.HTMLthead)) -> Array JSX -> JSX
-thead = elementWith htmlNamespace "thead"
-
-thead_ :: Array JSX -> JSX
-thead_ = elementWith htmlNamespace "thead" []
-
-time :: Array (Prop ("$element" :: HTMLTimeElement | I.HTMLtime)) -> Array JSX -> JSX
-time = elementWith htmlNamespace "time"
-
-time_ :: Array JSX -> JSX
-time_ = elementWith htmlNamespace "time" []
-
-title :: Array (Prop ("$element" :: HTMLTitleElement | I.HTMLtitle)) -> Array JSX -> JSX
-title = elementWith htmlNamespace "title"
-
-title_ :: Array JSX -> JSX
-title_ = elementWith htmlNamespace "title" []
-
-tr :: Array (Prop ("$element" :: HTMLTableRowElement | I.HTMLtr)) -> Array JSX -> JSX
-tr = elementWith htmlNamespace "tr"
-
-tr_ :: Array JSX -> JSX
-tr_ = elementWith htmlNamespace "tr" []
-
-track :: Array (Prop ("$element" :: HTMLTrackElement | I.HTMLtrack)) -> JSX
-track props = elementWith htmlNamespace "track" props []
-
-track_ :: JSX
-track_ = elementWith htmlNamespace "track" [] []
-
-u :: Array (Prop ("$element" :: HTMLElement | I.HTMLu)) -> Array JSX -> JSX
-u = elementWith htmlNamespace "u"
-
-u_ :: Array JSX -> JSX
-u_ = elementWith htmlNamespace "u" []
-
-ul :: Array (Prop ("$element" :: HTMLUListElement | I.HTMLul)) -> Array JSX -> JSX
-ul = elementWith htmlNamespace "ul"
-
-ul_ :: Array JSX -> JSX
-ul_ = elementWith htmlNamespace "ul" []
-
-var :: Array (Prop ("$element" :: HTMLElement | I.HTMLvar)) -> Array JSX -> JSX
-var = elementWith htmlNamespace "var"
-
-var_ :: Array JSX -> JSX
-var_ = elementWith htmlNamespace "var" []
-
-video :: Array (Prop ("$element" :: HTMLVideoElement | I.HTMLvideo)) -> Array JSX -> JSX
-video = elementWith htmlNamespace "video"
-
-video_ :: Array JSX -> JSX
-video_ = elementWith htmlNamespace "video" []
-
-wbr :: Array (Prop ("$element" :: HTMLElement | I.HTMLwbr)) -> JSX
-wbr props = elementWith htmlNamespace "wbr" props []
-
-wbr_ :: JSX
-wbr_ = elementWith htmlNamespace "wbr" [] []
+wbr :: forall props. Props ("$element" :: HTMLElement | I.HTMLwbr) props => Record props -> JSX
+wbr = typedVoidElement @("$element" :: HTMLElement | I.HTMLwbr) htmlNamespace "wbr"

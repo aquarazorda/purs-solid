@@ -79,11 +79,9 @@ try {
       "",
       "import Solid.Component as Component",
       "import Solid.DOM.HTML as H",
-      "import Solid.DOM.Props as P",
-      "import Solid.JSX (text)",
       "",
       "badge :: Component.Component {}",
-      'badge = Component.component \\_ -> pure (H.p [ P.id "badge" ] [ text "added while running" ])',
+      'badge = Component.component \\_ -> pure (H.p { id: "badge" } "added while running")',
       "",
     ].join("\n")
   );

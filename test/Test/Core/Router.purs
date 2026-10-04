@@ -15,7 +15,6 @@ import Solid.Async (createAsync)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM.HTML as H
-import Solid.DOM.Props as P
 import Solid.JSX (JSX, text)
 import Solid.Router (href)
 import Solid.Router as Router
@@ -42,7 +41,7 @@ withRouter url routes = do
     shell = Component.component \props -> do
       nav <- Router.useNavigate
       liftSetup (Ref.write (Just nav) navigateRef)
-      pure (H.main_ [ props.content ])
+      pure (H.main {} [ props.content ])
     view = Router.routerView router \content -> pure (Component.element shell { content })
   mounted <- mount view
   pure { mounted, navigate: navigateRef }
@@ -58,7 +57,7 @@ go ref to = do
   settle
 
 user :: Router.RouteProps (id :: String, tab :: Maybe String) -> JSX
-user props = H.p_
+user props = H.p {}
   [ text "user "
   , text (_.id <$> props.params)
   , text " / "
@@ -80,7 +79,7 @@ itemRoutes q =
   [ Router.route @"/" \_ -> pure (text "home")
   , Router.route @"/items/:id" \props -> do
       item /\ _ <- createAsync (runQuery q <<< _.id <$> props.params)
-      pure (Control.loading (text "loading") (H.p_ [ text item ]))
+      pure (Control.loading (text "loading") (H.p {} item))
   ]
 
 waitLoad :: Aff Unit
@@ -124,7 +123,7 @@ spec = describe "Solid.Router" do
   solidIt "layout routes render the matched child" do
     r <- withRouter "/settings/profile"
       [ Router.layout @"/settings"
-          (\props -> pure (H.section_ [ text "settings:", props.children ]))
+          (\props -> pure (H.section {} [ text "settings:", props.children ]))
           [ Router.route @"/profile" \_ -> pure (text "profile")
           , Router.route @"/billing" \_ -> pure (text "billing")
           ]
@@ -136,14 +135,14 @@ spec = describe "Solid.Router" do
 
   solidIt "plain links navigate and the active link is marked" do
     r <- withRouter "/"
-      [ Router.route @"/" \_ -> pure (H.a [ P.href (href @"/users/:id/:tab?" { id: "9", tab: Nothing }) ] [ text "open" ])
-      , Router.route @"/users/:id/:tab?" \props -> pure (H.div_ [ user props, H.a [ P.id "self", P.href "/users/9" ] [ text "me" ] ])
+      [ Router.route @"/" \_ -> pure (H.a { href: href @"/users/:id/:tab?" { id: "9", tab: Nothing } } "open")
+      , Router.route @"/users/:id/:tab?" \props -> pure (H.div {} [ user props, H.a { id: "self", href: "/users/9" } "me" ])
       ]
     link <- query "a" r.mounted >>= maybe (throwError (error "no link")) pure
     liftEffect (click link)
     settle
     delay (Milliseconds 5.0)
-    html r.mounted >>= shouldEqual """<main><div><p>user 9 / profile</p><a id="self" href="/users/9" data-active="" aria-current="page">me</a></div></main>"""
+    html r.mounted >>= shouldEqual """<main><div><p>user 9 / profile</p><a href="/users/9" data-active="" aria-current="page" id="self">me</a></div></main>"""
     liftEffect r.mounted.dispose
 
   describe "Solid.Router.Query" do
@@ -195,9 +194,9 @@ spec = describe "Solid.Router" do
           run <- useAction rename
           submissions <- useSubmissions rename
           let submit name = launchAff_ (run name >>= \result -> liftEffect (Ref.modify_ (_ <> [ result ]) results))
-          pure $ H.div_
-            [ H.button [ P.id "go", P.onClick \_ -> submit "ada" ] [ text "go" ]
-            , H.button [ P.id "leave", P.onClick \_ -> submit "" ] [ text "leave" ]
+          pure $ H.div {}
+            [ H.button { id: "go", onClick: \_ -> submit "ada" } "go"
+            , H.button { id: "leave", onClick: \_ -> submit "" } "leave"
             , text (submissions <#> \list -> show (Array.length list) <> " " <> show (_.result <$> list))
             ]
       r <- withRouter "/" [ Router.route @"/" \_ -> pure (Component.element page {}), Router.route @"/done" \_ -> pure (text "done") ]
@@ -236,7 +235,7 @@ spec = describe "Solid.Router" do
     solidIt "lazy layouts load their child routes on first match" do
       r <- withRouter "/"
         [ Router.route @"/" \_ -> pure (text "home")
-        , Router.layoutLazy @"/admin" @"Test.Core.Router.Admin" \props -> pure (H.section_ [ props.children ])
+        , Router.layoutLazy @"/admin" @"Test.Core.Router.Admin" \props -> pure (H.section {} [ props.children ])
         ]
       go r.navigate "/admin/users"
       waitForHtml "<main><section>admin users</section></main>" r.mounted
@@ -263,12 +262,12 @@ spec = describe "Solid.Router" do
             location <- Router.useLocation
             search <- useSearch @(tag :: Array String, page :: Maybe Int)
             link <- Router.useLinkState (pure "/list")
-            pure $ H.div_
+            pure $ H.div {}
               [ text (show <<< _.tag <$> searchParams search)
               , text (show <<< map toString <$> Router.locationState location)
               , text (link.current <#> \c -> if c then " current" else "")
-              , H.button [ P.id "page", P.onClick \_ -> setSearch search { page: Just 2 } ] [ text "" ]
-              , H.button [ P.id "tags", P.onClick \_ -> setSearch search { tag: [ "x", "y" ], page: Nothing } ] [ text "" ]
+              , H.button { id: "page", onClick: \_ -> setSearch search { page: Just 2 } } ""
+              , H.button { id: "tags", onClick: \_ -> setSearch search { tag: [ "x", "y" ], page: Nothing } } ""
               , text (show <<< _.page <$> searchParams search)
               ]
         ]
@@ -314,7 +313,7 @@ spec = describe "Solid.Router" do
         # onSettled (\s -> Ref.modify_ (_ <> [ s.result ]) settled)
       page = Component.component \_ -> do
         run <- useAction save
-        pure (H.button [ P.id "save", P.onClick \_ -> launchAff_ (void (run 21)) ] [ text (show <$> saving) ])
+        pure (H.button { id: "save", onClick: \_ -> launchAff_ (void (run 21)) } (show <$> saving))
     r <- withRouter "/" [ Router.route @"/" \_ -> pure (Component.element page {}) ]
     query "#save" r.mounted >>= traverse_ (liftEffect <<< click)
     settle

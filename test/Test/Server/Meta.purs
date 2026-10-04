@@ -14,7 +14,6 @@ import Data.Maybe (maybe)
 import Effect.Aff (Aff, throwError)
 import Effect.Class (liftEffect)
 import Solid.DOM.HTML as H
-import Solid.DOM.Props as P
 import Solid.JSX (JSX, text)
 import Solid.Meta as Meta
 import Solid.Web.SSR as SSR
@@ -31,10 +30,10 @@ count pattern = maybe 0 NEA.length <<< match (unsafeRegex pattern global)
 spec :: Spec Unit
 spec = describe "Solid.Meta (server)" do
   solidIt "head tags are collected into the head markup, not the body" do
-    result <- renderHead $ H.div_
+    result <- renderHead $ H.div {}
       [ Meta.title "Inbox"
-      , Meta.meta [ P.name "description", P.content "mail" ]
-      , Meta.link [ P.rel "canonical", P.href "https://example.test/inbox" ]
+      , Meta.meta { name: "description", content: "mail" }
+      , Meta.link { rel: "canonical", href: "https://example.test/inbox" }
       , text "body"
       ]
     -- The host owns the document, so the title arrives as a `document.title` script.
@@ -44,11 +43,11 @@ spec = describe "Solid.Meta (server)" do
     result.html `shouldSatisfy` (not <<< contains (Pattern "Inbox"))
 
   solidIt "the last tag with the same identity wins; key makes identities distinct" do
-    result <- renderHead $ H.div_
+    result <- renderHead $ H.div {}
       [ Meta.title "first"
       , Meta.title "second"
-      , Meta.meta [ Meta.key "img-1", P.name "og:image", P.content "a.png" ]
-      , Meta.meta [ Meta.key "img-2", P.name "og:image", P.content "b.png" ]
+      , Meta.meta { key: "img-1", name: "og:image", content: "a.png" }
+      , Meta.meta { key: "img-2", name: "og:image", content: "b.png" }
       ]
     result.head `shouldSatisfy` contains (Pattern "(\"second\")")
     result.head `shouldSatisfy` (not <<< contains (Pattern "(\"first\")"))

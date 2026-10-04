@@ -18,11 +18,9 @@ import Solid.Async (createAsync)
 import Solid.Component as Component
 import Solid.Context (createContext, provide, useContext)
 import Solid.Control as Control
-import Solid.DOM (bindChecked, bindValue, classWhen, dataAttr, ref, styleProp, targetChecked, targetValue, textContent)
+import Solid.DOM (element, targetChecked, targetValue)
 import Solid.DOM.HTML as H
-import Solid.DOM.Props as P
 import Solid.DOM.SVG as S
-import Solid.DOM.SVG.Props as SP
 import Solid.JSX (text)
 import Solid.Meta as Meta
 import Solid.JSX as JSX
@@ -62,14 +60,14 @@ spec :: Spec Unit
 spec = describe "views" do
   describe "elements and props" do
     solidIt "renders static elements, attributes and text" do
-      mounted <- mount $ H.div [ P.id "greeting", P.class_ "box" ] [ H.span_ [ text "hello" ], text " world" ]
+      mounted <- mount $ H.div { id: "greeting", class: "box" } [ H.span {} "hello", text " world" ]
       html mounted >>= shouldEqual """<div id="greeting" class="box"><span>hello</span> world</div>"""
       liftEffect mounted.dispose
 
     solidIt "reactive attributes and text update in place" do
       label <- signal "one"
       active <- signal false
-      mounted <- mount $ H.p [ P.title label.get, classWhen "active" active.get, P.class_ "item" ] [ text label.get ]
+      mounted <- mount $ H.p { title: label.get, class: { item: true, active: active.get } } label.get
       html mounted >>= shouldEqual """<p title="one" class="item">one</p>"""
       before <- expectElement "p" mounted
       write label "two"
@@ -81,7 +79,7 @@ spec = describe "views" do
 
     solidIt "boolean attributes are present or absent" do
       disabled <- signal true
-      mounted <- mount $ H.button [ P.disabled disabled.get ] [ text "go" ]
+      mounted <- mount $ H.button { disabled: disabled.get } "go"
       button <- expectElement "button" mounted
       liftEffect (getAttribute "disabled" button) >>= shouldEqual (Just "")
       write disabled false
@@ -90,7 +88,7 @@ spec = describe "views" do
 
     solidIt "form state is set as a DOM property" do
       draft <- signal "abc"
-      mounted <- mount $ H.input [ P.value draft.get, dataAttr "role" "draft" ]
+      mounted <- mount $ H.input { value: draft.get, "data-role": "draft" }
       input <- expectElement "input" mounted
       liftEffect (inputValue input) >>= shouldEqual "abc"
       write draft "xyz"
@@ -100,7 +98,7 @@ spec = describe "views" do
 
     solidIt "delegated events reach their handlers" do
       count <- signal 0
-      mounted <- mount $ H.button [ P.onClick \_ -> Signal.modify_ count.set (_ + 1) ] [ text (show <$> count.get) ]
+      mounted <- mount $ H.button { onClick: \_ -> Signal.modify_ count.set (_ + 1) } (show <$> count.get)
       button <- expectElement "button" mounted
       liftEffect (click button *> click button)
       html mounted >>= shouldEqual "<button>2</button>"
@@ -108,8 +106,8 @@ spec = describe "views" do
 
     solidIt "input events deliver the new value" do
       typed <- signal ""
-      mounted <- mount $ H.div_
-        [ H.input [ P.onInput \event -> targetValue event >>= set typed.set ]
+      mounted <- mount $ H.div {}
+        [ H.input { onInput: \event -> targetValue event >>= set typed.set }
         , text typed.get
         ]
       input <- expectElement "input" mounted
@@ -119,8 +117,8 @@ spec = describe "views" do
 
     solidIt "targetChecked reads the checkbox the handler is on" do
       checked <- signal false
-      mounted <- mount $ H.div_
-        [ H.input [ P.type_ InputCheckbox, P.onChange \event -> targetChecked event >>= set checked.set ]
+      mounted <- mount $ H.div {}
+        [ H.input { type: InputCheckbox, onChange: \event -> targetChecked event >>= set checked.set }
         , text (show <$> checked.get)
         ]
       input <- expectElement "input" mounted
@@ -131,9 +129,9 @@ spec = describe "views" do
     solidIt "bindValue and bindChecked bind both ways" do
       name <- signal "ada"
       done <- signal false
-      mounted <- mount $ H.div_
-        [ H.input [ P.id "name", bindValue (name.get /\ name.set) ]
-        , H.input [ P.id "done", P.type_ InputCheckbox, bindChecked (done.get /\ done.set) ]
+      mounted <- mount $ H.div {}
+        [ H.input { id: "name", bindValue: name.get /\ name.set }
+        , H.input { id: "done", type: InputCheckbox, bindChecked: done.get /\ done.set }
         , text name.get
         , text (show <$> done.get)
         ]
@@ -153,26 +151,59 @@ spec = describe "views" do
       inputState doneInput >>= shouldEqual (Just { value: "on", checked: false })
       liftEffect mounted.dispose
 
-    solidIt "styleProp entries merge with each other and with style" do
+    solidIt "style takes CSS text or a record of properties" do
       colour <- signal "red"
-      mounted <- mount $ H.div_
-        [ H.p [ styleProp "color" colour.get, styleProp "margin" "0" ] [ text "a" ]
-        , H.p [ P.style "padding: 1px", styleProp "color" "blue" ] [ text "b" ]
-        , H.p [ textContent "replaced" ] []
+      mounted <- mount $ H.div {}
+        [ H.p { style: { color: colour.get, margin: "0" } } "a"
+        , H.p { style: "padding: 1px" } "b"
+        , H.p { textContent: "replaced" } []
+        , H.p { innerHTML: "<b>bold</b>" } []
         ]
-      html mounted >>= shouldEqual """<div><p style="color: red; margin: 0px;">a</p><p style="padding: 1px; color: blue;">b</p><p>replaced</p></div>"""
+      html mounted >>= shouldEqual """<div><p style="color: red; margin: 0px;">a</p><p style="padding: 1px;">b</p><p>replaced</p><p><b>bold</b></p></div>"""
       write colour "green"
-      html mounted >>= shouldEqual """<div><p style="color: green; margin: 0px;">a</p><p style="padding: 1px; color: blue;">b</p><p>replaced</p></div>"""
+      html mounted >>= shouldEqual """<div><p style="color: green; margin: 0px;">a</p><p style="padding: 1px;">b</p><p>replaced</p><p><b>bold</b></p></div>"""
+      liftEffect mounted.dispose
+
+    solidIt "class toggles follow their accessors" do
+      done <- signal false
+      mounted <- mount $ H.li { class: { todo: true, done: done.get, editing: false } } "a"
+      html mounted >>= shouldEqual """<li class="todo">a</li>"""
+      write done true
+      html mounted >>= shouldEqual """<li class="todo done">a</li>"""
+      liftEffect mounted.dispose
+
+    solidIt "aria attributes and custom events" do
+      expanded <- signal "false"
+      seen <- liftEffect (Ref.new 0)
+      mounted <- mount $ H.button
+        { "aria-expanded": expanded.get, "on:ping": \_ -> Ref.modify_ (_ + 1) seen }
+        "menu"
+      button <- expectElement "button" mounted
+      liftEffect (dispatch "ping" button)
+      liftEffect (Ref.read seen) >>= shouldEqual 1
+      html mounted >>= shouldEqual """<button aria-expanded="false">menu</button>"""
+      write expanded "true"
+      html mounted >>= shouldEqual """<button aria-expanded="true">menu</button>"""
+      liftEffect mounted.dispose
+
+    solidIt "element takes any tag and any fields" do
+      clicks <- signal 0
+      mounted <- mount $ element "my-widget"
+        { "label-text": "hi", count: 2, onClick: \_ -> Signal.modify_ clicks.set (_ + 1) }
+        (show <$> clicks.get)
+      widget <- expectElement "my-widget" mounted
+      liftEffect (click widget)
+      html mounted >>= shouldEqual """<my-widget count="2" label-text="hi">1</my-widget>"""
       liftEffect mounted.dispose
 
     solidIt "refs receive the element" do
       seen <- liftEffect (Ref.new "")
-      mounted <- mount $ H.section [ P.id "target", ref \element -> tagName (HTMLElement.toElement element) >>= flip Ref.write seen ] []
+      mounted <- mount $ H.section { id: "target", ref: \section -> tagName (HTMLElement.toElement section) >>= flip Ref.write seen } []
       liftEffect (Ref.read seen) >>= shouldEqual "SECTION"
       liftEffect mounted.dispose
 
     solidIt "SVG elements use the SVG namespace" do
-      mounted <- mount $ S.svg [ SP.viewBox "0 0 10 10" ] [ S.circle [ SP.cx "5", SP.cy "5", SP.r "4" ] [] ]
+      mounted <- mount $ S.svg { viewBox: "0 0 10 10" } (S.circle { cx: "5", cy: "5", r: "4" } [])
       circle <- expectElement "circle" mounted
       namespaceURI circle `shouldEqual` Just "http://www.w3.org/2000/svg"
       svg <- expectElement "svg" mounted
@@ -180,14 +211,14 @@ spec = describe "views" do
       liftEffect mounted.dispose
 
     solidIt "dispose removes the view" do
-      mounted <- mount (H.p_ [ text "bye" ])
+      mounted <- mount (H.p {} "bye")
       liftEffect mounted.dispose
       html mounted >>= shouldEqual ""
 
   describe "JSX is a description" do
     solidIt "the same value renders independent copies" do
-      let badge = H.b_ [ text "x" ]
-      mounted <- mount (H.div_ [ badge, badge ])
+      let badge = H.b {} "x"
+      mounted <- mount (H.div {} [ badge, badge ])
       html mounted >>= shouldEqual "<div><b>x</b><b>x</b></div>"
       liftEffect mounted.dispose
 
@@ -219,7 +250,7 @@ spec = describe "views" do
 
     solidIt "forEach keeps each item's DOM when the list reorders" do
       items <- signal [ "a", "b", "c" ]
-      mounted <- mount $ H.ul_ [ Control.forEach items.get \item _ -> pure (H.li [ P.id item ] [ text item ]) ]
+      mounted <- mount $ H.ul {} (Control.forEach items.get \item _ -> pure (H.li { id: item } item))
       firstA <- expectElement "#a" mounted
       write items [ "c", "a" ]
       html mounted >>= shouldEqual """<ul><li id="c">c</li><li id="a">a</li></ul>"""
@@ -230,7 +261,7 @@ spec = describe "views" do
     solidIt "forEachUnkeyed and repeat" do
       items <- signal [ 1, 2 ]
       count <- signal 2
-      mounted <- mount $ H.div_
+      mounted <- mount $ H.div {}
         [ Control.forEachUnkeyed items.get \item _ -> pure (text (show <$> item))
         , text "|"
         , Control.repeat count.get \i -> pure (text (show i))
@@ -242,8 +273,8 @@ spec = describe "views" do
 
     solidIt "forEachBy updates a view in place when its key stays" do
       items <- signal [ { id: 1, label: "a" }, { id: 2, label: "b" } ]
-      mounted <- mount $ H.ul_
-        [ Control.forEachByElse _.id items.get (\item _ -> pure (H.li [ P.id (show <<< _.id <$> item) ] [ text (_.label <$> item) ])) (text "empty") ]
+      mounted <- mount $ H.ul {}
+        (Control.forEachByElse _.id items.get (\item _ -> pure (H.li { id: show <<< _.id <$> item } (_.label <$> item))) (text "empty"))
       first <- expectElement "[id='1']" mounted
       write items [ { id: 2, label: "b" }, { id: 1, label: "A" } ]
       html mounted >>= shouldEqual """<ul><li id="2">b</li><li id="1">A</li></ul>"""
@@ -256,7 +287,7 @@ spec = describe "views" do
     solidIt "list fallbacks show while there is nothing to render" do
       items <- signal ([] :: Array Int)
       count <- signal 0
-      mounted <- mount $ H.div_
+      mounted <- mount $ H.div {}
         [ Control.forEachUnkeyedElse items.get (\item _ -> pure (text (show <$> item))) (text "no items")
         , text "|"
         , Control.repeatElse count.get (\i -> pure (text (show i))) (text "zero")
@@ -268,7 +299,7 @@ spec = describe "views" do
       liftEffect mounted.dispose
 
     solidIt "reveal takes any subset of its options" do
-      mounted <- mount $ H.div_
+      mounted <- mount $ H.div {}
         [ Control.reveal {} [ text "a" ]
         , Control.reveal { order: Control.together, collapsed: true } [ text "b" ]
         ]
@@ -393,7 +424,7 @@ spec = describe "views" do
       count <- signal 1
       let
         counter = Component.component \props -> pure $
-          H.span_ [ text props.label, text ": ", text (show <$> props.count) ]
+          H.span {} [ text props.label, text ": ", text (show <$> props.count) ]
       mounted <- mount (Component.element counter { label: "clicks", count: count.get })
       html mounted >>= shouldEqual "<span>clicks: 1</span>"
       write count 2
@@ -405,8 +436,8 @@ spec = describe "views" do
       let
         label = Component.component \_ -> do
           current <- useContext theme
-          pure (H.em_ [ text current ])
-      mounted <- mount $ H.div_
+          pure (H.em {} current)
+      mounted <- mount $ H.div {}
         [ Component.element label {}
         , provide theme "dark" (pure (Component.element label {}))
         ]
@@ -416,3 +447,4 @@ spec = describe "views" do
 foreign import inputValue :: Element -> Effect String
 foreign import tagName :: Element -> Effect String
 foreign import documentTitle :: Effect String
+foreign import dispatch :: String -> Element -> Effect Unit

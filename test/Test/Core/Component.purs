@@ -51,10 +51,10 @@ spec = describe "Solid.Component" do
           { label
           , suffix
           , onPick: \l -> Ref.write l picked
-          , renderItem: \n -> H.em_ [ JSX.text (show n) ]
-          , children: [ JSX.text "a", H.u_ [ JSX.text "b" ] ]
+          , renderItem: \n -> H.em {} [ JSX.text (show n) ]
+          , children: [ JSX.text "a", H.u {} [ JSX.text "b" ] ]
           }
-      mounted <- mount (H.div_ [ use Nothing, use (Just "?") ])
+      mounted <- mount (H.div {} [ use Nothing, use (Just "?") ])
       html mounted >>= shouldEqual
         "<div><span>ada!</span><i><em>3</em></i><b>a<u>b</u></b><span>ada?</span><i><em>3</em></i><b>a<u>b</u></b></div>"
       liftEffect (set setLabel "grace")
@@ -80,7 +80,7 @@ spec = describe "Solid.Component" do
     let
       wrapper = Component.component \props -> do
         resolved <- Component.children (pure props.child)
-        pure (H.section_ [ JSX.reactive resolved ])
+        pure (H.section {} [ JSX.reactive resolved ])
     mounted <- mount (Component.element wrapper { child: JSX.text "child" })
     html mounted >>= shouldEqual "<section>child</section>"
     liftEffect mounted.dispose

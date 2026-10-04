@@ -19,11 +19,8 @@ import Partial.Unsafe (unsafeCrashWith)
 import Solid.Async (createAsync, createAsyncWith, serialized, withCodec)
 import Solid.Component as Component
 import Solid.Control as Control
-import Solid.DOM (classWhen, ref)
 import Solid.DOM.HTML as H
-import Solid.DOM.Props as P
 import Solid.DOM.SVG as S
-import Solid.DOM.SVG.Props as SP
 import Solid.JSX (JSX, text)
 import Solid.Signal (createSignal)
 import Solid.Web.SSR as SSR
@@ -75,7 +72,7 @@ decodeStatus json = do
 spec :: Spec Unit
 spec = describe "Solid.Web.SSR" do
   solidIt "renders elements, attributes and escaped text with hydration keys" do
-    html <- render $ H.div [ P.id "root", P.class_ "box" ] [ H.span_ [ text "<b>&</b>" ] ]
+    html <- render $ H.div { id: "root", class: "box" } (H.span {} "<b>&</b>")
     html `shouldSatisfy` has """id="root""""
     html `shouldSatisfy` has """class="box""""
     html `shouldSatisfy` has "&lt;b>&amp;&lt;/b>"
@@ -87,17 +84,17 @@ spec = describe "Solid.Web.SSR" do
           label /\ _ <- createSignal "now"
           active /\ _ <- createSignal true
           pure $ H.button
-            [ P.title label, P.class_ "btn", classWhen "active" active, P.onClick \_ -> pure unit, ref \_ -> pure unit ]
-            [ text label ]
+            { title: label, class: { btn: true, active }, onClick: \_ -> pure unit, ref: \_ -> pure unit }
+            label
       )
       {}
     html `shouldSatisfy` has """title="now""""
-    html `shouldSatisfy` has "btn active"
+    html `shouldSatisfy` has "active btn"
     html `shouldSatisfy` has ">now<"
     html `shouldSatisfy` (not <<< has "onclick")
 
   solidIt "renders SVG elements" do
-    html <- render $ S.svg [ SP.viewBox "0 0 1 1" ] [ S.circle [ SP.r "1" ] [] ]
+    html <- render $ S.svg { viewBox: "0 0 1 1" } (S.circle { r: "1" } [])
     html `shouldSatisfy` has """viewBox="0 0 1 1""""
     html `shouldSatisfy` has "<circle"
 
@@ -106,7 +103,7 @@ spec = describe "Solid.Web.SSR" do
       page ssrOptions = Component.element
         ( Component.component \_ -> do
             greeting /\ _ <- createAsyncWith ssrOptions (pure (later "hello from the server"))
-            pure (H.p_ [ text greeting ])
+            pure (H.p {} greeting)
         )
         {}
       withLoading view = Control.loading (text "loading…") view
@@ -148,7 +145,7 @@ spec = describe "Solid.Web.SSR" do
   solidIt "hydration script honours the nonce, and noScripts omits scripts" do
     script <- liftEffect (SSR.hydrationScriptWith { nonce: "abc123" }) >>= orFail
     script `shouldSatisfy` has "abc123"
-    html <- liftEffect (SSR.renderToStringWith { noScripts: true } (H.p_ [ text "static" ])) >>= orFail
+    html <- liftEffect (SSR.renderToStringWith { noScripts: true } (H.p {} "static")) >>= orFail
     (has "<script" html) `shouldEqual` false
 
   solidIt "onError sees errors the render handles" do
@@ -165,14 +162,14 @@ spec = describe "Solid.Web.SSR" do
 
   solidIt "clientOnly components render only their fallback on the server" do
     let chart = Component.clientOnly @"Test.Server.SSR.chart" :: Component.Component { fallback :: JSX, points :: Int }
-    html <- render (H.div_ [ Component.element chart { fallback: text "chart soon", points: 3 } ])
+    html <- render (H.div {} (Component.element chart { fallback: text "chart soon", points: 3 }))
     html `shouldSatisfy` has "chart soon"
 
   solidIt "streamed renders can write after the shell and at the end" do
     html <-
       SSR.renderToStringAsyncWith
         { onCompleteShell: \write -> write "<!--shell-->", onCompleteAll: \write -> write "<!--all-->" }
-        (H.p_ [ text "body" ]) >>= orFail
+        (H.p {} "body") >>= orFail
     html `shouldSatisfy` has "<!--shell-->"
     html `shouldSatisfy` has "<!--all-->"
 

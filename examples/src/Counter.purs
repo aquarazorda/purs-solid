@@ -9,7 +9,6 @@ import Effect (Effect)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM.HTML as H
-import Solid.DOM.Props as P
 import Solid.JSX (text)
 import Solid.Reactivity (createMemo)
 import Solid.Signal (createSignal, get, modify_, set)
@@ -52,41 +51,41 @@ counterApp = Component.component \_ -> do
       set setStep next
       appendEvent ("Step set to " <> show next)
 
-    button label action = H.button [ P.type_ ButtonButton, P.onClick \_ -> action ] [ text label ]
+    button label action = H.button { type: ButtonButton, onClick: \_ -> action } label
 
-  pure $ H.main [ P.class_ "counter-shell" ]
-    [ H.section [ P.class_ "counter-card" ]
-        [ H.h1_ [ text "Signal Counter" ]
-        , H.p [ P.class_ "counter-subtitle" ]
+  pure $ H.main { class: "counter-shell" }
+    [ H.section { class: "counter-card" }
+        [ H.h1 {} "Signal Counter"
+        , H.p { class: "counter-subtitle" }
             [ text "A small example focused on signals, memos, and list rendering." ]
-        , H.div [ P.class_ "counter-readout" ]
-            [ H.span [ P.class_ "counter-value" ] [ H.strong_ [ text (show <$> count) ] ]
-            , H.span [ P.class_ "counter-meta" ]
+        , H.div { class: "counter-readout" }
+            [ H.span { class: "counter-value" } [ H.strong {} (show <$> count) ]
+            , H.span { class: "counter-meta" }
                 [ text "Doubled: "
-                , H.span_ [ text (show <$> doubled) ]
+                , H.span {} (show <$> doubled)
                 , text " | Trend: "
-                , H.span [ P.class_ trend ] [ text trend ]
+                , H.span { class: trend } trend
                 ]
             ]
-        , H.div [ P.class_ "counter-actions" ]
+        , H.div { class: "counter-actions" }
             [ button "- step" subtractStep
             , button "+ step" addStep
             , button "Reset" resetCount
             ]
-        , H.div [ P.class_ "counter-presets" ]
+        , H.div { class: "counter-presets" }
             [ text "Step presets:"
             , button "1" (setPresetStep 1)
             , button "2" (setPresetStep 2)
             , button "5" (setPresetStep 5)
             ]
-        , H.section [ P.class_ "counter-log" ]
-            [ H.div [ P.class_ "counter-log-head" ]
-                [ H.h2_ [ text "Event log" ]
+        , H.section { class: "counter-log" }
+            [ H.div { class: "counter-log-head" }
+                [ H.h2 {} "Event log"
                 , button "Clear" (set setEvents [])
                 ]
             , Control.whenElse ((not <<< Array.null) <$> events)
-                (H.ol_ [ Control.forEachUnkeyed events \message _ -> pure (H.li_ [ text message ]) ])
-                (H.p [ P.class_ "counter-empty" ] [ text "No events yet." ])
+                (H.ol {} [ Control.forEachUnkeyed events \message _ -> pure (H.li {} message) ])
+                (H.p { class: "counter-empty" } "No events yet.")
             ]
         ]
     ]
