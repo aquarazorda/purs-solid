@@ -8,3 +8,5 @@ generated-docs/
 examples/src/*/Host/dist/
 .purs-repl
 site/dist/
+.vercel/
+.env*.local
