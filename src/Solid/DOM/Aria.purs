@@ -10,11 +10,7 @@ module Solid.DOM.Aria
   , Live(..)
   , Orientation(..)
   , Sort(..)
-  , Relevant
-  , additions
-  , removals
-  , text
-  , all
+  , Relevant(..)
   , class AriaValue
   , ariaValue
   ) where
@@ -92,24 +88,9 @@ data Orientation = Horizontal | Vertical
 
 data Sort = Ascending | Descending | Other | Unsorted
 
--- | The changes `aria-relevant` announces, combined with `<>`
--- | (`additions <> text`). There's no empty value.
-newtype Relevant = Relevant String
-
-instance Semigroup Relevant where
-  append (Relevant a) (Relevant b) = Relevant (a <> " " <> b)
-
-additions :: Relevant
-additions = Relevant "additions"
-
-removals :: Relevant
-removals = Relevant "removals"
-
-text :: Relevant
-text = Relevant "text"
-
-all :: Relevant
-all = Relevant "all"
+-- | The changes `aria-relevant` announces: each combination once, with
+-- | `All` for all three.
+data Relevant = Additions | Removals | Text | AdditionsRemovals | AdditionsText | RemovalsText | All
 
 derive instance Eq Tristate
 derive instance Eq Autocomplete
@@ -119,6 +100,7 @@ derive instance Eq Invalid
 derive instance Eq Live
 derive instance Eq Orientation
 derive instance Eq Sort
+derive instance Eq Relevant
 
 -- | How a value is written to its attribute. ARIA booleans are the strings
 -- | `"true"` / `"false"`, not present / absent.
@@ -187,7 +169,14 @@ instance AriaValue Sort where
     Unsorted -> "none"
 
 instance AriaValue Relevant where
-  ariaValue (Relevant value) = stringAttr value
+  ariaValue = stringAttr <<< case _ of
+    Additions -> "additions"
+    Removals -> "removals"
+    Text -> "text"
+    AdditionsRemovals -> "additions removals"
+    AdditionsText -> "additions text"
+    RemovalsText -> "removals text"
+    All -> "all"
 
 instance AriaValue String where
   ariaValue = toAttrValue
