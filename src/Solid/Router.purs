@@ -1,6 +1,6 @@
 -- | Paths are parsed at compile time, so a route's component receives exactly
 -- | the params its path declares. Links are plain anchors
--- | (`P.href (href @"/users/:id" { id })`); the router intercepts same-origin
+-- | (`H.a { href: href @"/users/:id" { id } }`); the router intercepts same-origin
 -- | clicks and marks the active link with `aria-current="page"`.
 module Solid.Router
   ( Route

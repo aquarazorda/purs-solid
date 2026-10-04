@@ -134,10 +134,28 @@ npm run test:all
 
 | Script | What it runs |
 |---|---|
-| `npm test` | client specs (happy-dom) and server specs, both on Solid's dev build; they fail on any Solid diagnostic |
+| `npm test` | client specs (happy-dom) and server specs on Solid's dev build; any Solid diagnostic fails them |
 | `npm run test:purescript:es` | the same specs compiled with `purs-backend-es` |
 | `npm run test:browser-smoke` | Counter and TodoMVC in Chromium |
 | `npm run test:hydration` | server render in Node, hydration in Chromium |
-| `npm run test:start` | the start-mode example built with Vite and driven in Chromium |
+| `npm run test:start`, `npm run test:dev` | the start-mode example built with Vite, and under Vite dev with edits while it runs |
+| `npm run test:vite` | the `purs-solid/vite` plugin's own logic |
+| `npm run test:types` | props the type checker must accept or reject |
+| `npm run gen:dom` | regenerates `Solid.DOM.HTML`, `Solid.DOM.SVG` and `Solid.Internal.Names` |
 | `npm run format`, `npm run format:check` | purs-tidy over the library, tests and examples |
-| `npm run bench`, `npm run bench:reference` | the rows benchmark, and the same app in plain Solid ([results](docs/benchmarks/README.md)) |
+| `npm run bench`, `npm run bench:reference` | the rows benchmark, and the same app in plain Solid |
+
+## Performance
+
+The rows benchmark (keyed, after [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark)): `examples/src/Bench/Rows.purs` against the same app in Solid JSX, `test/bench/reference/rows.jsx`. Medians in headless Chromium, Solid `2.0.0-rc.13`:
+
+| Operation | Solid JSX | purs-solid |
+|---|---|---|
+| create 1k rows | 12.0 ms | 19.1 ms |
+| replace 1k rows | 13.8 ms | 20.3 ms |
+| update every 10th row | 2.9 ms | 3.4 ms |
+| swap rows | 1.3 ms | 1.5 ms |
+| create 10k rows | 125.7 ms | 192.6 ms |
+| bundle (gzip) | 24.2 kB | 39.1 kB |
+
+Updates cost about the same. Creating DOM is about 1.5x slower: elements go through Solid's `dynamic()` because PureScript can't use Solid's JSX compiler, which clones templates.

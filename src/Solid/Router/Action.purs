@@ -1,7 +1,7 @@
 -- | Router actions: mutations the router tracks. When one finishes the router
 -- | applies its `Reply` (redirect, revalidation) and, unless the reply says
 -- | otherwise, revalidates every query on screen. Forms can post to one
--- | (`P.action (formAction save)` with method `POST`), which works before
+-- | (`H.form { action: formAction save, method: POST }`), which works before
 -- | hydration too. For transactional steps and optimistic values, see
 -- | `Solid.Action`.
 module Solid.Router.Action

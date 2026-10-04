@@ -20,7 +20,7 @@ Elements go through `dynamic(() => tag, { static: true })`, so Solid itself does
 4. **Passing a prop isn't reading it.** Props are plain records; reactive fields are `Accessor a`.
 5. **JSX is a description.** `JSX` is lazy; parents and control flow realize it, so hidden branches are never built.
 6. **Stores are updated with typed paths and pure `Update` values**, applied to Solid's draft in the FFI. Non-structural values are frozen before entering a store (`StoreValue`), because Solid 2 proxies class instances and PureScript ADTs are class instances.
-7. **Typed DOM.** Props are records checked field by field against each element's `dom-indexed` row; every attribute accepts a value or an `Accessor`, and event fields take handlers for the row's event type. Instances turn a record type into its per-field converters once, so a render only applies them.
+7. **Typed DOM.** Element props are records checked field by field against the element's `dom-indexed` row; every attribute accepts a value or an `Accessor`.
 8. **Data crossing server and client is `Serializable`** (primitives, `Nullable`, arrays, records) or goes through an explicit codec.
 
 ## FFI rules
@@ -39,3 +39,11 @@ Elements go through `dynamic(() => tag, { static: true })`, so Solid itself does
 - `purs` rewrites a burst of output files per build. In dev the wrapper replaces Vite's per-file updates for compiled output with one reload once the burst settles: the server's modules first, then the browser. Otherwise a page can render on half-updated modules or hydrate against the other version.
 - With `renderToStringWithHead`, Solid delivers the title as a script that sets `document.title`, not as a `<title>` tag.
 - Pin exact versions: several of these packages' `latest` npm tags point at old releases.
+
+## Not bound
+
+- `merge` / `omit`: props are records.
+- `createTrackedEffect` (deprecated, breaks rule 1); `createErrorBoundary` / `createLoadingBoundary` / `createRevealOrder` (the control-flow functions cover them).
+- `storePath` (typed paths replace it); `defineRoute(s)` / `Router.paths` (`route @path` and `href` replace them).
+- Internal and dev exports (`enableExternalSource`, `flatten`, `getObserver`, `$TRACK`, `DEV` / `OBSERVE`).
+- `ssrSource` on sync memos, `"hybrid"`, `mapArray`'s `fallback` / `name` (the `*Else` functions cover fallbacks), serializer `plugins`, asset `manifest`, `enableRichArguments`, `live` / `GET`.

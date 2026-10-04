@@ -12,9 +12,7 @@ module Solid.Internal.View
   , Namespace
   , htmlNamespace
   , svgNamespace
-  , mathmlNamespace
   , elementWith
-  , staticProp
   , bindingProp
   , eventProp
   , refProp
@@ -112,18 +110,10 @@ htmlNamespace = Namespace 0
 svgNamespace :: Namespace
 svgNamespace = Namespace 1
 
-mathmlNamespace :: Namespace
-mathmlNamespace = Namespace 2
-
 elementWith :: forall r. Namespace -> String -> Array (Prop r) -> Array JSX -> JSX
 elementWith = runFn4 elementImpl
 
 foreign import elementImpl :: forall r. Fn4 Namespace String (Array (Prop r)) (Array JSX) JSX
-
-foreign import staticPropImpl :: forall r a. Fn2 String a (Prop r)
-
-staticProp :: forall r a. String -> a -> Prop r
-staticProp = runFn2 staticPropImpl
 
 foreign import bindingPropImpl :: forall r v a b. Fn3 String (a -> b) v (Prop r)
 

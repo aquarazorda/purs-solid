@@ -18,7 +18,6 @@ import {
   clientOnly as solidClientOnly,
   dynamic,
   isServer,
-  MathMLElements,
   Namespaces,
   Portal,
   SVGElements,
@@ -85,8 +84,6 @@ const REF = 2;
 const EVENT = 3;
 const PROPS = 4;
 
-export const staticPropImpl = (k, v) => ({ k, m: STATIC, v });
-
 export const bindingPropImpl = (k, convert, v) =>
   typeof v === "function" ? { k, m: REACTIVE, v: () => convert(v()) } : { k, m: STATIC, v: convert(v) };
 
@@ -132,10 +129,9 @@ const staticComponent = (tag) => {
 };
 
 const propsObject = (namespace, tag, props, children) => {
-  // `xmlns` only for SVG / MathML tags that also exist in HTML (`a`, `title`, ...).
+  // `xmlns` only for SVG tags that also exist in HTML (`a`, `title`, ...).
   const object = {};
   if (namespace === 1 && !SVGElements.has(tag)) object.xmlns = Namespaces.svg;
-  else if (namespace === 2 && !MathMLElements.has(tag)) object.xmlns = Namespaces.mathml;
   let classes;
   let styles;
   let refs;

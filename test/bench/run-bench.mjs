@@ -1,18 +1,17 @@
-// npm run bench -- [label] [--reference] [--runs=N]
+// npm run bench -- [--reference] [--runs=N]
 //
 // Times each operation from the click until Solid's updates have flushed and
 // layout is forced, in headless Chromium. --reference measures the same app in
-// plain Solid 2 JSX. Writes docs/benchmarks/<label>.json.
+// plain Solid 2 JSX.
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { argv, versions } from "node:process";
+import { argv } from "node:process";
 import { brotliCompressSync, gzipSync } from "node:zlib";
 import { bundle, launch, page, rootDir, run, serve } from "../support.mjs";
 
 const args = argv.slice(2);
 const reference = args.includes("--reference");
-const label = args.find((arg) => !arg.startsWith("--")) ?? (reference ? "reference" : "purs-solid");
 const runs = Number(args.find((arg) => arg.startsWith("--runs="))?.slice("--runs=".length) ?? 1);
 const bundlePath = join(rootDir, "dist", reference ? "bench-reference" : "bench", "bench.js");
 
@@ -86,7 +85,7 @@ const measure = async (tab, scenario) => {
     verify(scenario, result);
     if (i >= warmup) timings.push(result.elapsed);
   }
-  return { median: median(timings), min: Math.min(...timings) };
+  return median(timings);
 };
 
 if (reference) run("vite", ["build", "--config", join(rootDir, "test", "bench", "reference", "vite.config.mjs")]);
@@ -110,18 +109,12 @@ try {
   }
   if (errors.length > 0) throw new Error(`Page errors:\n${errors.join("\n")}`);
 
-  const operations = {};
   for (const { name } of scenarios) {
-    const all = perRun.map((results) => results[name]);
-    operations[name] = { median: round(median(all.map((r) => r.median))), min: round(Math.min(...all.map((r) => r.min))) };
-    console.log(`${name.padEnd(24)} ${String(operations[name].median).padStart(8)} ms`);
+    const value = round(median(perRun.map((results) => results[name])));
+    console.log(`${name.padEnd(24)} ${String(value).padStart(8)} ms`);
   }
 
   const bundleBytes = { minified: code.length, gzip: gzipSync(code, { level: 9 }).length, brotli: brotliCompressSync(code).length };
-  const solid = JSON.parse(await readFile(join(rootDir, "node_modules", "solid-js", "package.json"), "utf8")).version;
-  const report = { label, date: new Date().toISOString(), solid, node: versions.node, chromium: browser.version(), runs, bundleBytes, operations };
-  await mkdir(join(rootDir, "docs", "benchmarks"), { recursive: true });
-  await writeFile(join(rootDir, "docs", "benchmarks", `${label}.json`), JSON.stringify(report, null, 2) + "\n");
   console.log(`bundle: ${bundleBytes.minified} B minified, ${bundleBytes.gzip} B gzip, ${bundleBytes.brotli} B brotli`);
 } finally {
   await browser.close();
