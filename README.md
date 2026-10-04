@@ -143,6 +143,7 @@ npm run test:all
 | `npm run test:start`, `npm run test:dev` | the start-mode example built with Vite, and under Vite dev with edits while it runs |
 | `npm run test:vite` | the `purs-solid/vite` plugin's own logic |
 | `npm run test:types` | props the type checker must accept or reject |
+| `npm run test:compiled` | a fixture with every field kind, rendered at runtime and through compiled templates (`vite/compile.mjs`), compared after each interaction |
 | `npm run build:site` | the landing page, guide and API reference (`site/`) into `site/dist`; its code samples are compiled regions of `site/src` |
 | `npm run gen:dom` | regenerates `Solid.DOM.HTML`, `Solid.DOM.SVG` and `Solid.Internal.Names` |
 | `npm run format`, `npm run format:check` | purs-tidy over the library, tests, examples and site |

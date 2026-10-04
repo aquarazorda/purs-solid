@@ -85,6 +85,17 @@ const realizeChildren = (children) => {
   return out;
 };
 
+// Used by templates compiled from PureScript (`vite/compile.mjs`): a child to
+// insert, a field's value (from a value or an accessor), and a field Solid's
+// compiler can't express, as props to spread.
+export const childValue = (jsx) => untrack(() => realizeChild(jsx));
+
+export const readValue = (value) => (typeof value === "function" ? value() : value);
+
+export const fieldValue = (value, convert) => convert(typeof value === "function" ? value() : value);
+
+export const fieldProps = (entry, value) => propsObject(0, "", [entry(value)], noChildren);
+
 export const textJsx = (value) => value;
 
 export const reactiveJsx = (read) => new Reactive(read);

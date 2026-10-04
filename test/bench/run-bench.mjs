@@ -1,8 +1,9 @@
-// npm run bench -- [--reference] [--runs=N]
+// npm run bench -- [--reference | --compiled] [--runs=N]
 //
 // Times each operation from the click until Solid's updates have flushed and
 // layout is forced, in headless Chromium. --reference measures the same app in
-// plain Solid 2 JSX.
+// plain Solid 2 JSX, --compiled this one with views compiled by Solid's
+// compiler (`vite/compile.mjs`).
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -12,8 +13,9 @@ import { bundle, launch, page, rootDir, run, serve } from "../support.mjs";
 
 const args = argv.slice(2);
 const reference = args.includes("--reference");
+const compiled = args.includes("--compiled");
 const runs = Number(args.find((arg) => arg.startsWith("--runs="))?.slice("--runs=".length) ?? 1);
-const bundlePath = join(rootDir, "dist", reference ? "bench-reference" : "bench", "bench.js");
+const bundlePath = join(rootDir, "dist", reference ? "bench-reference" : compiled ? "bench-compiled" : "bench", "bench.js");
 
 const scenarios = [
   { name: "create 1k rows", setup: ["clear"], timed: "run", check: { rows: 1000 } },
@@ -89,6 +91,10 @@ const measure = async (tab, scenario) => {
 };
 
 if (reference) run("vite", ["build", "--config", join(rootDir, "test", "bench", "reference", "vite.config.mjs")]);
+else if (compiled) {
+  run("purs-backend-es", ["build"]);
+  run("vite", ["build", "--config", join(rootDir, "test", "bench", "compiled", "vite.config.mjs")]);
+}
 else bundle("Bench.Rows", bundlePath);
 
 const code = await readFile(bundlePath);
