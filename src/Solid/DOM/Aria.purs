@@ -10,12 +10,14 @@ module Solid.DOM.Aria
   , Live(..)
   , Orientation(..)
   , Sort(..)
+  , Relevant(..)
   , class AriaValue
   , ariaValue
   ) where
 
 import Prelude
 
+import Data.String (joinWith)
 import Solid.DOM.AttrValue (AttrRep, stringAttr, toAttrValue)
 
 type Aria =
@@ -53,7 +55,7 @@ type Aria =
   , "aria-posinset" :: Int
   , "aria-pressed" :: Tristate
   , "aria-readonly" :: Boolean
-  , "aria-relevant" :: String
+  , "aria-relevant" :: Array Relevant
   , "aria-required" :: Boolean
   , "aria-roledescription" :: String
   , "aria-rowcount" :: Int
@@ -87,6 +89,9 @@ data Orientation = Horizontal | Vertical
 
 data Sort = Ascending | Descending | Other | Unsorted
 
+-- | `aria-relevant` lists the changes to announce: `[ Additions, Text ]`.
+data Relevant = Additions | Removals | Text | All
+
 derive instance Eq Tristate
 derive instance Eq Autocomplete
 derive instance Eq Current
@@ -95,6 +100,7 @@ derive instance Eq Invalid
 derive instance Eq Live
 derive instance Eq Orientation
 derive instance Eq Sort
+derive instance Eq Relevant
 
 -- | How a value is written to its attribute. ARIA booleans are the strings
 -- | `"true"` / `"false"`, not present / absent.
@@ -161,6 +167,13 @@ instance AriaValue Sort where
     Descending -> "descending"
     Other -> "other"
     Unsorted -> "none"
+
+instance AriaValue (Array Relevant) where
+  ariaValue = stringAttr <<< joinWith " " <<< map case _ of
+    Additions -> "additions"
+    Removals -> "removals"
+    Text -> "text"
+    All -> "all"
 
 instance AriaValue String where
   ariaValue = toAttrValue

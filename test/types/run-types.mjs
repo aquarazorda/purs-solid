@@ -25,7 +25,7 @@ import Web.UIEvent.MouseEvent (MouseEvent)
 `;
 
 const accepted = [
-  ["Accessor String -> Accessor Boolean -> JSX", `\\label disabled -> H.div { "data-id": label, role: "group", "aria-label": label, "aria-hidden": disabled, "aria-level": 2, "aria-valuenow": 0.5, "aria-checked": Aria.Mixed, "aria-live": Aria.Polite }
+  ["Accessor String -> Accessor Boolean -> JSX", `\\label disabled -> H.div { "data-id": label, role: "group", "aria-label": label, "aria-hidden": disabled, "aria-level": 2, "aria-valuenow": 0.5, "aria-checked": Aria.Mixed, "aria-live": Aria.Polite, "aria-relevant": [ Aria.All ] }
   [ H.input { ref: \\input -> void (Input.value input), type: InputText, value: label, disabled, onKeyDown: \\event -> void (pure (KeyboardEvent.key event)) }
   , H.label { for: "name", class: { active: disabled, static: true }, style: { color: label } } label
   , H.td { colSpan: 2, "on:custom": \\_ -> pure unit } []
@@ -56,6 +56,7 @@ const rejected = [
   ["a string for an aria number", "JSX", `H.div { "aria-level": "2" } []`, "Could not match type String with type Int"],
   ["a string for an aria keyword", "JSX", `H.div { "aria-checked": "mixed" } []`, "Could not match type String with type Tristate"],
   ["a keyword from another attribute", "JSX", `H.div { "aria-live": Aria.Mixed } []`, "Could not match type Tristate with type Live"],
+  ["a string for aria-relevant", "JSX", `H.div { "aria-relevant": "additions text" } []`, "Could not match type String with type Array Relevant"],
   ["an on: handler for a specific event type", "JSX", `H.div { "on:ping": \\(_ :: MouseEvent) -> pure unit } []`, "MouseEvent"],
   ["text mixed into an array of elements", "JSX", `H.div {} [ "a", H.span {} "b" ]`, "JSX"],
 ];
