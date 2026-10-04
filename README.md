@@ -154,11 +154,11 @@ The rows benchmark (keyed, after [js-framework-benchmark](https://github.com/kra
 
 | Operation | Solid JSX | purs-solid |
 |---|---|---|
-| create 1k rows | 12.0 ms | 19.1 ms |
-| replace 1k rows | 13.8 ms | 20.3 ms |
-| update every 10th row | 2.9 ms | 3.4 ms |
-| swap rows | 1.3 ms | 1.5 ms |
-| create 10k rows | 125.7 ms | 192.6 ms |
-| bundle (gzip) | 24.2 kB | 39.1 kB |
+| create 1k rows | 12.0 ms | 16.9 ms |
+| replace 1k rows | 13.2 ms | 18.1 ms |
+| update every 10th row | 2.8 ms | 3.5 ms |
+| swap rows | 1.1 ms | 1.3 ms |
+| create 10k rows | 128.8 ms | 164.8 ms |
+| bundle (gzip) | 24.2 kB | 39.7 kB |
 
-Updates cost about the same. Creating DOM is about 1.5x slower: elements go through Solid's `dynamic()` because PureScript can't use Solid's JSX compiler, which clones templates.
+Updates cost about the same. Creating DOM is about 1.35x slower: purs-solid clones templates at runtime, while Solid's JSX compiler also bakes in what it knows statically.

@@ -10,7 +10,7 @@ Runtime logic lives in JS FFI that calls Solid; PureScript supplies the types (r
 - No ADT → string → JS round trips, and no PureScript ADTs or interpreters on hot paths where a JS check does the job.
 - Plain DOM access uses registry bindings (`web-html`, `web-dom`, …).
 
-Elements go through `dynamic(() => tag, { static: true })`, so Solid itself does client rendering, hydration and SSR. Hand-writing compiled output against compiler-target helpers (`getNextElement`, `ssrElement`, …) would be faster at bulk creation, but it would make Solid's hydration internals ours to maintain.
+On the server and while hydrating, elements go through `dynamic(() => tag, { static: true })`, so Solid itself does SSR and hydration. New DOM in the browser clones one `template` per subtree shape, then applies each element's props with `assign` / `spread` and inserts its other children. Attributes stay out of templates: Solid sets `href` / `action` so the router can claim links, and normalizes `style`. Hand-writing compiled output for SSR and hydration (`getNextElement`, `ssrElement`, …) would make Solid's hydration internals ours to maintain.
 
 ## Rules
 

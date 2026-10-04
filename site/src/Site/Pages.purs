@@ -74,7 +74,7 @@ landing snippets demo = H.div { class: "page" }
       , H.section { class: "closing" }
           [ H.h2 {} "Solid underneath"
           , H.p {}
-              "Elements are created through Solid's own dynamic and spread, so Solid does the rendering, SSR and hydration. Updates cost about the same as hand-written Solid; creating DOM is about 1.5× slower, because PureScript can't use Solid's JSX compiler."
+              "Solid does the rendering, SSR and hydration: new DOM is cloned from templates and server output goes through Solid's own dynamic. Updates cost about the same as hand-written Solid; creating DOM is about 1.35× slower, because PureScript can't use Solid's JSX compiler."
           , H.a { class: "button primary", href: "docs/" } "Get started"
           ]
       ]

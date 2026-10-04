@@ -5,6 +5,7 @@ import {
   Errored,
   For,
   Hydration,
+  isHydrating,
   lazy as solidLazy,
   Loading,
   Match,
@@ -13,19 +14,34 @@ import {
   Reveal,
   Show,
   Switch,
+  untrack,
 } from "solid-js";
 import {
+  assign,
   clientOnly as solidClientOnly,
   dynamic,
+  insert,
   isServer,
   Namespaces,
   Portal,
+  spread,
   SVGElements,
+  template,
+  VoidElements,
 } from "@solidjs/web";
 
 class Reactive {
   constructor(read) {
     this.read = read;
+  }
+}
+
+class El {
+  constructor(ns, tag, props, children) {
+    this.ns = ns;
+    this.tag = tag;
+    this.props = props;
+    this.children = children;
   }
 }
 
@@ -43,6 +59,7 @@ const realizeAll = (items) => {
 
 // Reactive regions outside element children get a memo so errors reach the enclosing `Errored`.
 export const realize = (jsx) => {
+  if (jsx instanceof El) return realizeElement(jsx);
   if (typeof jsx === "function") return jsx();
   if (jsx instanceof Reactive) {
     const read = jsx.read;
@@ -113,7 +130,10 @@ const styleValue = (entry) => {
 
 const defineMerged = (object, k, entries, read) => {
   const entry = mergeEntries(k, entries);
-  if (entry.m === REACTIVE) Object.defineProperty(object, k, { get: () => read(entry), enumerable: true });
+  if (entry.m === REACTIVE) {
+    reactiveProps = true;
+    Object.defineProperty(object, k, { get: () => read(entry), enumerable: true });
+  }
   else object[k] = read(entry);
 };
 
@@ -128,9 +148,13 @@ const staticComponent = (tag) => {
   return component;
 };
 
+// Whether the last `propsObject` defined a getter (a reactive prop).
+let reactiveProps = false;
+
 const propsObject = (namespace, tag, props, children) => {
   // `xmlns` only for SVG tags that also exist in HTML (`a`, `title`, ...).
   const object = {};
+  reactiveProps = false;
   if (namespace === 1 && !SVGElements.has(tag)) object.xmlns = Namespaces.svg;
   let classes;
   let styles;
@@ -143,7 +167,10 @@ const propsObject = (namespace, tag, props, children) => {
       else if (prop.m === REF) (refs ??= []).push(prop.v);
       else if (prop.k === "class") (classes ??= []).push(prop);
       else if (prop.k === "style") (styles ??= []).push(prop);
-      else if (prop.m === REACTIVE) Object.defineProperty(object, prop.k, { get: prop.v, enumerable: true });
+      else if (prop.m === REACTIVE) {
+        reactiveProps = true;
+        Object.defineProperty(object, prop.k, { get: prop.v, enumerable: true });
+      }
       else if (prop.m === EVENT && isServer) continue;
       else object[prop.k] = prop.v;
     }
@@ -165,8 +192,90 @@ const propsObject = (namespace, tag, props, children) => {
   return object;
 };
 
-export const elementImpl = (namespace, tag, props, children) => () =>
-  createComponent(staticComponent(tag), propsObject(namespace, tag, props, children));
+export const elementImpl = (namespace, tag, props, children) => new El(namespace, tag, props, children);
+
+// The server and hydration create (or claim) each element through Solid's
+// `dynamic`. New DOM in the browser clones one template per subtree shape
+// instead, then applies each element's props and inserts its other children.
+const realizeElement = (el) =>
+  isServer || isHydrating() || !templatable(el.tag)
+    ? createComponent(staticComponent(el.tag), propsObject(el.ns, el.tag, el.props, el.children))
+    : untrack(() => cloneElement(el));
+
+const untemplatable = new Set(["html", "head", "body", "template"]);
+const templatable = (tag) => !untemplatable.has(tag) && !tag.includes("-");
+
+const inTemplate = (child, ns) =>
+  child instanceof El && templatable(child.tag) && (child.ns === ns || (ns === 0 && child.tag === "svg"));
+
+const shapeKey = (el) => {
+  let key = el.tag + "(";
+  for (const child of el.children) if (inTemplate(child, el.ns)) key += shapeKey(child);
+  return key + ")";
+};
+
+const markup = (el) => {
+  if (VoidElements.has(el.tag)) return `<${el.tag}>`;
+  let html = `<${el.tag}>`;
+  for (const child of el.children) if (inTemplate(child, el.ns)) html += markup(child);
+  return html + `</${el.tag}>`;
+};
+
+const templates = new Map();
+
+const cloneElement = (el) => {
+  const key = el.ns + shapeKey(el);
+  let make = templates.get(key);
+  if (make === undefined) {
+    make = el.ns === 1 && el.tag !== "svg" ? template(`<svg>${markup(el)}</svg>`, 2) : template(markup(el));
+    templates.set(key, make);
+  }
+  const node = make();
+  fill(node, el);
+  return node;
+};
+
+const noChildren = [];
+
+const fill = (node, el) => {
+  if (el.props.length > 0) {
+    const props = propsObject(el.ns, el.tag, el.props, noChildren);
+    delete props.xmlns;
+    if (reactiveProps) spread(node, props, true);
+    else assign(node, props, true);
+  }
+  const children = el.children;
+  if (children.length === 0) return;
+  // Elements are already in the clone and static text goes in next to them.
+  // Each run of other children is inserted together, as one array, before
+  // the static node that follows it.
+  const anchors = new Array(children.length);
+  let element = node.firstChild;
+  for (let i = 0; i < children.length; i += 1) {
+    const child = children[i];
+    if (inTemplate(child, el.ns)) {
+      fill(element, child);
+      anchors[i] = element;
+      element = element.nextSibling;
+    } else if (typeof child === "string" || typeof child === "number") {
+      anchors[i] = node.insertBefore(document.createTextNode(child), element);
+    }
+  }
+  for (let start = 0; start < children.length; ) {
+    if (anchors[start] !== undefined) {
+      start += 1;
+      continue;
+    }
+    let end = start;
+    while (end < children.length && anchors[end] === undefined) end += 1;
+    const marker = end < children.length ? anchors[end] : null;
+    const run = children.slice(start, end).map(realizeChild);
+    const value = run.length === 1 ? run[0] : run.some((child) => typeof child === "function") ? () => run : run;
+    if (start === 0 && end === children.length) insert(node, value);
+    else insert(node, value, marker);
+    start = end;
+  }
+};
 
 // Marks the values `lazy` may load: a loaded export without it isn't a component.
 const componentTag = Symbol.for("purs-solid/component");
