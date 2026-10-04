@@ -4,6 +4,8 @@ PureScript bindings for [Solid 2.0](https://github.com/solidjs/solid): fine-grai
 
 The bindings use Solid's public API only; what they add is types that reject incorrect code. For example, a signal can't be written during setup, a derived value can't perform effects, a prop only type-checks on elements that have it, and a route's params come from its path. See [docs/design.md](docs/design.md).
 
+Guide and API reference: [purs-solid.vercel.app](https://purs-solid.vercel.app).
+
 ## Example
 
 ```purescript
