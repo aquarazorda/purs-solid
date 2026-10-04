@@ -3,22 +3,26 @@ import { defineConfig } from "vite";
 import { pursViews } from "../../vite/compile.mjs";
 
 const here = (path) => fileURLToPath(new URL(path, import.meta.url));
-const compiled = process.env.PURS_SOLID_VIEWS === "compiled";
+// PURS_SOLID_VIEWS: runtime | compiled. PURS_SOLID_TARGET: client | hydrate | server.
+const mode = process.env.PURS_SOLID_VIEWS;
+const target = process.env.PURS_SOLID_TARGET;
+const server = target === "server";
+const views = server ? { generate: "ssr", hydratable: true } : { generate: "dom", hydratable: target === "hydrate" };
 
 export default defineConfig({
   root: here("."),
   logLevel: "warn",
-  plugins: compiled ? [pursViews()] : [],
-  resolve: { conditions: ["browser", "development"] },
-  define: { "process.env.NODE_ENV": JSON.stringify("development") },
+  plugins: mode === "compiled" ? [pursViews(views)] : [],
+  resolve: server ? {} : { conditions: ["browser", "development"] },
+  define: server ? {} : { "process.env.NODE_ENV": JSON.stringify("development") },
   build: {
-    outDir: here(`../../dist/compiled-${compiled ? "compiled" : "runtime"}`),
+    outDir: here(`../../dist/compiled/${mode}-${target}`),
     emptyOutDir: true,
     minify: false,
     modulePreload: false,
-    rollupOptions: {
-      input: here("./entry.js"),
-      output: { format: "iife", entryFileNames: "app.js" },
-    },
+    ssr: server ? here("./server.js") : undefined,
+    rollupOptions: server
+      ? { output: { format: "es", entryFileNames: "server.js" } }
+      : { input: here(`./${target}.js`), output: { format: "es", entryFileNames: "app.js", codeSplitting: false } },
   },
 });

@@ -2,7 +2,11 @@
 -- | runtime path (`test/compiled`).
 module Test.Compiled.Fixture
   ( fixture
+  , wrapper
   , main
+  , hydrateMain
+  , renderBody
+  , renderScript
   ) where
 
 import Prelude
@@ -16,10 +20,13 @@ import Solid.DOM (element)
 import Solid.DOM.Aria as Aria
 import Solid.DOM.HTML as H
 import Solid.DOM.SVG as S
-import Solid.JSX (text)
-import Solid.Signal (createSignal, modify_)
-import Solid.Web (mountAt)
+import Solid.JSX (JSX, text)
+import Solid.Signal (Accessor, createSignal, modify_)
+import Data.Either (Either, either)
 import Effect (Effect)
+import Effect.Exception (Error, throwException)
+import Solid.Web (hydrateAt, mountAt)
+import Solid.Web.SSR as SSR
 import Web.DOM.Element (setAttribute)
 import Web.HTML.HTMLElement as HTMLElement
 
@@ -62,7 +69,24 @@ fixture = Component.component \_ -> do
     , H.p {} [ text "a", H.b {} "b", text label, H.i {} [], text "c" ]
     , H.p {} (H.span {} "single child")
     , Control.when odd (H.em {} "odd")
+    , wrapper { id: "runtime-wrapper", title: label }
     ]
+
+-- | Props that arrive as a parameter keep their element on the runtime path.
+wrapper :: { id :: String, title :: Accessor String } -> JSX
+wrapper props = H.div props [ H.span { class: "inner" } "compiled inside a runtime element" ]
 
 main :: Effect Unit
 main = mountAt "app" (Component.element fixture {})
+
+hydrateMain :: Effect Unit
+hydrateMain = hydrateAt "app" (Component.element fixture {})
+
+renderBody :: Effect String
+renderBody = SSR.renderToString (Component.element fixture {}) >>= orThrow
+
+renderScript :: Effect String
+renderScript = SSR.hydrationScript >>= orThrow
+
+orThrow :: forall a. Either Error a -> Effect a
+orThrow = either throwException pure
