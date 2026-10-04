@@ -106,6 +106,8 @@ writeFileSync(
     description: "A guide to purs-solid: components, reactivity, stores, async, routing, SSR and start mode.",
     root: "../",
     body: pages.docs,
+    head: pages.hydration,
+    scripts: '<script src="../client.js"></script>',
   })
 );
 

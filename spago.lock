@@ -97,6 +97,7 @@
             "either",
             "exceptions",
             "foldable-traversable",
+            "integers",
             "maybe",
             "prelude",
             "purs-solid",
@@ -104,6 +105,7 @@
             "strings",
             "tuples",
             "web-dom",
+            "web-events",
             "web-html",
             "web-uievents"
           ]

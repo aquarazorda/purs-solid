@@ -10,6 +10,7 @@ package:
     - either
     - exceptions
     - foldable-traversable
+    - integers
     - maybe
     - prelude
     - purs-solid
@@ -17,5 +18,6 @@ package:
     - strings
     - tuples
     - web-dom
+    - web-events
     - web-html
     - web-uievents

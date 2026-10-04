@@ -10,6 +10,7 @@ import Effect (Effect)
 import Effect.Exception (Error, throwException)
 import Site.Demo (counter)
 import Site.Pages (Snippets, docs, landing)
+import Site.Toc (toc)
 import Solid.Component as Component
 import Solid.Control (noHydration)
 import Solid.Web.SSR as SSR
@@ -18,7 +19,8 @@ render :: Snippets -> Effect { landing :: String, docs :: String, hydration :: S
 render snippets = do
   demo <- SSR.renderToString (Component.element counter {}) >>= orThrow
   landingHtml <- SSR.renderToString (noHydration (landing snippets demo)) >>= orThrow
-  docsHtml <- SSR.renderToString (noHydration (docs snippets)) >>= orThrow
+  contents <- SSR.renderToString (Component.element toc {}) >>= orThrow
+  docsHtml <- SSR.renderToString (noHydration (docs snippets contents)) >>= orThrow
   hydration <- SSR.hydrationScript >>= orThrow
   pure { landing: landingHtml, docs: docsHtml, hydration }
 

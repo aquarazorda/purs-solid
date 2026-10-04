@@ -410,6 +410,12 @@ pre.code code {
   text-decoration: none;
 }
 
+.toc li a.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
 .docs > main {
   padding: 2.5rem 0 4rem;
   min-width: 0;
@@ -476,6 +482,10 @@ pre.code code {
     padding: 0.2rem 0.5rem;
     border-radius: 6px;
     background: var(--code-bg);
+  }
+
+  .toc li a.active {
+    background: var(--accent-soft);
   }
 
   .hero {

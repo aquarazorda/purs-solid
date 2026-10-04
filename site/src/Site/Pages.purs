@@ -7,6 +7,7 @@ module Site.Pages
 import Prelude
 
 import Data.Array (concatMap)
+import Site.Toc (Section(..), sectionId, sectionTitle, sections)
 import Solid.DOM.HTML as H
 import Solid.JSX (JSX, text)
 
@@ -114,25 +115,26 @@ feature :: Snippets -> Feature -> JSX
 feature snippets { title, body, snippet } = H.article { class: "feature" }
   [ H.h3 {} title, H.p {} body, sample snippets snippet ]
 
-type Section = { id :: String, title :: String, modules :: Array String, content :: Array JSX }
+type Guide = { modules :: Array String, content :: Array JSX }
 
-docs :: Snippets -> JSX
-docs snippets = H.div { class: "page" }
+docs :: Snippets -> String -> JSX
+docs snippets contents = H.div { class: "page" }
   [ header "../"
   , H.div { class: "docs" }
-      [ H.nav { class: "toc", "aria-label": "Contents" }
-          [ H.p {} "Guide", H.ol {} (sections <#> \{ id, title } -> H.li {} (H.a { href: "#" <> id } title)) ]
+      [ H.nav { id: "toc", class: "toc", "aria-label": "Contents", innerHTML: contents } []
       , H.main {} (concatMap section sections)
       ]
   , footer "../"
   ]
   where
-  sections = guide snippets
-
-  section { id, title, modules, content } =
-    [ H.section { id, class: "doc" } $
-        [ H.h2 {} (H.a { href: "#" <> id } title) ] <> content <> api modules
-    ]
+  section current =
+    let
+      id = sectionId current
+      { modules, content } = guide snippets current
+    in
+      [ H.section { id, class: "doc" } $
+          [ H.h2 {} (H.a { href: "#" <> id } (sectionTitle current)) ] <> content <> api modules
+      ]
 
   api [] = []
   api modules =
@@ -141,11 +143,10 @@ docs snippets = H.div { class: "page" }
         modules
     ]
 
-guide :: Snippets -> Array Section
-guide snippets =
-  [ { id: "install"
-    , title: "Install"
-    , modules: []
+guide :: Snippets -> Section -> Guide
+guide snippets = case _ of
+  Install ->
+    { modules: []
     , content:
         [ H.p {} "Solid 2 is a release candidate, so pin exact versions. The router and meta packages are needed only for Solid.Router and Solid.Meta, and the Vite plugin only for start mode."
         , plain "npm install --save-exact solid-js@2.0.0-rc.13 @solidjs/web@2.0.0-rc.13\nnpm install --save-exact @solidjs/router@2.0.0-next.32 @solidjs/meta@1.0.0-next.2\nnpm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0-next.47"
@@ -154,9 +155,8 @@ guide snippets =
         , H.p {} [ text "Bundle development builds with the ", c "development", text " export condition to get Solid's diagnostics." ]
         ]
     }
-  , { id: "components"
-    , title: "Components and elements"
-    , modules: [ "Solid.Component", "Solid.DOM", "Solid.DOM.HTML", "Solid.DOM.SVG", "Solid.DOM.Aria", "Solid.JSX" ]
+  Components ->
+    { modules: [ "Solid.Component", "Solid.DOM", "Solid.DOM.HTML", "Solid.DOM.SVG", "Solid.DOM.Aria", "Solid.JSX" ]
     , content:
         [ H.p {} [ text "A ", c "Component", text " is a function from a props record to a view, built in ", c "Setup", text ". Elements take a record of props and their children; ", c "Component.element", text " renders a component with its props." ]
         , sample snippets "counter"
@@ -177,18 +177,16 @@ guide snippets =
         , sample snippets "untyped"
         ]
     }
-  , { id: "reactivity"
-    , title: "Signals, memos and effects"
-    , modules: [ "Solid.Signal", "Solid.Reactivity", "Solid.Setup", "Solid.Lifecycle", "Solid.Context" ]
+  Reactivity ->
+    { modules: [ "Solid.Signal", "Solid.Reactivity", "Solid.Setup", "Solid.Lifecycle", "Solid.Context" ]
     , content:
         [ H.p {} [ text "Component bodies run in ", c "Setup", text ": they create signals, memos and effects, but can't read or write signals directly. ", c "get", text ", ", c "set", text " and ", c "modify", text " run in ", c "Effect", text ", in handlers and in an effect's apply step. Derived values are ", c "Accessor", text "s, a lawful monad with no effects." ]
         , sample snippets "signals"
         , H.p {} [ text "An effect splits into a tracked compute (an ", c "Accessor", text ") and an untracked apply, which returns its cleanup. Props are plain records; pass reactive values as ", c "Accessor", text " fields. ", c "liftSetup", text " is the escape hatch for running an ", c "Effect", text " in setup." ]
         ]
     }
-  , { id: "control-flow"
-    , title: "Control flow"
-    , modules: [ "Solid.Control" ]
+  ControlFlow ->
+    { modules: [ "Solid.Control" ]
     , content:
         [ H.p {} [ text "Views are descriptions: hidden branches are never built. ", c "when", text ", ", c "showMaybe", text " and the list functions reuse DOM as their inputs change. A list of records is keyed by a field, so a rebuilt array doesn't rebuild its rows." ]
         , sample snippets "control"
@@ -196,43 +194,38 @@ guide snippets =
         , sample snippets "case"
         ]
     }
-  , { id: "stores"
-    , title: "Stores"
-    , modules: [ "Solid.Store" ]
+  Stores ->
+    { modules: [ "Solid.Store" ]
     , content:
         [ H.p {} [ text "Stores hold nested state. Updates are pure ", c "Update", text " values on typed paths, applied to Solid's draft; reads go through cursors, so each row only tracks the fields it shows." ]
         , sample snippets "store"
         ]
     }
-  , { id: "async"
-    , title: "Async data"
-    , modules: [ "Solid.Async", "Solid.Action" ]
+  Async ->
+    { modules: [ "Solid.Async", "Solid.Action" ]
     , content:
         [ H.p {} [ c "createAsync", text " runs an ", c "Aff", text " for each value of its input and kills superseded ones. The result is an ", c "Async", text ", which may not have loaded, so it has no ", c "get", text ": render it, derive from it, or await it with ", c "resolve", text ". ", c "loading", text " shows a fallback until it's ready, and ", c "errored", text " catches failures." ]
         , sample snippets "async"
         , H.p {} [ text "Mutations are ", c "Action", text "s (", c "Solid.Action", text "), and optimistic values exist only inside them." ]
         ]
     }
-  , { id: "router"
-    , title: "Router"
-    , modules: [ "Solid.Router", "Solid.Router.Path", "Solid.Router.Search", "Solid.Router.Query", "Solid.Router.Action" ]
+  Router ->
+    { modules: [ "Solid.Router", "Solid.Router.Path", "Solid.Router.Search", "Solid.Router.Query", "Solid.Router.Action" ]
     , content:
         [ H.p {} [ text "Paths are parsed at compile time: ", c "route @\"/users/:id<int>\"", text " gives its component ", c "{ id :: Int }", text ", and ", c "href", text " builds links from the same pattern. Links are plain anchors that the router intercepts. Search params are typed by a row." ]
         , sample snippets "router"
         , H.p {} [ c "Solid.Router.Query", text " caches route data, and ", c "Solid.Router.Action", text " runs mutations the router tracks: forms, submissions and revalidation." ]
         ]
     }
-  , { id: "ssr"
-    , title: "Server rendering and hydration"
-    , modules: [ "Solid.Web", "Solid.Web.SSR", "Solid.Meta", "Solid.Errors" ]
+  Ssr ->
+    { modules: [ "Solid.Web", "Solid.Web.SSR", "Solid.Meta", "Solid.Errors" ]
     , content:
         [ H.p {} [ text "Render on the server with ", c "renderToString", text ", ", c "renderToStringAsync", text " (waits for async data) or ", c "renderToReadableStream", text ", then hydrate the same view on the client. Async values resolved on the server are serialized, so the client doesn't fetch them again. Head tags from ", c "Solid.Meta", text " can be rendered anywhere." ]
         , sample snippets "ssr"
         ]
     }
-  , { id: "start-mode"
-    , title: "Start mode"
-    , modules: [ "Solid.Start.ServerFunction", "Solid.Start.UseServer", "Solid.Start.Response", "Solid.Start.Middleware" ]
+  StartMode ->
+    { modules: [ "Solid.Start.ServerFunction", "Solid.Start.UseServer", "Solid.Start.Response", "Solid.Start.Middleware" ]
     , content:
         [ H.p {} [ text "A start-mode app is a ", c "Component", text ". Use ", c "purs-solid/vite", text " in place of ", c "@solidjs/vite-plugin", text ": it takes the same options, with ", c "start.app", text " and ", c "start.middleware", text " given as module names." ]
         , plain "import solid from \"purs-solid/vite\";\n\nexport default defineConfig({ plugins: [solid({ start: true, ssr: true })] });"
@@ -240,12 +233,10 @@ guide snippets =
         , sample snippets "server-function"
         ]
     }
-  , { id: "testing"
-    , title: "Testing"
-    , modules: [ "Solid.Testing" ]
+  Testing ->
+    { modules: [ "Solid.Testing" ]
     , content:
         [ H.p {} [ c "Solid.Testing", text " mounts views into a DOM (happy-dom works) and waits for Solid to settle. It doesn't depend on a test framework." ]
         , sample snippets "testing"
         ]
     }
-  ]
